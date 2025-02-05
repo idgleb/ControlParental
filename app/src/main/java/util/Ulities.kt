@@ -1,9 +1,13 @@
 package util
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import com.ursolgleb.controlparental.Launcher
+import com.ursolgleb.controlparental.databinding.ActivityMainBinding
 
 
 class Ulities: AccessibilityService() {
@@ -14,6 +18,36 @@ class Ulities: AccessibilityService() {
 
     override fun onInterrupt() {
         TODO("Not yet implemented")
+    }
+
+    // Comparar permisos
+    fun comparePermissions(context: Context) {
+        val launcherPackage = Launcher.getDefaultLauncherPackageName(context)
+
+        if (launcherPackage.isEmpty()) {
+            Log.e("AppBlockerService", "La variable de launcher está vacía")
+            return
+        }
+
+        val launcherPermissions = getPermissions(launcherPackage, context)
+        val settingsPermissions = getPermissions("com.android.settings", context)
+        val exclusiveLauncherPermissions = launcherPermissions - settingsPermissions
+        Log.d(
+            "AppBlockerService",
+            "Permisos exclusivos del Launcher: $exclusiveLauncherPermissions"
+        )
+    }
+
+    fun getPermissions(packageName: String, context: Context): List<String> {
+        val pm = context.packageManager
+        return try {
+            pm.getPackageInfo(
+                packageName,
+                PackageManager.GET_PERMISSIONS
+            ).requestedPermissions?.toList() ?: emptyList()
+        } catch (e: PackageManager.NameNotFoundException) {
+            emptyList()
+        }
     }
 
     fun accionesAccessibility(){

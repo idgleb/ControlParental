@@ -139,10 +139,14 @@ class MainActivity : AppCompatActivity() {
 
 
         bindMain.mostrarLauncherBoton.setOnClickListener {
-            Log.w("AppBlockerService", "Launcher: ${getLauncherPredeterminado(this)}")
-            Toast.makeText(this, "Launcher: ${getLauncherPredeterminado(this)}", Toast.LENGTH_SHORT)
-                .show()
-            bindMain.tvInformacion.appendAndScroll("\nLauncher: ${getLauncherPredeterminado(this)}")
+            Log.w("AppBlockerService", "Launcher: ${Launcher.getDefaultLauncherPackageName(this)}")
+            bindMain.tvInformacion.appendAndScroll(
+                "\nLauncher: ${
+                    Launcher.getDefaultLauncherPackageName(
+                        this
+                    )
+                }"
+            )
         }
 
         bindMain.getSecureSettingsBoton.setOnClickListener {
@@ -270,22 +274,7 @@ class MainActivity : AppCompatActivity() {
         startActivity(homeIntent)
     }
 
-    fun getLauncherPredeterminado(context: Context): List<String> {
-        val pm = context.packageManager
-        val intent = Intent(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_HOME)
-        }
-        val resolveInfoList = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
 
-        return resolveInfoList.map { it.activityInfo.packageName }.filter { isRealLauncher(it) }
-    }
-    fun isRealLauncher(packageName: String): Boolean {
-        return hasPermission(this, packageName, "android.permission.BIND_APPWIDGET")
-    }
-    fun hasPermission(context: Context, packageName: String, permission: String): Boolean {
-        val pm = context.packageManager
-        return pm.checkPermission(permission, packageName) == PackageManager.PERMISSION_GRANTED
-    }
 
     fun getSecureSettings(context: Context): Map<String, String?> {
         val secureSettings = mutableMapOf<String, String?>()
@@ -414,7 +403,8 @@ class MainActivity : AppCompatActivity() {
 
     fun TextView.scrollToBottom() {
         this.post {
-            val scrollAmount = bindMain.tvInformacion.layout.getLineTop(bindMain.tvInformacion.lineCount) - bindMain.tvInformacion.height
+            val scrollAmount =
+                bindMain.tvInformacion.layout.getLineTop(bindMain.tvInformacion.lineCount) - bindMain.tvInformacion.height
             if (scrollAmount > 0) {
                 bindMain.tvInformacion.scrollTo(0, scrollAmount)
             } else {
@@ -422,12 +412,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    
+
     fun TextView.appendAndScroll(text: String) {
         this.append(text)
         this.scrollToBottom()
     }
-
 
 
     private fun initUI() {

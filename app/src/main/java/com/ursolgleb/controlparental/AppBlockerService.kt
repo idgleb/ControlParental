@@ -19,7 +19,7 @@ import android.provider.Settings
 
 class AppBlockerService : AccessibilityService() {
 
-    private lateinit var allowedApps: List<String>
+    private lateinit var allowedApps: MutableList<String>
 
     private var isBlockerEnabled = false
 
@@ -34,11 +34,7 @@ class AppBlockerService : AccessibilityService() {
 
         if (event == null) return
 
-
-
-        Log.e("AppBlockerService", "Launcher predeterminado: ${getDefaultLauncherPackageName(this)}")
-
-        Log.e("AppBlockerService", "Home page App: ${getDefaultLauncherPackageName(this)}")
+        Log.e("AppBlockerService", "Home page App: ${Launcher.getDefaultLauncherPackageName(this)}")
 
         getEventDetails(event) { detallesTraducidos ->
             Log.d("AppBlockerService", detallesTraducidos)
@@ -93,11 +89,11 @@ class AppBlockerService : AccessibilityService() {
                             performGlobalAction(GLOBAL_ACTION_BACK)
                             Log.e(
                                 "AppBlockerService",
-                                "Bloqueando 555 app: $packageName, porque contiene la palabra: $blockedWordsSub"
+                                "Bloqueando 555 app: $claseDeOrigen, porque contiene la palabra: $blockedWordsSub"
                             )
                             Toast.makeText(
                                 this,
-                                "$packageName está bloqueada, porque contiene la palabra: $blockedWordsSub",
+                                "$claseDeOrigen está bloqueada, porque contiene la palabra: $blockedWordsSub",
                                 Toast.LENGTH_SHORT
                             )
                                 .show()
@@ -109,7 +105,7 @@ class AppBlockerService : AccessibilityService() {
         }
 
         if (isBlockerEnabled) {
-            if (getLauncherPackageName()?.contains(event.packageName.toString()) != true) {
+            if (Launcher.getDefaultLauncherPackageName(this) != event.packageName) {
                 Log.w("AppBlockerService", "Atras hasta Home 555: ${event.eventType}")
                 performGlobalAction(GLOBAL_ACTION_BACK)
             } else {
@@ -119,32 +115,29 @@ class AppBlockerService : AccessibilityService() {
             }
         }
 
-        val isOnHomeScreen = getLauncherPackageName()?.contains(event.packageName.toString())
+        val isOnHomeScreen =
+            Launcher.getDefaultLauncherPackageName(this) == event.packageName
         Log.w("AppBlockerService", "¿Está 888 en la pantalla de inicio? $isOnHomeScreen")
 
     }
 
-    private fun getLauncherPackageName(): String? {
-        val intent = Intent(Intent.ACTION_MAIN)
-        intent.addCategory(Intent.CATEGORY_HOME)
-
-        val resolveInfo = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
-        return resolveInfo?.activityInfo?.packageName
-    }
-
     override fun onServiceConnected() {
         super.onServiceConnected()
-        allowedApps = listOf(
+        allowedApps = mutableListOf(
             "com.ursolgleb.appblocker",
             "com.ursolgleb.controlparental",
             "com.android.chrome",
             "com.google.android.apps.nexuslauncher",
-            getDefaultLauncherPackageName(this),
             "com.android.settings",
             "com.android.systemui",
             "com.google.android.inputmethod.latin"
         )
-        Log.d("AppBlockerService", "Lista de aplicaciones permitidas inicializada!")
+
+        allowedApps.add(Launcher.getDefaultLauncherPackageName(this))
+
+        Log.d("AppBlockerService", "Lista de aplicaciones acceptadas:")
+        allowedApps.forEach { Log.w("AppBlockerService", it) }
+
         Toast.makeText(this, "Servicio de accesibilidad iniciado", Toast.LENGTH_SHORT).show()
     }
 
@@ -335,24 +328,6 @@ class AppBlockerService : AccessibilityService() {
                 resultado("Error al descargar el modelo: ${e.localizedMessage}")
             }
     }
-
-    fun getDefaultLauncherPackageName(context: Context): String {
-        val pm = context.packageManager
-        val intent = Intent(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_HOME)
-        }
-        val resolveInfoList = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
-        return resolveInfoList.map { it.activityInfo.packageName }.filter { isRealLauncher(it) }.toString()
-    }
-    fun isRealLauncher(packageName: String): Boolean {
-        return hasPermission(this, packageName, "android.permission.BIND_APPWIDGET")
-    }
-    fun hasPermission(context: Context, packageName: String, permission: String): Boolean {
-        val pm = context.packageManager
-        return pm.checkPermission(permission, packageName) == PackageManager.PERMISSION_GRANTED
-    }
-
-
 
 
 }

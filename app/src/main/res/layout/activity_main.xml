@@ -21,13 +21,13 @@
             android:id="@+id/requestUsageStatsPermissionBoton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="requestUsageStatsPermission"
+            android:text="UsageStatsPermission"
             android:textSize="20sp"/>
         <Button
             android:id="@+id/requestAccessibilityServiceBoton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="requestAccessibilityService"
+            android:text="AccessibilityService"
             android:textSize="20sp"/>
 
 
@@ -42,14 +42,14 @@
             android:id="@+id/getUsageStatsBoton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="getUsageStats"
+            android:text="get Usage Stats"
             android:textSize="20sp"/>
 
         <Button
             android:id="@+id/getForegroundAppBoton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="getForegroundApp"
+            android:text="get ForegroundApp"
             android:textSize="20sp"/>
 
         <Button
@@ -63,7 +63,7 @@
             android:id="@+id/mostrarPantallaDeBloqueoBoton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="mostrarPantallaDeBloqueo"
+            android:text="mostrar PantallaDeBloqueo"
             android:textSize="20sp"/>
 
         <Button
@@ -82,6 +82,7 @@
 
         <TextView
             android:id="@+id/tvInformacion"
+            android:layout_marginTop="18dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:scrollbars="vertical"
