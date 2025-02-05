@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="30dp"
+    tools:context=".MainActivity">
+
+
+
+    <LinearLayout
+        android:id="@+id/main"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+
+        <Button
+            android:id="@+id/requestUsageStatsPermissionBoton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="requestUsageStatsPermission"
+            android:textSize="20sp"/>
+        <Button
+            android:id="@+id/requestAccessibilityServiceBoton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="requestAccessibilityService"
+            android:textSize="20sp"/>
+
+
+        <Button
+            android:id="@+id/obtenerListaAppBoton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Obtener Lista de Apps"
+            android:textSize="20sp"/>
+
+        <Button
+            android:id="@+id/getUsageStatsBoton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="getUsageStats"
+            android:textSize="20sp"/>
+
+        <Button
+            android:id="@+id/getForegroundAppBoton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="getForegroundApp"
+            android:textSize="20sp"/>
+
+        <Button
+            android:id="@+id/redirigirAlaPantallaDeInicioBoton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="redirigirAlaPantallaDeInicio"
+            android:textSize="20sp"/>
+
+        <Button
+            android:id="@+id/mostrarPantallaDeBloqueoBoton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="mostrarPantallaDeBloqueo"
+            android:textSize="20sp"/>
+
+        <Button
+            android:id="@+id/mostrarLauncherBoton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mostrar Launchers"
+            android:textSize="20sp"/>
+
+        <Button
+            android:id="@+id/getSecureSettingsBoton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="get Secure Settings"
+            android:textSize="20sp"/>
+
+        <TextView
+            android:id="@+id/tvInformacion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="vertical"
+            android:overScrollMode="always"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            tools:text="Texto largo aquí..." />
+
+
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+

@@ -1,0 +1,32 @@
+
+
+
+2025-02-03 03:02:57.988 21255-21255 AppBlockerService       com.ursolgleb.controlparental        D  App en primer plano: com.android.settings
+2025-02-03 03:02:58.462 21255-21255 AppBlockerService       com.ursolgleb.controlparental        D  App en primer plano: com.android.settings
+2025-02-03 03:02:58.484 21255-21255 AppBlockerService       com.ursolgleb.controlparental        D  🔹 **Tipo de evento:** Vista clicada
+                                                                                                    📦 **Paquete:** com.android.settings
+                                                                                                    🏷 **Clase de origen:** android.widget.LinearLayout
+                                                                                                    🖥 **Vista donde ocurrió:** android.widget.LinearLayout
+                                                                                                    🏷 **ID del elemento:** ID no disponible
+                                                                                                    🗣 **Descripción del contenido:** Sin descripción
+                                                                                                    📝 **Texto capturado:** Applications, Assistant, Recent Applications, Default Applications
+                                                                                                    🌍 **Idioma original:** ru
+
+2025-02-03 03:09:51.746 21255-21255 AppBlockerService       com.ursolgleb.controlparental        D  App en primer plano: com.android.settings
+2025-02-03 03:09:52.036 21255-21255 AppBlockerService       com.ursolgleb.controlparental        D  🔹 **Tipo de evento:** Vista clicada
+                                                                                                    📦 **Paquete:** com.android.settings
+                                                                                                    🏷 **Clase de origen:** android.widget.LinearLayout
+                                                                                                    🖥 **Vista donde ocurrió:** android.widget.LinearLayout
+                                                                                                    🏷 **ID del elemento:** ID no disponible
+                                                                                                    🗣 **Descripción del contenido:** Sin descripción
+                                                                                                    📝 **Texto capturado:** Applications, Assistant, Recent Applications, Default applications
+                                                                                                    🌍 **Idioma original:** es
+
+2025-02-03 03:13:21.630 21255-21255 AppBlockerService       com.ursolgleb.controlparental        D  🔹 **Tipo de evento:** Vista clicada
+                                                                                                    📦 **Paquete:** com.android.settings
+                                                                                                    🏷 **Clase de origen:** android.widget.LinearLayout
+                                                                                                    🖥 **Vista donde ocurrió:** android.widget.LinearLayout
+                                                                                                    🏷 **ID del elemento:** ID no disponible
+                                                                                                    🗣 **Descripción del contenido:** Sin descripción
+                                                                                                    📝 **Texto capturado:** Apps, Assistant, recent apps, default apps
+                                                                                                    🌍 **Idioma:** en
