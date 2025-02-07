@@ -14,6 +14,10 @@ import java.util.Locale
 import com.ursolgleb.controlparental.UI.MainActivity
 import com.ursolgleb.controlparental.allowedApps
 import com.ursolgleb.controlparental.data.BlockedAppEntity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AppBlockerService : AccessibilityService() {
 
@@ -32,7 +36,7 @@ class AppBlockerService : AccessibilityService() {
         if (event == null) return
 
         if (event.packageName == "com.ursolgleb.controlparental"
-            //&& event.className != "android.widget.TextView"
+        //&& event.className != "android.widget.TextView"
         ) {
             return
         }
@@ -53,10 +57,7 @@ class AppBlockerService : AccessibilityService() {
                 isBlockerEnabled = true
 
                 saveBlockedAppBaseDeDatos(packageName)
-                ////Broadcast
-                val intent = Intent("com.ursolgleb.controlparental.UPDATE_BLOCKED_APPS")
-                sendBroadcast(intent)
-                Log.w("MainActivityListaApps", "Broadcast enviado desde saveBlockedAppBaseDeDatos")
+
 
 
                 val msg = "Bloqueando app: $packageName"
@@ -256,10 +257,23 @@ class AppBlockerService : AccessibilityService() {
     }
 
     private fun saveBlockedAppBaseDeDatos(packageName: String) {
-        Thread {
-            ControlParentalApp.db.blockedAppDao()
-                .insertBlockedApp(BlockedAppEntity(packageName = packageName))
-        }.start()
+        CoroutineScope(Dispatchers.IO).launch {
+            val existingApp = ControlParentalApp.db.blockedAppDao().getBlockedApp(packageName)
+
+            if (existingApp != null) {
+                // Si el packageName ya existe, actualiza el campo blockedAt
+                val updatedApp = existingApp.copy(blockedAt = System.currentTimeMillis())
+                ControlParentalApp.db.blockedAppDao().updateBlockedApp(updatedApp)
+            } else {
+                // Si no existe, inserta un nuevo registro
+                ControlParentalApp.db.blockedAppDao().insertBlockedApp(BlockedAppEntity(packageName = packageName))
+            }
+            withContext(Dispatchers.Main){
+                val intent = Intent("com.ursolgleb.controlparental.UPDATE_BLOCKED_APPS")
+                sendBroadcast(intent)
+                Log.w("MainActivityListaApps", "Broadcast enviado desde saveBlockedAppBaseDeDatos")
+            }
+        }
     }
 
 }

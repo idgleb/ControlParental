@@ -22,6 +22,13 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/clearAppBlockedBoton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CLEAR APPS BLOCKED"
+            android:textSize="20sp"
+            android:onClick="eliminarAppsBloqueadas"/>
 
 
         <TextView

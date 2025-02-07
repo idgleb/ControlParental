@@ -30,6 +30,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.ursolgleb.controlparental.databinding.ActivityMainBinding
 import android.provider.Settings
 import android.text.TextUtils
+import android.view.View
 import android.view.accessibility.AccessibilityManager
 import android.widget.TextView
 import android.widget.Toast
@@ -98,7 +99,10 @@ class MainActivity : AppCompatActivity() {
     private fun initUpdateAppsBloquedasReceiver() {
         updateAppsBloquedasReceiver = UpdateAppsBloquedasReceiver { msg ->
             actualizarListaAppsBloqueadas()
-            Log.d("MainActivityListaApps", "actualizarListaAppsBloqueadas de UpdateAppsBloquedasReceiver $msg")
+            Log.d(
+                "MainActivityListaApps",
+                "actualizarListaAppsBloqueadas de UpdateAppsBloquedasReceiver $msg"
+            )
         }
     }
 
@@ -115,6 +119,15 @@ class MainActivity : AppCompatActivity() {
             }
             withContext(Dispatchers.Main) {
                 bindMain.tvAppsBloqueadas.text = blockedAppsText
+            }
+        }
+    }
+
+    fun eliminarAppsBloqueadas(view: View) {
+        CoroutineScope(Dispatchers.IO).launch {
+            ControlParentalApp.db.blockedAppDao().deleteAllBlockedApps()
+            withContext(Dispatchers.Main) {
+                actualizarListaAppsBloqueadas()
             }
         }
     }
