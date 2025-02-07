@@ -6,15 +6,35 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="30dp"
-    tools:context=".MainActivity">
+    tools:context=".UI.MainActivity">
 
-
+<ScrollView
+    android:id="@+id/scrollView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent">
 
     <LinearLayout
         android:id="@+id/main"
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+
+
+        <TextView
+            android:id="@+id/tvAppsBloqueadas"
+            android:layout_marginTop="18dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="vertical"
+            android:overScrollMode="always"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:textIsSelectable="true"
+            tools:text="Texto  aquí..." />
 
 
         <Button
@@ -80,6 +100,27 @@
             android:text="get Secure Settings"
             android:textSize="20sp"/>
 
+        <Button
+            android:id="@+id/showAllowedAppsBoton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="show Allowed Apps"
+            android:textSize="20sp"/>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/clearFileBoton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CLEAR FILE"
+            android:textSize="20sp"/>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/actualizarBoton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ACTUALIZAR"
+            android:textSize="20sp"/>
+
         <TextView
             android:id="@+id/tvInformacion"
             android:layout_marginTop="18dp"
@@ -89,11 +130,25 @@
             android:overScrollMode="always"
             android:focusable="true"
             android:focusableInTouchMode="true"
+            android:textIsSelectable="true"
             tools:text="Texto largo aquí..." />
 
-
-
     </LinearLayout>
+
+</ScrollView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/arribaBoton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="34dp"
+        app:backgroundTint="@color/black"
+        app:fabSize="normal"
+        app:srcCompat="@android:drawable/stat_sys_upload"
+        app:tint="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 

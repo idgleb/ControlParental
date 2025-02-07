@@ -1,25 +1,22 @@
-package com.ursolgleb.controlparental
+package com.ursolgleb.controlparental.services
 
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_HOME
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.content.pm.ResolveInfo
 import android.graphics.Rect
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
-import com.google.mlkit.common.model.DownloadConditions
-import com.google.mlkit.nl.translate.TranslateLanguage
-import com.google.mlkit.nl.translate.Translation
-import com.google.mlkit.nl.translate.TranslatorOptions
+
+import com.ursolgleb.controlparental.ControlParentalApp
+import com.ursolgleb.controlparental.utils.Archivo
+import com.ursolgleb.controlparental.utils.Launcher
 import java.util.Locale
-import android.provider.Settings
+import com.ursolgleb.controlparental.UI.MainActivity
+import com.ursolgleb.controlparental.allowedApps
+import com.ursolgleb.controlparental.data.BlockedAppEntity
 
 class AppBlockerService : AccessibilityService() {
 
-    private lateinit var allowedApps: MutableList<String>
 
     private var isBlockerEnabled = false
 
@@ -34,27 +31,44 @@ class AppBlockerService : AccessibilityService() {
 
         if (event == null) return
 
-        Log.e("AppBlockerService", "Home page App: ${Launcher.getDefaultLauncherPackageName(this)}")
-
-        getEventDetails(event) { detallesTraducidos ->
-            Log.d("AppBlockerService", detallesTraducidos)
+        if (event.packageName == "com.ursolgleb.controlparental"
+            //&& event.className != "android.widget.TextView"
+        ) {
+            return
         }
+
+        val eventDetales = getEventDetails(event)
+        Log.d("AppBlockerService", eventDetales)
+        Archivo.appendTextToFile(this, MainActivity.fileName, "\n $eventDetales")
 
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val packageName = event.packageName?.toString() ?: return
-            Log.w("AppBlockerService", "App en primer plano: $packageName")
-            Toast.makeText(this, "App en primer plano: $packageName", Toast.LENGTH_SHORT).show()
 
-            if (!allowedApps.contains(packageName)) {
+            val msg = "App en primer plano: $packageName"
+            Log.w("AppBlockerService", msg)
+            Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
+
+            if (!allowedApps.apps.contains(packageName)) {
                 performGlobalAction(GLOBAL_ACTION_BACK)
                 isBlockerEnabled = true
-                Log.e("AppBlockerService", "Bloqueando app: $packageName")
-                Toast.makeText(this, "$packageName está bloqueada", Toast.LENGTH_SHORT).show()
+
+                saveBlockedAppBaseDeDatos(packageName)
+                ////Broadcast
+                val intent = Intent("com.ursolgleb.controlparental.UPDATE_BLOCKED_APPS")
+                sendBroadcast(intent)
+                Log.w("MainActivityListaApps", "Broadcast enviado desde saveBlockedAppBaseDeDatos")
+
+
+                val msg = "Bloqueando app: $packageName"
+                Log.e("AppBlockerService", msg)
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
             }
         }
 
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
             val packageName = event.packageName?.toString() ?: return
+
             if (packageName == "com.android.settings") {
                 getEventTextoCapturado(event) { textoCapturado ->
                     for (blockedWord in blockedWords) {
@@ -63,16 +77,11 @@ class AppBlockerService : AccessibilityService() {
                         ) {
                             performGlobalAction(GLOBAL_ACTION_BACK)       // Simula botón "Atrás"
                             isBlockerEnabled = true
-                            Log.e(
-                                "AppBlockerService",
+                            val msg =
                                 "Bloqueando app: $packageName, porque contiene la palabra: $blockedWord"
-                            )
-                            Toast.makeText(
-                                this,
-                                "$packageName está bloqueada, porque contiene la palabra: $blockedWord",
-                                Toast.LENGTH_SHORT
-                            )
-                                .show()
+                            Log.e("AppBlockerService", msg)
+                            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                            Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
                             return@getEventTextoCapturado
                         }
                     }
@@ -87,16 +96,11 @@ class AppBlockerService : AccessibilityService() {
                     for (blockedWordsSub in blockedWordsSub) {
                         if (textoCapturado.contains(blockedWordsSub, ignoreCase = true)) {
                             performGlobalAction(GLOBAL_ACTION_BACK)
-                            Log.e(
-                                "AppBlockerService",
+                            val msg =
                                 "Bloqueando 555 app: $claseDeOrigen, porque contiene la palabra: $blockedWordsSub"
-                            )
-                            Toast.makeText(
-                                this,
-                                "$claseDeOrigen está bloqueada, porque contiene la palabra: $blockedWordsSub",
-                                Toast.LENGTH_SHORT
-                            )
-                                .show()
+                            Log.e("AppBlockerService", msg)
+                            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                            Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
                             return@getEventTextoCapturado
                         }
                     }
@@ -106,10 +110,14 @@ class AppBlockerService : AccessibilityService() {
 
         if (isBlockerEnabled) {
             if (Launcher.getDefaultLauncherPackageName(this) != event.packageName) {
-                Log.w("AppBlockerService", "Atras hasta Home 555: ${event.eventType}")
+                val msg = "Atras hasta Home 555: ${event.eventType}"
+                Log.w("AppBlockerService", msg)
+                Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
                 performGlobalAction(GLOBAL_ACTION_BACK)
             } else {
-                Log.w("AppBlockerService", "LOCK_SCREEN: ${event.eventType}")
+                val msg = "LOCK_SCREEN: ${event.eventType}"
+                Log.w("AppBlockerService", msg)
+                Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
                 //performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
                 isBlockerEnabled = false
             }
@@ -117,40 +125,35 @@ class AppBlockerService : AccessibilityService() {
 
         val isOnHomeScreen =
             Launcher.getDefaultLauncherPackageName(this) == event.packageName
-        Log.w("AppBlockerService", "¿Está 888 en la pantalla de inicio? $isOnHomeScreen")
+        val msg = "Está 888 en la pantalla de inicio? $isOnHomeScreen"
+        Log.w("AppBlockerService", msg)
+        Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
 
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        allowedApps = mutableListOf(
-            "com.ursolgleb.appblocker",
-            "com.ursolgleb.controlparental",
-            "com.android.chrome",
-            "com.google.android.apps.nexuslauncher",
-            "com.android.settings",
-            "com.android.systemui",
-            "com.google.android.inputmethod.latin"
-        )
 
-        allowedApps.add(Launcher.getDefaultLauncherPackageName(this))
+        allowedApps.apps.add(Launcher.getDefaultLauncherPackageName(this))
 
-        Log.d("AppBlockerService", "Lista de aplicaciones acceptadas:")
-        allowedApps.forEach { Log.w("AppBlockerService", it) }
+        allowedApps.showApps(this)
 
-        Toast.makeText(this, "Servicio de accesibilidad iniciado", Toast.LENGTH_SHORT).show()
+        val msg = "Servicio de accesibilidad iniciado"
+        Log.w("AppBlockerService", msg)
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
+
     }
 
 
     override fun onInterrupt() {
-        Log.w("AppBlockerService", "Servicio de accesibilidad interrumpido")
+        val msg = "Servicio de accesibilidad interrumpido"
+        Log.w("AppBlockerService", msg)
+        Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
     }
 
 
-    private fun getEventDetails(
-        event: AccessibilityEvent,
-        onResult: (String) -> Unit
-    ) {
+    private fun getEventDetails(event: AccessibilityEvent): String {
         val eventType = when (event.eventType) {
             AccessibilityEvent.TYPE_VIEW_CLICKED -> "Vista clicada"
             AccessibilityEvent.TYPE_VIEW_LONG_CLICKED -> "Vista con clic largo"
@@ -213,26 +216,19 @@ class AppBlockerService : AccessibilityService() {
             val bounds = Rect()
             node.getBoundsInScreen(bounds)
             val boundsInfo = "(${bounds.left}, ${bounds.top}, ${bounds.right}, ${bounds.bottom})"
-
             """
-        📌 **Detalles de la vista de origen:**
-        🖥 **Clase:** ${node.className}
-        🏷 **ID:** ${node.viewIdResourceName ?: "No disponible"}
-        🗣 **Descripción del contenido:** ${node.contentDescription ?: "Sin descripción"}
-        🔘 **Clickable:** ${node.isClickable}
-        🔘 **LongClickable:** ${node.isLongClickable}
-        🔘 **Focusable:** ${node.isFocusable}
-        🔘 **Focused:** ${node.isFocused}
-        🔘 **Selected:** ${node.isSelected}
-        👁 **Visible al usuario:** ${node.isVisibleToUser}
-        🔲 **Bounds:** $boundsInfo
-        """.trimIndent()
+            📌 **Detalles de la vista de origen:**
+            🖥 **Clase:** ${node.className}
+            🏷 **ID:** ${node.viewIdResourceName ?: "No disponible"}
+            🗣 **Descripción del contenido:** ${node.contentDescription ?: "Sin descripción"}
+            """.trimIndent()
         } else {
             "📌 No hay información del nodo de accesibilidad."
         }
 
         // Construcción del mensaje con toda la información disponible
         val detallesBase = """
+            
         🔹 **Tipo de evento:** $eventType
         📦 **Paquete:** $packageName
         🏷 **Clase de origen:** $className
@@ -241,33 +237,12 @@ class AppBlockerService : AccessibilityService() {
         🗣 **Descripción del contenido:** $contentDesc
         📝 **Texto capturado:** $eventTextOriginal
         🌍 **Idioma:** $idioma
-        ⏳ **Tiempo del evento:** $eventTime
-        📝 **Texto previo:** $beforeText
-        ✅ **¿Marcado?:** $isChecked
-        🔒 **¿Campo de contraseña?:** $isPassword
-        🔄 **¿Habilitado?:** $isEnabled
-        🔳 **¿Pantalla completa?:** $isFullScreen
-        🔽 **¿Scrollable?:** $isScrollable
-        📜 **Scroll X/Y:** ($scrollX, $scrollY)
-        📋 **Índice en lista:** $currentItemIndex / $itemCount
-        ➕ **Elementos agregados:** $addedCount
-        ➖ **Elementos eliminados:** $removedCount
         🎮 **Acción realizada:** $action
-        📜 **Cantidad de registros:** $recordCount
-        🔍 **Granularidad del movimiento:** $movementGranularity
-        📨 **Datos adicionales:** $parcelableData
         $nodeInfo
+        
     """.trimIndent()
 
-        // Si el idioma no es inglés, traducir el texto; de lo contrario, usarlo tal cual.
-        if (idioma != "en" && eventTextOriginal.isNotEmpty()) {
-            traducirTexto(eventTextOriginal, idioma, "en") { textoTraducido ->
-                val detallesTraducidos = detallesBase.replace(eventTextOriginal, textoTraducido)
-                onResult(detallesTraducidos)
-            }
-        } else {
-            onResult(detallesBase)
-        }
+        return detallesBase
     }
 
 
@@ -276,58 +251,15 @@ class AppBlockerService : AccessibilityService() {
         onResult: (String) -> Unit
     ) {
         val eventTextOriginal = event.text.joinToString(", ")
-        val idioma = Locale.getDefault().language
-
-        // Si el idioma no es inglés, traducir el texto; de lo contrario, usarlo tal cual.
-        if (idioma != "en" && eventTextOriginal != "") {
-            traducirTexto(eventTextOriginal, idioma, "en") { textoTraducido ->
-                val textoCapturado = textoTraducido.trimIndent()
-                onResult(textoCapturado)
-            }
-        } else {
-            val textoCapturado = eventTextOriginal.trimIndent()
-            onResult(textoCapturado)
-        }
+        val textoCapturado = eventTextOriginal.trimIndent()
+        onResult(textoCapturado)
     }
 
-
-    fun traducirTexto(
-        texto: String,
-        idiomaOrigen: String,
-        idiomaDestino: String = "en",
-        resultado: (String) -> Unit
-    ) {
-
-        val mlKitIdiomaOrigen =
-            TranslateLanguage.fromLanguageTag(idiomaOrigen) ?: TranslateLanguage.ENGLISH
-
-        val mlKitIdiomaDestino =
-            TranslateLanguage.fromLanguageTag(idiomaDestino) ?: TranslateLanguage.ENGLISH
-
-        val opciones = TranslatorOptions.Builder()
-            .setSourceLanguage(mlKitIdiomaOrigen)
-            .setTargetLanguage(mlKitIdiomaDestino)
-            .build()
-        val traductor = Translation.getClient(opciones)
-
-        // Configurar condiciones para la descarga del modelo (por ejemplo, solo en Wi-Fi)
-        val condiciones = DownloadConditions.Builder().build()
-
-        // Descargar el modelo si es necesario y luego traducir el texto
-        traductor.downloadModelIfNeeded(condiciones)
-            .addOnSuccessListener {
-                traductor.translate(texto)
-                    .addOnSuccessListener { textoTraducido ->
-                        resultado(textoTraducido)
-                    }
-                    .addOnFailureListener { e ->
-                        resultado("Error al traducir: ${e.localizedMessage}")
-                    }
-            }
-            .addOnFailureListener { e ->
-                resultado("Error al descargar el modelo: ${e.localizedMessage}")
-            }
+    private fun saveBlockedAppBaseDeDatos(packageName: String) {
+        Thread {
+            ControlParentalApp.db.blockedAppDao()
+                .insertBlockedApp(BlockedAppEntity(packageName = packageName))
+        }.start()
     }
-
 
 }
