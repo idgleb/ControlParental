@@ -2,4 +2,9 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="fondo_scroll">#F0F0F0</color>
+    <color name="blue_principal">#4B89EB</color>
+    <color name="fondo_principal">#2E65BA</color>
+    <color name="boton_secundario">#86B4FF</color>
+    <color name="text_boton">#FFFFFF</color>
 </resources>

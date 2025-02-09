@@ -2,7 +2,7 @@ package com.ursolgleb.controlparental
 
 import android.content.Context
 import android.util.Log
-import com.ursolgleb.controlparental.UI.MainActivity
+import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.utils.Archivo
 
 class allowedApps {
@@ -20,10 +20,10 @@ class allowedApps {
         fun showApps(context: Context){
             var msg = "Lista de aplicaciones acceptadas:"
             Log.d("AppBlockerService", msg)
-            Archivo.appendTextToFile(context, MainActivity.fileName, "\n $msg")
+            Archivo.appendTextToFile(context, DesarolloActivity.fileName, "\n $msg")
             apps.forEach {
                 Log.w("AppBlockerService", it)
-                Archivo.appendTextToFile(context, MainActivity.fileName, "\n $it")
+                Archivo.appendTextToFile(context, DesarolloActivity.fileName, "\n $it")
             }
         }
 

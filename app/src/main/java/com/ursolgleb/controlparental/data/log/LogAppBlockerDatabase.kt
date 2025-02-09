@@ -5,19 +5,19 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [BlockedAppEntity::class], version = 1)
-abstract class AppBlockerDatabase : RoomDatabase() {
-    abstract fun blockedAppDao(): BlockedAppDao
+@Database(entities = [LogBlockedAppEntity::class], version = 1)
+abstract class LogAppBlockerDatabase : RoomDatabase() {
+    abstract fun logBlockedAppDao(): LogBlockedAppDao
 
     companion object {
         @Volatile
-        private var INSTANCE: AppBlockerDatabase? = null
+        private var INSTANCE: LogAppBlockerDatabase? = null
 
-        fun getDatabase(context: Context): AppBlockerDatabase {
+        fun getDatabase(context: Context): LogAppBlockerDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
-                    AppBlockerDatabase::class.java,
+                    LogAppBlockerDatabase::class.java,
                     "app_blocker.db"
                 ).build()
                 INSTANCE = instance

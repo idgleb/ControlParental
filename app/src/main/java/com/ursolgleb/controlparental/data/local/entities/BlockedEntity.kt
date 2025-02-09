@@ -9,7 +9,8 @@ import androidx.room.PrimaryKey
     foreignKeys = [ForeignKey(
         entity = AppEntity::class,
         parentColumns = ["packageName"],
-        childColumns = ["packageName"]
+        childColumns = ["packageName"],
+        onDelete = ForeignKey.CASCADE
     )]
 )
 data class BlockedEntity(

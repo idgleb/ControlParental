@@ -11,11 +11,12 @@ import com.ursolgleb.controlparental.ControlParentalApp
 import com.ursolgleb.controlparental.utils.Archivo
 import com.ursolgleb.controlparental.utils.Launcher
 import java.util.Locale
-import com.ursolgleb.controlparental.UI.MainActivity
+import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.allowedApps
-import com.ursolgleb.controlparental.data.log.BlockedAppEntity
+import com.ursolgleb.controlparental.data.log.LogBlockedAppEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -23,6 +24,8 @@ class AppBlockerService : AccessibilityService() {
 
 
     private var isBlockerEnabled = false
+    private var currentAppEnPrimerPlano: String? = null
+    val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     private val blockedWords = listOf(
         "app"
@@ -43,35 +46,27 @@ class AppBlockerService : AccessibilityService() {
 
         val eventDetales = getEventDetails(event)
         Log.d("AppBlockerService", eventDetales)
-        Archivo.appendTextToFile(this, MainActivity.fileName, "\n $eventDetales")
+        Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $eventDetales")
 
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val packageName = event.packageName?.toString() ?: return
+            currentAppEnPrimerPlano = packageName
+            blockearSiEnBlackList(packageName)
 
             val msg = "App en primer plano: $packageName"
-            Log.w("AppBlockerService", msg)
-            Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
-
-            if (!allowedApps.apps.contains(packageName)) {
-                performGlobalAction(GLOBAL_ACTION_BACK)
-                isBlockerEnabled = true
-
-                saveBlockedAppBaseDeDatos(packageName)
-
-                val msg = "Bloqueando app: $packageName"
-                Log.e("AppBlockerService", msg)
-                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-                Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
-            }
+            Log.w("AppBlockerService111", msg)
+            Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
         }
 
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
             val packageName = event.packageName?.toString() ?: return
+            currentAppEnPrimerPlano = packageName
+            blockearSiEnBlackList(packageName)
 
             if (packageName == "com.android.settings") {
                 getEventTextoCapturado(event) { textoCapturado ->
                     for (blockedWord in blockedWords) {
-                        if (textoCapturado.contains("app", ignoreCase = true)
+                        if (textoCapturado.contains(blockedWord, ignoreCase = true)
                         ) {
                             performGlobalAction(GLOBAL_ACTION_BACK)   // Simula botón "Atrás"
                             isBlockerEnabled = true
@@ -80,7 +75,7 @@ class AppBlockerService : AccessibilityService() {
                                 "Bloqueando app: $packageName, porque contiene la palabra: $blockedWord"
                             Log.e("AppBlockerService", msg)
                             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-                            Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
+                            Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
                             return@getEventTextoCapturado
                         }
                     }
@@ -101,7 +96,7 @@ class AppBlockerService : AccessibilityService() {
                                 "Bloqueando 555 app: $claseDeOrigen, porque contiene la palabra: $blockedWordsSub"
                             Log.e("AppBlockerService", msg)
                             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-                            Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
+                            Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
                             return@getEventTextoCapturado
                         }
                     }
@@ -113,12 +108,12 @@ class AppBlockerService : AccessibilityService() {
             if (Launcher.getDefaultLauncherPackageName(this) != event.packageName) {
                 val msg = "❤️❤️❤️Atras hasta Home 555: ${event.eventType}"
                 Log.w("AppBlockerService", msg)
-                Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
+                Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
                 performGlobalAction(GLOBAL_ACTION_BACK)
             } else {
                 val msg = "😶‍🌫️😶‍🌫️😶‍🌫️LOCK_SCREEN😶‍🌫️😶‍🌫️😶‍🌫️: ${event.eventType}"
                 Log.w("AppBlockerService", msg)
-                Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
+                Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
                 //performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
                 isBlockerEnabled = false
             }
@@ -128,8 +123,39 @@ class AppBlockerService : AccessibilityService() {
             Launcher.getDefaultLauncherPackageName(this) == event.packageName
         val msg = "Está 888 en la pantalla de inicio? $isOnHomeScreen"
         Log.w("AppBlockerService", msg)
-        Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
+        Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
 
+    }
+
+    private fun blockearSiEnBlackList(packageName: String) {
+        coroutineScope.launch {
+            val blockedDao = ControlParentalApp.dbApps.blockedDao()
+            val blockedApp = blockedDao.getBlockedAppByPackageName(packageName)
+            if (blockedApp == null) {
+                Log.w("AppBlockerService111", "blockedApp == null true")
+                return@launch
+            } else {
+                Log.w("AppBlockerService111", "blockedApp == null false")
+                performGlobalAction(GLOBAL_ACTION_BACK)
+                isBlockerEnabled = true
+                saveBlockedAppBaseDeDatos(packageName)
+                val msg = "Bloqueando app: $packageName"
+                Log.e("AppBlockerService111", msg)
+                Archivo.appendTextToFile(
+                    this@AppBlockerService,
+                    DesarolloActivity.fileName,
+                    "\n $msg"
+                )
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@AppBlockerService, msg, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        coroutineScope.cancel()
     }
 
     override fun onServiceConnected() {
@@ -142,7 +168,7 @@ class AppBlockerService : AccessibilityService() {
         val msg = "Servicio de accesibilidad iniciado"
         Log.w("AppBlockerService", msg)
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-        Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
+        Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
 
     }
 
@@ -150,7 +176,7 @@ class AppBlockerService : AccessibilityService() {
     override fun onInterrupt() {
         val msg = "Servicio de accesibilidad interrumpido"
         Log.w("AppBlockerService", msg)
-        Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
+        Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
     }
 
 
@@ -258,17 +284,19 @@ class AppBlockerService : AccessibilityService() {
 
     private fun saveBlockedAppBaseDeDatos(packageName: String) {
         CoroutineScope(Dispatchers.IO).launch {
-            val existingApp = ControlParentalApp.db.blockedAppDao().getBlockedApp(packageName)
+            val existingApp =
+                ControlParentalApp.dbLogs.logBlockedAppDao().getLogBlockedApp(packageName)
 
             if (existingApp != null) {
                 // Si el packageName ya existe, actualiza el campo blockedAt
                 val updatedApp = existingApp.copy(blockedAt = System.currentTimeMillis())
-                ControlParentalApp.db.blockedAppDao().updateBlockedApp(updatedApp)
+                ControlParentalApp.dbLogs.logBlockedAppDao().updateLogBlockedApp(updatedApp)
             } else {
                 // Si no existe, inserta un nuevo registro
-                ControlParentalApp.db.blockedAppDao().insertBlockedApp(BlockedAppEntity(packageName = packageName))
+                ControlParentalApp.dbLogs.logBlockedAppDao()
+                    .insertLogBlockedApp(LogBlockedAppEntity(packageName = packageName))
             }
-            withContext(Dispatchers.Main){
+            withContext(Dispatchers.Main) {
                 val intent = Intent("com.ursolgleb.controlparental.UPDATE_BLOCKED_APPS")
                 sendBroadcast(intent)
                 Log.w("MainActivityListaApps", "Broadcast enviado desde saveBlockedAppBaseDeDatos")

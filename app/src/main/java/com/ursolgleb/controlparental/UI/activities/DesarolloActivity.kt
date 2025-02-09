@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental.UI
+package com.ursolgleb.controlparental.UI.activities
 //datos de uso
 //accesibilidad
 
@@ -27,7 +27,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.ursolgleb.controlparental.databinding.ActivityMainBinding
 import android.provider.Settings
 import android.text.TextUtils
 import android.view.View
@@ -42,13 +41,14 @@ import com.ursolgleb.controlparental.utils.Launcher
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.receiver.UpdateAppsBloquedasReceiver
 import com.ursolgleb.controlparental.allowedApps
+import com.ursolgleb.controlparental.databinding.ActivityDesarolloBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class MainActivity : AppCompatActivity() {
-    lateinit var bindMain: ActivityMainBinding
+class DesarolloActivity : AppCompatActivity() {
+    lateinit var bindDesarollo: ActivityDesarolloBinding
 
     companion object {
         const val fileName = "log.txt"
@@ -61,9 +61,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        bindMain = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(bindMain.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        bindDesarollo = ActivityDesarolloBinding.inflate(layoutInflater)
+        setContentView(bindDesarollo.root)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main_admin)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
@@ -93,7 +93,6 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         fileWatcher.stopWatching()
-        unregisterReceiver(updateAppsBloquedasReceiver)
     }
 
     private fun initUpdateAppsBloquedasReceiver() {
@@ -113,19 +112,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun actualizarListaAppsBloqueadas() {
         CoroutineScope(Dispatchers.IO).launch {
-            val blockedApps = ControlParentalApp.db.blockedAppDao().getBlockedApps()
+            val blockedApps = ControlParentalApp.dbLogs.logBlockedAppDao().getLogBlockedApps()
             val blockedAppsText = blockedApps.joinToString("\n") { app ->
                 "🔒 ${app.packageName}  ⌚${app.blockedAt}"
             }
             withContext(Dispatchers.Main) {
-                bindMain.tvAppsBloqueadas.text = blockedAppsText
+                bindDesarollo.tvAppsBloqueadas.text = blockedAppsText
             }
         }
     }
 
     fun eliminarAppsBloqueadas(view: View) {
         CoroutineScope(Dispatchers.IO).launch {
-            ControlParentalApp.db.blockedAppDao().deleteAllBlockedApps()
+            ControlParentalApp.dbLogs.logBlockedAppDao().deleteLogAllBlockedApps()
             withContext(Dispatchers.Main) {
                 actualizarListaAppsBloqueadas()
             }
@@ -142,7 +141,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initListeners() {
 
-        bindMain.requestUsageStatsPermissionBoton.setOnClickListener {
+        bindDesarollo.requestUsageStatsPermissionBoton.setOnClickListener {
 
             val intent = Intent("com.ursolgleb.controlparental.UPDATE_BLOCKED_APPS")
             intent.putExtra("mensaje", "¡Hola desde la boton!")
@@ -158,7 +157,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        bindMain.requestAccessibilityServiceBoton.setOnClickListener {
+        bindDesarollo.requestAccessibilityServiceBoton.setOnClickListener {
             if (!isAccessibilityServiceEnabled(this, AppBlockerService::class.java)) {
                 requestAccessibilityService()
             } else {
@@ -168,10 +167,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        bindMain.obtenerListaAppBoton.setOnClickListener {
+        bindDesarollo.obtenerListaAppBoton.setOnClickListener {
             val pm = packageManager
             val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-            bindMain.tvInformacion.appendAndScroll("Lista de Apps:")
+            bindDesarollo.tvInformacion.appendAndScroll("Lista de Apps:")
             for (app in apps) {
                 val msg = "App: ${app.loadLabel(pm)} - Package: ${app.packageName}"
                 Log.d("AppBlockerService", msg)
@@ -180,7 +179,7 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-        bindMain.getUsageStatsBoton.setOnClickListener {
+        bindDesarollo.getUsageStatsBoton.setOnClickListener {
             if (!hasUsageStatsPermission(this)) {
                 requestUsageStatsPermission(this)
                 return@setOnClickListener
@@ -210,58 +209,58 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-        bindMain.getForegroundAppBoton.setOnClickListener {
+        bindDesarollo.getForegroundAppBoton.setOnClickListener {
             val foregroundApp = getForegroundApp()
             val msg = "App en primer plano: $foregroundApp"
             Log.d("AppBlockerService", msg)
             Archivo.appendTextToFile(this, fileName, "\n $msg")
         }
 
-        bindMain.redirigirAlaPantallaDeInicioBoton.setOnClickListener {
+        bindDesarollo.redirigirAlaPantallaDeInicioBoton.setOnClickListener {
             redirigirAlaPantallaDeInicio()
         }
 
-        bindMain.mostrarPantallaDeBloqueoBoton.setOnClickListener {
+        bindDesarollo.mostrarPantallaDeBloqueoBoton.setOnClickListener {
             // Lógica para mostrar la pantalla de bloqueo
             mostrarPantallaDeBloqueo()
         }
 
 
-        bindMain.mostrarLauncherBoton.setOnClickListener {
+        bindDesarollo.mostrarLauncherBoton.setOnClickListener {
             val msg = "Launcher: ${Launcher.getDefaultLauncherPackageName(this)}"
             Log.w("AppBlockerService", msg)
             Archivo.appendTextToFile(this, fileName, "\n $msg")
         }
 
-        bindMain.getSecureSettingsBoton.setOnClickListener {
+        bindDesarollo.getSecureSettingsBoton.setOnClickListener {
             val msg = "SecureSettings: ${getSecureSettings(this)}"
             Log.e("AppBlockerService", msg)
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
             Archivo.appendTextToFile(this, fileName, "\n $msg")
         }
 
-        bindMain.showAllowedAppsBoton.setOnClickListener {
+        bindDesarollo.showAllowedAppsBoton.setOnClickListener {
             allowedApps.showApps(this)
         }
 
-        bindMain.clearFileBoton.setOnClickListener {
+        bindDesarollo.clearFileBoton.setOnClickListener {
             Archivo.clearFile(this, fileName)
-            bindMain.tvInformacion.text = ""
+            bindDesarollo.tvInformacion.text = ""
         }
 
-        bindMain.actualizarBoton.setOnClickListener {
+        bindDesarollo.actualizarBoton.setOnClickListener {
             leerYMostrarInfoDeArchivo(fileName)
         }
-        bindMain.arribaBoton.setOnClickListener {
-            bindMain.scrollView.scrollTo(0, 0)
+        bindDesarollo.arribaBoton.setOnClickListener {
+            bindDesarollo.scrollView.scrollTo(0, 0)
         }
 
     }
 
     private fun leerYMostrarInfoDeArchivo(fileName: String) {
         val logContent = Archivo.readTextFromFile(this, fileName)
-        bindMain.tvInformacion.text = logContent
-        bindMain.tvInformacion.scrollToBottom()
+        bindDesarollo.tvInformacion.text = logContent
+        bindDesarollo.tvInformacion.scrollToBottom()
     }
 
     private fun requestAccessibilityService() {
@@ -510,11 +509,11 @@ class MainActivity : AppCompatActivity() {
     fun TextView.scrollToBottom() {
         this.post {
             val scrollAmount =
-                bindMain.tvInformacion.layout.getLineTop(bindMain.tvInformacion.lineCount) - bindMain.tvInformacion.height
+                bindDesarollo.tvInformacion.layout.getLineTop(bindDesarollo.tvInformacion.lineCount) - bindDesarollo.tvInformacion.height
             if (scrollAmount > 0) {
-                bindMain.tvInformacion.scrollTo(0, scrollAmount)
+                bindDesarollo.tvInformacion.scrollTo(0, scrollAmount)
             } else {
-                bindMain.tvInformacion.scrollTo(0, 0)
+                bindDesarollo.tvInformacion.scrollTo(0, 0)
             }
         }
     }
@@ -526,7 +525,7 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun initUI() {
-        bindMain.tvInformacion.movementMethod = android.text.method.ScrollingMovementMethod()
+        bindDesarollo.tvInformacion.movementMethod = android.text.method.ScrollingMovementMethod()
         leerYMostrarInfoDeArchivo(fileName)
         actualizarListaAppsBloqueadas()
         Log.d("MainActivityListaApps", "Actualizando lista de apps bloqueadas de initUI")

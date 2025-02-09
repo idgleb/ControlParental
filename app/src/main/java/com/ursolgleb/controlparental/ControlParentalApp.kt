@@ -2,20 +2,20 @@ package com.ursolgleb.controlparental
 
 import android.app.Application
 import com.ursolgleb.controlparental.data.local.AppDatabase
-import com.ursolgleb.controlparental.data.log.AppBlockerDatabase
+import com.ursolgleb.controlparental.data.log.LogAppBlockerDatabase
 
 class ControlParentalApp: Application()  {
     companion object{
-        lateinit var db: AppBlockerDatabase
+        lateinit var dbLogs: LogAppBlockerDatabase
             private set
-        lateinit var db2: AppDatabase
+        lateinit var dbApps: AppDatabase
             private set
     }
 
     override fun onCreate() {
         super.onCreate()
-        db = AppBlockerDatabase.getDatabase(this)
-        db2 = AppDatabase.getDatabase(this)
+        dbLogs = LogAppBlockerDatabase.getDatabase(this)
+        dbApps = AppDatabase.getDatabase(this)
 
     }
 }

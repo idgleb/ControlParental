@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.ursolgleb.controlparental.data.log.BlockedAppDao
 import com.ursolgleb.controlparental.data.local.dao.AppDao
 import com.ursolgleb.controlparental.data.local.dao.BlockedDao
 import com.ursolgleb.controlparental.data.local.dao.UsageLimitDao
@@ -14,7 +13,8 @@ import com.ursolgleb.controlparental.data.local.entities.UsageLimitEntity
 
 @Database(
     entities = [AppEntity::class, BlockedEntity::class, UsageLimitEntity::class],
-    version = 1
+    version = 2,  // Incrementa el número (antes era 1)
+    exportSchema = true  // Para que Room guarde el esquema de versiones previas
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun appDao(): AppDao

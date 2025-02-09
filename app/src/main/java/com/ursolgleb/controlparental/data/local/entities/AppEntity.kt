@@ -9,7 +9,6 @@ data class AppEntity(
     val appName: String,
     val appIcon: String,
     val appCategory: String,
-    val appAge: Int,
-    val appIsSystemApp: Boolean,
-    val isBlocked: Boolean = false,  // Aplicación bloqueada o no
+    val contentRating: String,
+    val appIsSystemApp: Boolean
 )
