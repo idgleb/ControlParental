@@ -13,7 +13,7 @@ import com.ursolgleb.controlparental.utils.Launcher
 import java.util.Locale
 import com.ursolgleb.controlparental.UI.MainActivity
 import com.ursolgleb.controlparental.allowedApps
-import com.ursolgleb.controlparental.data.BlockedAppEntity
+import com.ursolgleb.controlparental.data.log.BlockedAppEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -58,8 +58,6 @@ class AppBlockerService : AccessibilityService() {
 
                 saveBlockedAppBaseDeDatos(packageName)
 
-
-
                 val msg = "Bloqueando app: $packageName"
                 Log.e("AppBlockerService", msg)
                 Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
@@ -73,11 +71,11 @@ class AppBlockerService : AccessibilityService() {
             if (packageName == "com.android.settings") {
                 getEventTextoCapturado(event) { textoCapturado ->
                     for (blockedWord in blockedWords) {
-                        if (textoCapturado.contains("app", ignoreCase = true) &&
-                            textoCapturado.contains("Assistant", ignoreCase = true)
+                        if (textoCapturado.contains("app", ignoreCase = true)
                         ) {
-                            performGlobalAction(GLOBAL_ACTION_BACK)       // Simula botón "Atrás"
+                            performGlobalAction(GLOBAL_ACTION_BACK)   // Simula botón "Atrás"
                             isBlockerEnabled = true
+                            saveBlockedAppBaseDeDatos("$packageName, ❌: $blockedWord")
                             val msg =
                                 "Bloqueando app: $packageName, porque contiene la palabra: $blockedWord"
                             Log.e("AppBlockerService", msg)
@@ -97,6 +95,8 @@ class AppBlockerService : AccessibilityService() {
                     for (blockedWordsSub in blockedWordsSub) {
                         if (textoCapturado.contains(blockedWordsSub, ignoreCase = true)) {
                             performGlobalAction(GLOBAL_ACTION_BACK)
+                            isBlockerEnabled = true
+                            saveBlockedAppBaseDeDatos("$claseDeOrigen, ❌: $blockedWordsSub")
                             val msg =
                                 "Bloqueando 555 app: $claseDeOrigen, porque contiene la palabra: $blockedWordsSub"
                             Log.e("AppBlockerService", msg)
@@ -111,12 +111,12 @@ class AppBlockerService : AccessibilityService() {
 
         if (isBlockerEnabled) {
             if (Launcher.getDefaultLauncherPackageName(this) != event.packageName) {
-                val msg = "Atras hasta Home 555: ${event.eventType}"
+                val msg = "❤️❤️❤️Atras hasta Home 555: ${event.eventType}"
                 Log.w("AppBlockerService", msg)
                 Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
                 performGlobalAction(GLOBAL_ACTION_BACK)
             } else {
-                val msg = "LOCK_SCREEN: ${event.eventType}"
+                val msg = "😶‍🌫️😶‍🌫️😶‍🌫️LOCK_SCREEN😶‍🌫️😶‍🌫️😶‍🌫️: ${event.eventType}"
                 Log.w("AppBlockerService", msg)
                 Archivo.appendTextToFile(this, MainActivity.fileName, "\n $msg")
                 //performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)

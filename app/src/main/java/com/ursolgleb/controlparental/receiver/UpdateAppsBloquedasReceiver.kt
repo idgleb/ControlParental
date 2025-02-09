@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental
+package com.ursolgleb.controlparental.receiver
 
 import android.content.BroadcastReceiver
 import android.content.Context

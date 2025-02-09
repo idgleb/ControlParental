@@ -40,7 +40,7 @@ import com.ursolgleb.controlparental.utils.Archivo
 import com.ursolgleb.controlparental.utils.FileWatcher
 import com.ursolgleb.controlparental.utils.Launcher
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.UpdateAppsBloquedasReceiver
+import com.ursolgleb.controlparental.receiver.UpdateAppsBloquedasReceiver
 import com.ursolgleb.controlparental.allowedApps
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

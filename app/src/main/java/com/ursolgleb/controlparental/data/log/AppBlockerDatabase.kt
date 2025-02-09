@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental.data
+package com.ursolgleb.controlparental.data.log
 
 import android.content.Context
 import androidx.room.Database
