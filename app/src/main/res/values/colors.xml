@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="black">#FF000000</color>
+    <color name="gris">#949494</color>
     <color name="white">#FFFFFFFF</color>
     <color name="fondo_scroll">#F0F0F0</color>
-    <color name="blue_principal">#4B89EB</color>
+    <color name="blue_principal">#009ee3</color>
     <color name="fondo_principal">#2E65BA</color>
     <color name="boton_secundario">#86B4FF</color>
+    <color name="boton_secundario2">#479AD1</color>
     <color name="text_boton">#FFFFFF</color>
+    <color name="mercadopago">#00A650</color>
 </resources>

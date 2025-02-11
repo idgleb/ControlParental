@@ -1,6 +1,7 @@
 package com.ursolgleb.controlparental.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -21,4 +22,8 @@ interface AppDao {
 
     @Update
     suspend fun updateApp(app: AppEntity)
+
+    @Query("DELETE FROM apps")  // Reemplaza "apps_table" con el nombre de tu tabla.
+    suspend fun deleteAllApps()
+
 }

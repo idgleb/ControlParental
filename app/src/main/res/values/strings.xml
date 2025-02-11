@@ -3,4 +3,6 @@
     <string name="accessibility_service_description">
         Servicio de accesibilidad para supervisar y bloquear aplicaciones no permitidas en el dispositivos de tus hijos.
     </string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

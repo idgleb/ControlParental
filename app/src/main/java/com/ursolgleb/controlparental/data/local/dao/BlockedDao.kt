@@ -9,8 +9,11 @@ import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
 
 @Dao
 interface BlockedDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertBlockedApp(app: BlockedEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBlockedApps(apps: List<BlockedEntity>)
 
     @Delete
     suspend fun deleteBlockedApp(app: BlockedEntity)

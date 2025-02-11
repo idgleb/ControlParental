@@ -68,6 +68,13 @@ dependencies {
     kapt (libs.androidx.room.compiler)
     implementation (libs.androidx.room.ktx)
     implementation (libs.jsoup)
+    implementation (libs.json)  // Lo mismo aquí
+    implementation(libs.okhttp)
+    implementation(libs.glide) // Última versión de Glide
+    kapt(libs.compiler) // Para generación de código
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.fragment.ktx)
 
 
 }

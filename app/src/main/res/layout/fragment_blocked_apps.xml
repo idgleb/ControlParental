@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cvAppsBlocked"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:layout_width="match_parent"
+    app:cardCornerRadius="12dp">
+
+    <LinearLayout
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:orientation="vertical"
+        android:padding="0dp">
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:layout_width="wrap_content"
+            android:text="🔒 Apps Bloqueadas"
+            android:textSize="18sp"
+            android:textStyle="normal" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAppsBloqueadas"
+            android:layout_height="114dp"
+            android:layout_width="match_parent"
+            android:visibility="gone" />
+
+        <TextView
+            android:gravity="center"
+            android:id="@+id/tvEmptyMessage"
+            android:layout_height="114dp"
+            android:layout_width="match_parent"
+            android:text="No hay aplicaciones bloqueadas"
+            android:textColor="@color/gris"
+            android:textSize="18sp"
+            android:visibility="visible" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:background="@drawable/rounded_button_principal_selector"
+            android:drawablePadding="0dp"
+            android:drawableStart="@drawable/baseline_add_circle_outline_24"
+            android:drawableTint="@color/white"
+            android:id="@+id/aggregarAppsABlockedBoton"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:layout_width="match_parent"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:text="Agregar Apps"
+            android:textAllCaps="false"
+            android:textColor="@color/text_boton"
+            android:textSize="15sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/delitBlackedAppBoton"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_width="match_parent"
+            android:text="delit" />
+
+        <Button
+            android:id="@+id/delitAllAppBoton"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_width="match_parent"
+            android:text="delit ALL" />
+
+        <Button
+            android:id="@+id/llenarAllAppBoton"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_width="match_parent"
+            android:text="Lenar ALL" />
+
+
+    </LinearLayout>
+
+
+</androidx.cardview.widget.CardView>
+

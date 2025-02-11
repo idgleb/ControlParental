@@ -4,25 +4,20 @@
 
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"
-        tools:ignore="ProtectedPermissions" /> <!-- Sección <queries> para poder listar launchers instalados -->
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Sección <queries> para poder listar launchers instalados -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
-
             <category android:name="android.intent.category.HOME" />
         </intent>
     </queries>
+    <!-- Consultar cualquier aplicación con intent de MAIN y LAUNCHER -->
     <queries>
-
-        <!-- Consultar todas las aplicaciones instaladas -->
-        <package android:name="com.example.app" />
-        <package android:name="com.whatsapp" />
-        <package android:name="com.instagram.android" />
-
-        <!-- Consultar cualquier aplicación con intent de MAIN y LAUNCHER -->
         <intent>
             <action android:name="android.intent.action.MAIN" />
-
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
     </queries>
@@ -31,6 +26,7 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
+        android:usesCleartextTraffic="true"
         android:name=".ControlParentalApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
