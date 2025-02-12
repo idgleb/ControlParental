@@ -2,8 +2,6 @@ package com.ursolgleb.controlparental.UI.activities
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.view.View
 import android.view.ViewTreeObserver
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -11,21 +9,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.ursolgleb.controlparental.ControlParentalApp
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.UI.adapters.BlockedAppsAdapter
 import com.ursolgleb.controlparental.UI.fragments.BlockedAppsFragment
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
-import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
 import com.ursolgleb.controlparental.databinding.ActivityAdminMainBinding
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainAdminActivity : AppCompatActivity() {
-    lateinit var blockedAppAdapter: BlockedAppsAdapter
     lateinit var bindAdminMain: ActivityAdminMainBinding
     private val sharedViewModel: SharedViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,7 +77,7 @@ class MainAdminActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         lifecycleScope.launch { sharedViewModel.updateBDApps(packageManager) }
-        lifecycleScope.launch { sharedViewModel.loadBlockedAppsDeBDaViewModel() }
+        //lifecycleScope.launch { sharedViewModel.loadBlockedAppsDeBDaViewModel() }
     }
 
 

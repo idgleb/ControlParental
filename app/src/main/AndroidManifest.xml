@@ -5,19 +5,18 @@
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.INTERNET"/>
-
-    <!-- Sección <queries> para poder listar launchers instalados -->
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- Sección <queries> para poder listar launchers instalados -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
+
             <category android:name="android.intent.category.HOME" />
         </intent>
-    </queries>
-    <!-- Consultar cualquier aplicación con intent de MAIN y LAUNCHER -->
+    </queries> <!-- Consultar cualquier aplicación con intent de MAIN y LAUNCHER -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
+
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
     </queries>
@@ -26,7 +25,6 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
-        android:usesCleartextTraffic="true"
         android:name=".ControlParentalApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -36,7 +34,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ControlParental"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <activity
+            android:name=".UI.activities.AddAppsActivity"
+            android:exported="false" />
         <activity
             android:name=".UI.activities.MainAdminActivity"
             android:exported="true">
@@ -63,9 +65,7 @@
 
         <activity
             android:name=".UI.activities.DesarolloActivity"
-            android:exported="true">
-
-        </activity>
+            android:exported="true" />
     </application>
 
 </manifest>

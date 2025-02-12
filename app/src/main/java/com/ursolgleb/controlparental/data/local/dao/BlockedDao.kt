@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface BlockedDao {
@@ -19,7 +20,7 @@ interface BlockedDao {
     suspend fun deleteBlockedApp(app: BlockedEntity)
 
     @Query("SELECT * FROM blocked")
-    suspend fun getAllBlockedApps(): List<BlockedEntity>
+    fun getAllBlockedApps(): Flow<List<BlockedEntity>>
 
     @Query("DELETE FROM blocked")
     suspend fun deleteAllBlockedApps()

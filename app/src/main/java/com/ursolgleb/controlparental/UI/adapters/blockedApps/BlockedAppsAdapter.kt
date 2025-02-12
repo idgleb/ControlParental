@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental.UI.adapters
+package com.ursolgleb.controlparental.UI.adapters.blockedApps
 
 import android.content.Context
 import android.graphics.drawable.Drawable
@@ -16,8 +16,7 @@ import kotlinx.coroutines.withContext
 class BlockedAppsAdapter(
     val blockedApps: MutableList<BlockedEntity>,
     private val context: Context
-) :
-    RecyclerView.Adapter<BlockedAppsViewHolder>() {
+) : RecyclerView.Adapter<BlockedAppsViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BlockedAppsViewHolder {
         val binding =
@@ -33,7 +32,7 @@ class BlockedAppsAdapter(
             val icon = getAppIcon(blockedApp.packageName, context)
 
             withContext(Dispatchers.Main) {
-                holder.bind(blockedApp, appInfo?.appName, icon)
+                holder.bind(appInfo?.appName, icon)
             }
         }
     }

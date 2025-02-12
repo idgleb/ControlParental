@@ -1,17 +1,20 @@
 package com.ursolgleb.controlparental.UI.fragments
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.UI.adapters.BlockedAppsAdapter
+import com.ursolgleb.controlparental.UI.adapters.blockedApps.BlockedAppsAdapter
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.ControlParentalApp
+import com.ursolgleb.controlparental.UI.activities.AddAppsActivity
 import com.ursolgleb.controlparental.databinding.FragmentBlockedAppsBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -19,7 +22,11 @@ import kotlinx.coroutines.withContext
 
 class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
     lateinit var blockedAppAdapter: BlockedAppsAdapter
-    private val sharedViewModel: SharedViewModel by activityViewModels()
+    //private val sharedViewModel: SharedViewModel by activityViewModels()
+    private val sharedViewModel: SharedViewModel by activityViewModels {
+        ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().application)
+    }
+
     private var _binding: FragmentBlockedAppsBinding? = null
     private val binding get() = _binding!!
 
@@ -40,21 +47,16 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
                 val blockedDao = ControlParentalApp.dbApps.blockedDao()
                 blockedDao.deleteAllBlockedApps()
                 withContext(Dispatchers.Main) {
-                    sharedViewModel.updateBlockedAppsInterfaz(emptyList())
+                    //sharedViewModel.updateBlockedAppsInterfaz(emptyList())
                     Log.w("BlockedAppsFragment", "Apps delited")
                 }
             }
         }
 
         binding.aggregarAppsABlockedBoton.setOnClickListener {
-            sharedViewModel.addAppBlockList("com.android.chrome",
-                onSuccess = { msg -> Log.w("BlockedAppsFragment", msg) },
-                onError = { msg -> Log.w("BlockedAppsFragment", msg) }
-            )
-            sharedViewModel.addAppBlockList("com.google.android.youtube",
-                onSuccess = { msg -> Log.w("BlockedAppsFragment", msg) },
-                onError = { msg -> Log.w("BlockedAppsFragment", msg) }
-            )
+            val intent = Intent(requireContext(), AddAppsActivity::class.java)
+            startActivity(intent)
+
         }
 
         binding.delitAllAppBoton.setOnClickListener {
@@ -62,7 +64,7 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
                 ControlParentalApp.dbApps.appDao().deleteAllApps()
                 //ControlParentalApp.dbApps.blockedDao().deleteAllBlockedApps()
                 withContext(Dispatchers.Main) {
-                    sharedViewModel.updateBlockedAppsInterfaz(emptyList())
+                    //sharedViewModel.updateBlockedAppsInterfaz(emptyList())
                     Log.e("BlockedAppsFragment", "Todos Apps delited")
                 }
             }
@@ -77,6 +79,7 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
     private fun initObservers() {
         // 🔥 Observar cambios en la lista de apps bloqueadas
         sharedViewModel.blockedApps.observe(viewLifecycleOwner) { newList ->
+            Log.w("BlockedAppsFragment", "Lista de apps bloqueadas actualizada: $newList")
             blockedAppAdapter.updateListEnAdaptador(newList)
 
             // 🔥 Si la lista está vacía, mostrar "Empty"
@@ -104,7 +107,8 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
     override fun onResume() {
         super.onResume()
         lifecycleScope.launch { sharedViewModel.updateBDApps(requireContext().packageManager) }
-        lifecycleScope.launch { sharedViewModel.loadBlockedAppsDeBDaViewModel() }
+        Log.w("BlockedAppsFragment", "onResume")
+        //lifecycleScope.launch { sharedViewModel.loadBlockedAppsDeBDaViewModel() }// 🔥 Recargar apps bloqueadas
     }
 
     override fun onDestroyView() {
