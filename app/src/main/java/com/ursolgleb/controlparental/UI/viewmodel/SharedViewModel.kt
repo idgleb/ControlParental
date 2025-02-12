@@ -42,17 +42,27 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun loadAppsFromDatabase() {
+        // 🔹 Lanzamos una primera corrutina para obtener la lista de aplicaciones instaladas
         viewModelScope.launch {
+            // 🔥 Observamos la base de datos en tiempo real con Flow
             ControlParentalApp.dbApps.appDao().getAllApps().collect { apps ->
+                // ✅ Actualizamos LiveData _todosApps con la nueva lista de aplicaciones
+                // Esto notificará a los observadores en la UI automáticamente
                 _todosApps.value = apps
             }
         }
+
+        // 🔹 Lanzamos una segunda corrutina para obtener la lista de aplicaciones bloqueadas
         viewModelScope.launch {
+            // 🔥 Observamos los cambios en la tabla de aplicaciones bloqueadas en tiempo real
             ControlParentalApp.dbApps.blockedDao().getAllBlockedApps().collect { blockedApps ->
+                // ✅ Actualizamos LiveData _blockedApps con la nueva lista de aplicaciones bloqueadas
+                // Esto asegurará que la UI refleje los cambios en tiempo real
                 _blockedApps.value = blockedApps
             }
         }
     }
+
 
 
 
