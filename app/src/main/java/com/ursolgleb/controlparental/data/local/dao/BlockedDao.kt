@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface BlockedDao {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBlockedApp(app: BlockedEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

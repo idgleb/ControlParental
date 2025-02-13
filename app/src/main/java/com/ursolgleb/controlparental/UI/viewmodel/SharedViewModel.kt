@@ -11,16 +11,18 @@ import android.graphics.drawable.Drawable
 import android.os.DeadObjectException
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.ursolgleb.controlparental.ControlParentalApp
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -29,84 +31,131 @@ import java.net.URL
 
 class SharedViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val _blockedApps = MutableLiveData<List<BlockedEntity>>(emptyList())
-    val blockedApps: LiveData<List<BlockedEntity>> = _blockedApps
-    private val _todosApps = MutableLiveData<List<AppEntity>>(emptyList())
-    val todosApps: LiveData<List<AppEntity>> = _todosApps
-    private val _appsNoBloqueados = MutableLiveData<List<AppEntity>>(emptyList())
-    val appsNoBloqueados: LiveData<List<AppEntity>> = _appsNoBloqueados
+    private val blockedAppsProcessing = mutableSetOf<String>()
+    private val mutex_updateBDApps = Mutex()
+    private val mutex_addApp = Mutex()
+
+    private val _todosApps = MutableStateFlow<List<AppEntity>>(emptyList())
+    val todosApps: StateFlow<List<AppEntity>> = _todosApps
+
+    private val _blockedApps = MutableStateFlow<List<BlockedEntity>>(emptyList())
+    val blockedApps: StateFlow<List<BlockedEntity>> = _blockedApps
+
+    private val _appsNoBloqueados = MutableStateFlow<List<BlockedEntity>>(emptyList())
+    val appsNoBloqueados: StateFlow<List<BlockedEntity>> = _appsNoBloqueados
 
     init {
         // 🔥 Cargar datos en tiempo real cuando se cree el ViewModel
-        loadAppsFromDatabase()
+        Log.w("SharedViewModel", "init SharedViewModel $_blockedApps")
+        loadAppsFromDatabaseASharedViewModer()
     }
 
-    private fun loadAppsFromDatabase() {
+    private fun loadAppsFromDatabaseASharedViewModer() {
         // 🔹 Lanzamos una primera corrutina para obtener la lista de aplicaciones instaladas
         viewModelScope.launch {
             // 🔥 Observamos la base de datos en tiempo real con Flow
-            ControlParentalApp.dbApps.appDao().getAllApps().collect { apps ->
-                // ✅ Actualizamos LiveData _todosApps con la nueva lista de aplicaciones
-                // Esto notificará a los observadores en la UI automáticamente
-                _todosApps.value = apps
-            }
+            ControlParentalApp.dbApps.appDao().getAllApps()
+                .stateIn(viewModelScope) // Se suscribe solo una vez
+                .collect { apps ->
+                    // ✅ Actualizamos LiveData _todosApps con la nueva lista de aplicaciones
+                    // Esto notificará a los observadores en la UI automáticamente
+                    _todosApps.value = apps
+                }
         }
 
         // 🔹 Lanzamos una segunda corrutina para obtener la lista de aplicaciones bloqueadas
         viewModelScope.launch {
             // 🔥 Observamos los cambios en la tabla de aplicaciones bloqueadas en tiempo real
-            ControlParentalApp.dbApps.blockedDao().getAllBlockedApps().collect { blockedApps ->
-                // ✅ Actualizamos LiveData _blockedApps con la nueva lista de aplicaciones bloqueadas
-                // Esto asegurará que la UI refleje los cambios en tiempo real
-                _blockedApps.value = blockedApps
-            }
+            ControlParentalApp.dbApps.blockedDao().getAllBlockedApps()
+                .stateIn(viewModelScope) // Se suscribe solo una vez
+                .collect { blockedApps ->
+                    // ✅ Actualizamos LiveData _blockedApps con la nueva lista de aplicaciones bloqueadas
+                    // Esto asegurará que la UI refleje los cambios en tiempo real
+                    _blockedApps.value = blockedApps
+                    Log.w("SharedViewModel", "getAllBlockedApps().collect: $_blockedApps")
+                }
         }
     }
 
-
-
-
-    // 🔥 ✅ Para agregar una app a la base de datos
-    fun addAppBlockList(
-        packageName: String,
-        onSuccess: ((String) -> Unit)? = null,
-        onError: ((String) -> Unit)? = null
-    ) {
+    // 🔥 ✅ Para agregar una app a la base de datos ⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰
+    fun addAppBlockListBD(packageName: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val blockedDao = ControlParentalApp.dbApps.blockedDao()
-            val appDao = ControlParentalApp.dbApps.appDao()
-            val existingBlockedApp = blockedDao.getBlockedAppByPackageName(packageName)
-            if (existingBlockedApp == null) {
+
+            mutex_addApp.withLock {
+                if (blockedAppsProcessing.contains(packageName)) {
+                    Log.w("SharedViewModel1", "Ya se está procesando: $packageName")
+                    return@launch
+                }
+                blockedAppsProcessing.add(packageName)
+            }
+
+            try {
+                val blockedDao = ControlParentalApp.dbApps.blockedDao()
+                val appDao = ControlParentalApp.dbApps.appDao()
+
+                val existingBlockedApp = blockedDao.getBlockedAppByPackageName(packageName)
+                if (existingBlockedApp != null) {
+                    withContext(Dispatchers.Main) {
+                        Log.w("SharedViewModel1", "App ya está bloqueada: $packageName")
+                    }
+                    return@launch
+                }
+
+                val existingAppEnSistema = appDao.getApp(packageName)
+                if (existingAppEnSistema == null) {
+                    withContext(Dispatchers.Main) {
+                        Log.w(
+                            "SharedViewModel1",
+                            "App no encontrada en bd de apps instaladas: $packageName"
+                        )
+                    }
+                    return@launch
+                }
+
                 val newBlockedApp = BlockedEntity(packageName = packageName)
                 blockedDao.insertBlockedApp(newBlockedApp)
+
                 withContext(Dispatchers.Main) {
-                    onSuccess?.invoke("Nueva App insertada a BLOCKED bd: $packageName") // ✅ Callback si la operación fue exitosa
+                    Log.w("SharedViewModel1", "Nueva App insertada a BLOCKED bd: $packageName")
                 }
-            } else {
-                val app = appDao.getApp(packageName)
-                withContext(Dispatchers.Main) {
-                    onError?.invoke("${app?.appName ?: "App"} ya está bloqueada") // ✅ Callback si ya está bloqueada
+            } catch (e: Exception) {
+                Log.e("SharedViewModel1", "Error al agregar app bloqueada: ${e.message}")
+            } finally {
+                mutex_addApp.withLock {
+                    blockedAppsProcessing.remove(packageName)
                 }
             }
         }
     }
 
-    suspend fun updateBDApps(pm: PackageManager) {
+    // 🔥 ✅ Función para actualizar la base de datos de aplicaciones ⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰ MUTEX
+    suspend fun updateBDApps() {
+        val locked = mutex_updateBDApps.tryLock() // Intenta obtener el bloqueo
+        if (!locked) {
+            Log.w("SharedViewModelMUTEX", "updateBDApps ya está en ejecución")
+            return
+        }
         try {
-            val appsNuevas = getNuevasAppsEnSistema(pm)
-            if (appsNuevas.isEmpty()) return
-            agregarAppsAAppsBD(appsNuevas, pm)
-            agregarAppsABlockedBD(appsNuevas)
+            Log.e("SharedViewModel", "555 999 updateBDApps")
+            val appsNuevas = getNuevasAppsEnSistema()
+            if (appsNuevas.isNotEmpty()) {
+                addAppsAAppsBD(appsNuevas)
+                addAppsABlockedBD(appsNuevas)
+            }
         } catch (e: DeadObjectException) {
             Log.e("SharedViewModel", "DeadObjectException: ${e.message}")
         } catch (e: Exception) {
             Log.e("SharedViewModel", "Error en updateBDApps: ${e.message}")
+        } finally {
+            if (locked) { // Solo desbloquea si realmente ha adquirido el bloqueo
+                mutex_updateBDApps.unlock()
+            }
         }
     }
 
-
-    // 🔥 ✅ Función para agregar apps a la base de datos y LiveData
-    suspend fun agregarAppsAAppsBD(appsNuevas: List<ApplicationInfo>, pm: PackageManager) {
+    // 🔥 ✅ Función para agregar apps a la base de datos ♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️
+    suspend fun addAppsAAppsBD(appsNuevas: List<ApplicationInfo>) {
+        val pm = getApplication<Application>().packageManager
         if (appsNuevas.isEmpty()) return
         val appDao = ControlParentalApp.dbApps.appDao()
         for (app in appsNuevas) {
@@ -132,13 +181,11 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    // 🔥 ✅ Función para agregar apps bloqueadas a la base de datos
-    suspend fun agregarAppsABlockedBD(appsNuevas: List<ApplicationInfo>) {
+    // 🔥 ✅ Función para agregar apps bloqueadas a la base de datos 👌👌👌👌👌👌👌👌👌👌👌
+    fun addAppsABlockedBD(appsNuevas: List<ApplicationInfo>) {
         if (appsNuevas.isEmpty()) return
-        val blockedDao = ControlParentalApp.dbApps.blockedDao()
         for (app in appsNuevas) {
-            val newBlockedApp = BlockedEntity(packageName = app.packageName)
-            blockedDao.insertBlockedApp(newBlockedApp)
+            addAppBlockListBD(app.packageName)
         }
     }
 
@@ -147,15 +194,20 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
         return ControlParentalApp.dbApps.appDao().getAllApps().first()
     }
 
-    private suspend fun getNuevasAppsEnSistema(pm: PackageManager): List<ApplicationInfo> {
-        val appsDeSistema = getAllAppsWithUIdeSistema(pm)
+    suspend fun getBlockedAppsFromDB(): List<BlockedEntity> {
+        return ControlParentalApp.dbApps.blockedDao().getAllBlockedApps().first()
+    }
+
+    suspend fun getNuevasAppsEnSistema(): List<ApplicationInfo> {
+        val appsDeSistema = getAllAppsWithUIdeSistema()
         if (appsDeSistema.isEmpty()) return emptyList()
         val appsDeBD = getAppsFromDB()
         val paquetesEnBD = appsDeBD.map { it.packageName }.toSet()
         return appsDeSistema.filter { it.packageName !in paquetesEnBD }
     }
 
-    fun getAllAppsWithUIdeSistema(pm: PackageManager): List<ApplicationInfo> {
+    fun getAllAppsWithUIdeSistema(): List<ApplicationInfo> {
+        val pm = getApplication<Application>().packageManager
         val installedApps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
         val appsWithUI = mutableListOf<ApplicationInfo>()
         for (app in installedApps) {
@@ -194,19 +246,20 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
 
     fun getUsageStats(dias: Int): List<UsageStats> {
         val usageStatsManager =
-            getApplication<Application>().getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+            getApplication<Application>().getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
+                ?: return emptyList() // Retorna una lista vacía si el servicio no está disponible
         val endTime = System.currentTimeMillis()
         val startTime = endTime - 1000 * 60 * 60 * 24 * dias // Últimas X dias
         return usageStatsManager.queryUsageStats(
             UsageStatsManager.INTERVAL_DAILY, startTime, endTime
-        )
+        ).orEmpty()
     }
 
     suspend fun getAppAgeRatingScraper(packageName: String): String {
         //val url = "https://play.google.com/store/apps/details?id=$packageName&hl=en"
         val url = "https://play.google.com/store/apps/details?id=$packageName"
         return withContext(Dispatchers.IO) {
-            if (!urlExists(url)) {
+            if (!isUrlExists(url)) {
                 Log.w("MainAdminActivity", "La app no existe en Google Play")
                 return@withContext ""
             }
@@ -217,7 +270,10 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
                     .get()
                 val ageRatingElement = doc.select("span[itemprop=contentRating]").first()
                 if (ageRatingElement == null) {
-                    Log.w("MainAdminActivity", "No se encontró el elemento de clasificación")
+                    Log.w(
+                        "MainAdminActivity",
+                        "No se encontró el elemento de clasificación"
+                    )
                     return@withContext ""
                 }
                 ageRatingElement.text()
@@ -229,7 +285,7 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun urlExists(url: String): Boolean {
+    fun isUrlExists(url: String): Boolean {
         return try {
             val connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 requestMethod = "HEAD"

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AppDao {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertApp(app: AppEntity)
 
     @Query("SELECT * FROM apps WHERE packageName = :packageName")
@@ -23,7 +23,7 @@ interface AppDao {
     @Update
     suspend fun updateApp(app: AppEntity)
 
-    @Query("DELETE FROM apps")  // Reemplaza "apps_table" con el nombre de tu tabla.
+    @Query("DELETE FROM apps")
     suspend fun deleteAllApps()
 
 }

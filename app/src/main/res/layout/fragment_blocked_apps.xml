@@ -29,7 +29,7 @@
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvAppsBloqueadas"
-                android:layout_height="114dp"
+                android:layout_height="wrap_content"
                 android:layout_width="match_parent"
                 android:visibility="gone" />
 

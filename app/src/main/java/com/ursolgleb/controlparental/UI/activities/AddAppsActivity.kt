@@ -1,7 +1,6 @@
 package com.ursolgleb.controlparental.UI.activities
 
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -21,7 +20,6 @@ import kotlinx.coroutines.launch
 class AddAppsActivity : AppCompatActivity() {
     lateinit var appAdapter: AppsAdapter
     lateinit var bindAddApps: ActivityAddAppsBinding
-    //private val sharedViewModel: SharedViewModel by viewModels()
 
     private val sharedViewModel: SharedViewModel by viewModels {
         ViewModelProvider.AndroidViewModelFactory.getInstance(application)
@@ -48,7 +46,7 @@ class AddAppsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch { sharedViewModel.updateBDApps(this@AddAppsActivity.packageManager) }
+        lifecycleScope.launch { sharedViewModel.updateBDApps() }
     }
 
     private fun initListeners() {
@@ -70,27 +68,17 @@ class AddAppsActivity : AppCompatActivity() {
 
     private fun bloquearAppsSeleccionadas(selectedApps: Set<String>) {
         for (app in selectedApps) {
-            sharedViewModel.addAppBlockList(app,
-                onSuccess = { msg -> Log.w("AddAppsActivity", msg) },
-                onError = { msg -> Log.w("AddAppsActivity", msg) }
-            )
+            sharedViewModel.addAppBlockListBD(app)
         }
-        lifecycleScope.launch {
-            //sharedViewModel.loadBlockedAppsDeBDaViewModel()
-        }
-
     }
 
     private fun initObservers() {
         // 🔥 Observar cambios en la lista de apps
-        sharedViewModel.todosApps.observe(this) { apps ->
-
-            appAdapter.updateListAppEnAdaptador(apps)
-
-
+        lifecycleScope.launch {
+            sharedViewModel.todosApps.collect { apps ->
+                appAdapter.updateListAppEnAdaptador(apps)
+            }
         }
-
-
     }
 
     private fun initUI() {

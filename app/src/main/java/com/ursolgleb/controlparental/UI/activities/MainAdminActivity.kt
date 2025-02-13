@@ -8,6 +8,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.fragments.BlockedAppsFragment
@@ -16,8 +17,10 @@ import com.ursolgleb.controlparental.databinding.ActivityAdminMainBinding
 import kotlinx.coroutines.launch
 
 class MainAdminActivity : AppCompatActivity() {
+    private val sharedViewModel: SharedViewModel by viewModels {
+        ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+    }
     lateinit var bindAdminMain: ActivityAdminMainBinding
-    private val sharedViewModel: SharedViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         bindAdminMain = ActivityAdminMainBinding.inflate(layoutInflater)
         super.onCreate(savedInstanceState)
@@ -76,7 +79,7 @@ class MainAdminActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch { sharedViewModel.updateBDApps(packageManager) }
+        lifecycleScope.launch { sharedViewModel.updateBDApps() }
         //lifecycleScope.launch { sharedViewModel.loadBlockedAppsDeBDaViewModel() }
     }
 
