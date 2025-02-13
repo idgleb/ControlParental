@@ -44,6 +44,9 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
     private val _appsNoBloqueados = MutableStateFlow<List<BlockedEntity>>(emptyList())
     val appsNoBloqueados: StateFlow<List<BlockedEntity>> = _appsNoBloqueados
 
+    private val _filteredApps = MutableStateFlow<List<AppEntity>>(emptyList())
+    val filteredApps: StateFlow<List<AppEntity>> = _filteredApps
+
     init {
         // 🔥 Cargar datos en tiempo real cuando se cree el ViewModel
         Log.w("SharedViewModel", "init SharedViewModel $_blockedApps")
@@ -57,22 +60,28 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
             ControlParentalApp.dbApps.appDao().getAllApps()
                 .stateIn(viewModelScope) // Se suscribe solo una vez
                 .collect { apps ->
-                    // ✅ Actualizamos LiveData _todosApps con la nueva lista de aplicaciones
-                    // Esto notificará a los observadores en la UI automáticamente
-                    _todosApps.value = apps
+                    val sortedApps = apps
+                        .map { app ->
+                            app to getHorasDeUso(app.packageName, 1)
+                        }
+                        .sortedByDescending { (_, horasDeUso) -> horasDeUso } // Ordenamos por horas de uso
+                        .map { (app, _) -> app } // Extraemos solo la lista de apps ordenada
+                    _todosApps.value = sortedApps
                 }
         }
 
         // 🔹 Lanzamos una segunda corrutina para obtener la lista de aplicaciones bloqueadas
         viewModelScope.launch {
-            // 🔥 Observamos los cambios en la tabla de aplicaciones bloqueadas en tiempo real
             ControlParentalApp.dbApps.blockedDao().getAllBlockedApps()
-                .stateIn(viewModelScope) // Se suscribe solo una vez
+                .stateIn(viewModelScope)
                 .collect { blockedApps ->
-                    // ✅ Actualizamos LiveData _blockedApps con la nueva lista de aplicaciones bloqueadas
-                    // Esto asegurará que la UI refleje los cambios en tiempo real
-                    _blockedApps.value = blockedApps
-                    Log.w("SharedViewModel", "getAllBlockedApps().collect: $_blockedApps")
+                    val sortedBlockedApps = blockedApps
+                        .map { app ->
+                            app to getHorasDeUso(app.packageName, 1)
+                        }
+                        .sortedByDescending { (_, horasDeUso) -> horasDeUso } // Ordenamos por horas de uso
+                        .map { (app, _) -> app } // Extraemos solo la lista de apps ordenada
+                    _blockedApps.value = sortedBlockedApps
                 }
         }
     }
@@ -302,6 +311,43 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
             false // Si hay error, asumimos que la URL no existe
         }
     }
+
+
+    ////////////////////
+    fun sort_todosAppsByUsage(days: Int) {
+        viewModelScope.launch {
+            val allApps = _todosApps.value
+            val sortedList = allApps
+                .map { app ->
+                    app to getHorasDeUso(app.packageName, days) // Calculamos solo una vez
+                }
+                //.filter { (_, horasDeUso) -> horasDeUso > 0 } // Filtramos solo los que tienen uso
+                .sortedByDescending { (_, horasDeUso) -> horasDeUso } // Ordenamos por horas de uso
+                .map { (app, _) -> app } // Extraemos solo la lista de apps ordenada
+
+            _todosApps.value = sortedList // Actualiza el flujo con la lista ordenada
+            Log.w("filteredList", "filterAndSortAppsByUsage: $sortedList")
+        }
+    }
+
+    fun sort_blockedAppsByUsage(days: Int) {
+        viewModelScope.launch {
+            val allApps = _blockedApps.value
+            val sortedList = allApps
+                .map { app ->
+                    app to getHorasDeUso(app.packageName, days) // Calculamos solo una vez
+                }
+                //.filter { (_, horasDeUso) -> horasDeUso > 0 } // Filtramos solo los que tienen uso
+                .sortedByDescending { (_, horasDeUso) -> horasDeUso } // Ordenamos por horas de uso
+                .map { (app, _) -> app } // Extraemos solo la lista de apps ordenada
+
+            _blockedApps.value = sortedList // Actualiza el flujo con la lista ordenada
+            Log.w("filteredList", "filterAndSortAppsByUsage: $sortedList")
+        }
+    }
+
+
+
 
 }
 

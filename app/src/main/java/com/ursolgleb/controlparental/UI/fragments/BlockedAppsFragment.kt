@@ -92,19 +92,11 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
     private fun initUI(view: View) {
         _binding = FragmentBlockedAppsBinding.bind(view)
 
-        lifecycleScope.launch {
-            val blockedApps = sharedViewModel.getBlockedAppsFromDB()
-            Log.w("BlockedAppsFragment", "initUI getBlockedAppsFromDB(): $blockedApps")
-            withContext(Dispatchers.Main) {
-                Log.w("BlockedAppsFragment", "initUI crear ADAPTER: $blockedApps")
-                blockedAppAdapter =
-                    BlockedAppsAdapter(blockedApps.toMutableList(), requireContext())
-                binding.rvAppsBloqueadas.layoutManager = LinearLayoutManager(requireContext())
-                binding.rvAppsBloqueadas.adapter = blockedAppAdapter
-                binding.rvAppsBloqueadas.setRecycledViewPool(RecyclerView.RecycledViewPool()) // ✅ Optimización
-            }
-        }
-
+        blockedAppAdapter =
+            BlockedAppsAdapter(mutableListOf(), requireContext())
+        binding.rvAppsBloqueadas.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvAppsBloqueadas.adapter = blockedAppAdapter
+        binding.rvAppsBloqueadas.setRecycledViewPool(RecyclerView.RecycledViewPool()) // ✅ Optimización
 
     }
 
