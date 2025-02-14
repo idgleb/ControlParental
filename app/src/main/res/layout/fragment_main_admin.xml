@@ -5,9 +5,7 @@
     android:id="@+id/main_admin"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/fondo_principal"
-    tools:context=".UI.activities.MainAdminActivity">
-
+    android:background="@color/fondo_principal">
 
 
     <androidx.constraintlayout.widget.ConstraintLayout

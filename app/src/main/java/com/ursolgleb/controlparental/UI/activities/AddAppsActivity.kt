@@ -15,15 +15,15 @@ import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.adapters.apps.AppsAdapter
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.databinding.ActivityAddAppsBinding
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class AddAppsActivity : AppCompatActivity() {
     lateinit var appAdapter: AppsAdapter
     lateinit var bindAddApps: ActivityAddAppsBinding
 
-    private val sharedViewModel: SharedViewModel by viewModels {
-        ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-    }
+    private val sharedViewModel: SharedViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,11 +44,6 @@ class AddAppsActivity : AppCompatActivity() {
 
     }
 
-    override fun onResume() {
-        super.onResume()
-        lifecycleScope.launch { sharedViewModel.updateBDApps() }
-    }
-
     private fun initListeners() {
         bindAddApps.btnBack.setOnClickListener {
             finish()
@@ -57,19 +52,15 @@ class AddAppsActivity : AppCompatActivity() {
         bindAddApps.aggregarAppsABlockedBoton.setOnClickListener {
             val selectedApps = appAdapter.getSelectedApps() // 🔥 Obtener apps seleccionadas
             if (selectedApps.isNotEmpty()) {
-                bloquearAppsSeleccionadas(selectedApps)
+                lifecycleScope.launch {
+                    sharedViewModel.addListaStringAppsABlockedBD(selectedApps.toList())
+                }
                 finish()
             } else {
                 Toast.makeText(this, "No has seleccionado ninguna app", Toast.LENGTH_SHORT).show()
             }
         }
 
-    }
-
-    private fun bloquearAppsSeleccionadas(selectedApps: Set<String>) {
-        for (app in selectedApps) {
-            sharedViewModel.addAppBlockListBD(app)
-        }
     }
 
     private fun initObservers() {
@@ -83,13 +74,18 @@ class AddAppsActivity : AppCompatActivity() {
 
     private fun initUI() {
 
+        val listApps = sharedViewModel.todosApps.value
+
         appAdapter = AppsAdapter(mutableListOf(), this, sharedViewModel)
         bindAddApps.rvApps.adapter = appAdapter
         bindAddApps.rvApps.layoutManager = LinearLayoutManager(this)
         bindAddApps.rvApps.setRecycledViewPool(RecyclerView.RecycledViewPool())
 
-
-
-        //
     }
+
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch { sharedViewModel.updateBDApps() }
+    }
+
 }

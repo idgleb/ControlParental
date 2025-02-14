@@ -11,8 +11,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AppDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertApp(app: AppEntity)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertListaApps(apps: List<AppEntity>)
 
     @Query("SELECT * FROM apps WHERE packageName = :packageName")
     suspend fun getApp(packageName: String): AppEntity?

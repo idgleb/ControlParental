@@ -14,7 +14,6 @@ import androidx.room.PrimaryKey
     )]
 )
 data class BlockedEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val packageName: String
+    @PrimaryKey val packageName: String
 )
 

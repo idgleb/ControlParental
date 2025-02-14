@@ -2,11 +2,19 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("kotlin-kapt") // 🔴 Agregar esta línea para habilitar KAPT
+
+    id("dagger.hilt.android.plugin")
+
 }
 
 android {
     namespace = "com.ursolgleb.controlparental"
     compileSdk = 35
+
+    kapt {
+        correctErrorTypes = true
+    }
+
 
     defaultConfig {
         applicationId = "com.ursolgleb.controlparental"
@@ -55,6 +63,8 @@ android {
     }
 }
 
+
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -63,6 +73,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.androidx.work.runtime.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -77,6 +88,15 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.fragment.ktx)
+    implementation (libs.androidx.work.runtime.ktx)
+
+
+
+    implementation ("com.google.dagger:hilt-android:2.49")
+    kapt ("com.google.dagger:hilt-compiler:2.49")
+
 
 
 }
+
+

@@ -1,6 +1,7 @@
 package com.ursolgleb.controlparental.UI.adapters.apps
 
 import android.content.Context
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -57,6 +58,7 @@ class AppsAdapter(
 
     // 🔥 ✅ Función para actualizar toda la lista
     fun updateListAppEnAdaptador(newList: List<AppEntity>) {
+        Log.w("AppsAdapter", "updateListAppEnAdaptador")
         apps.clear()
         apps.addAll(newList)
         notifyDataSetChanged()

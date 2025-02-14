@@ -13,15 +13,23 @@ import com.ursolgleb.controlparental.utils.Launcher
 import java.util.Locale
 import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.allowedApps
+import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.log.LogBlockedAppEntity
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class AppBlockerService : AccessibilityService() {
 
+    @Inject
+    lateinit var appDatabase: AppDatabase
+
+    val blockedDao = appDatabase.blockedDao()
 
     private var isBlockerEnabled = false
     private var currentAppEnPrimerPlano: String? = null
@@ -129,7 +137,6 @@ class AppBlockerService : AccessibilityService() {
 
     private fun blockearSiEnBlackList(packageName: String) {
         coroutineScope.launch {
-            val blockedDao = ControlParentalApp.dbApps.blockedDao()
             val blockedApp = blockedDao.getBlockedAppByPackageName(packageName)
             if (blockedApp == null) {
                 Log.w("AppBlockerService111", "blockedApp == null true")

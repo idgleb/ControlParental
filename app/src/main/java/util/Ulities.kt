@@ -7,7 +7,14 @@ import android.content.pm.PackageManager
 import android.graphics.Rect
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import androidx.lifecycle.viewModelScope
+import com.ursolgleb.controlparental.ControlParentalApp
+import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
 import com.ursolgleb.controlparental.utils.Launcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 
@@ -140,7 +147,8 @@ class Ulities : AccessibilityService() {
             if (node != null) {  // Si el nodo no es nulo
                 val bounds = Rect()
                 node.getBoundsInScreen(bounds)  // Obtiene los límites de la vista en pantalla
-                val boundsInfo = "(${bounds.left}, ${bounds.top}, ${bounds.right}, ${bounds.bottom})"
+                val boundsInfo =
+                    "(${bounds.left}, ${bounds.top}, ${bounds.right}, ${bounds.bottom})"
 
                 """
                 📌 **Detalles de la vista de origen:**
@@ -189,8 +197,63 @@ class Ulities : AccessibilityService() {
         $nodeInfo
     """.trimIndent()
 
-
     }
+
+
+    /*    // 🔥 ✅ Para agregar una app a la base de datos ⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰
+
+    private val blockedAppsProcessing = mutableSetOf<String>()
+    private val mutex_addApp = Mutex()
+
+        fun addAppBlockAbd(packageName: String) {
+            viewModelScope.launch(Dispatchers.IO) {
+
+                mutex_addApp.withLock {
+                    if (blockedAppsProcessing.contains(packageName)) {
+                        Log.w("SharedViewModel1", "Ya se está procesando: $packageName")
+                        return@launch
+                    }
+                    blockedAppsProcessing.add(packageName)
+                }
+
+                try {
+                    val blockedDao = ControlParentalApp.dbApps.blockedDao()
+                    val appDao = ControlParentalApp.dbApps.appDao()
+
+                    val existingBlockedApp = blockedDao.getBlockedAppByPackageName(packageName)
+                    if (existingBlockedApp != null) {
+                        withContext(Dispatchers.Main) {
+                            Log.w("SharedViewModel1", "App ya está bloqueada: $packageName")
+                        }
+                        return@launch
+                    }
+
+                    val existingAppEnSistema = appDao.getApp(packageName)
+                    if (existingAppEnSistema == null) {
+                        withContext(Dispatchers.Main) {
+                            Log.w(
+                                "SharedViewModel1",
+                                "App no encontrada en bd de apps instaladas: $packageName"
+                            )
+                        }
+                        return@launch
+                    }
+
+                    val newBlockedApp = BlockedEntity(packageName = packageName)
+                    blockedDao.insertBlockedApp(newBlockedApp)
+
+                    withContext(Dispatchers.Main) {
+                        Log.w("SharedViewModel1", "Nueva App insertada a BLOCKED bd: $packageName")
+                    }
+                } catch (e: Exception) {
+                    Log.e("SharedViewModel1", "Error al agregar app bloqueada: ${e.message}")
+                } finally {
+                    mutex_addApp.withLock {
+                        blockedAppsProcessing.remove(packageName)
+                    }
+                }
+            }
+        }*/
 
 
 }

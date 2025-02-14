@@ -12,9 +12,10 @@ import android.os.DeadObjectException
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.ursolgleb.controlparental.ControlParentalApp
+import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,12 +29,21 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.net.HttpURLConnection
 import java.net.URL
+import javax.inject.Inject
 
-class SharedViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class SharedViewModel @Inject constructor(
+    application: Application,
+    appDatabase: AppDatabase
+) : AndroidViewModel(application) {
 
-    private val blockedAppsProcessing = mutableSetOf<String>()
+    private val appDao = appDatabase.appDao()
+    private val blockedDao = appDatabase.blockedDao()
+
     private val mutex_updateBDApps = Mutex()
-    private val mutex_addApp = Mutex()
+    private val mutex_inicieDelecturaDeBD = Mutex()
+
+    private val mutex_Global = Mutex() // Mutex compartido para sincronización
 
     private val _todosApps = MutableStateFlow<List<AppEntity>>(emptyList())
     val todosApps: StateFlow<List<AppEntity>> = _todosApps
@@ -41,23 +51,56 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
     private val _blockedApps = MutableStateFlow<List<BlockedEntity>>(emptyList())
     val blockedApps: StateFlow<List<BlockedEntity>> = _blockedApps
 
-    private val _appsNoBloqueados = MutableStateFlow<List<BlockedEntity>>(emptyList())
-    val appsNoBloqueados: StateFlow<List<BlockedEntity>> = _appsNoBloqueados
-
-    private val _filteredApps = MutableStateFlow<List<AppEntity>>(emptyList())
-    val filteredApps: StateFlow<List<AppEntity>> = _filteredApps
+    var inicieDeLecturaDeBD = false
 
     init {
+        Log.w("SharedViewModel3", "init SharedViewModel $inicieDeLecturaDeBD")
+        // 🔥 Carga inicial de datos de la base de datos
+        inicieDelecturaDeBD()
+
         // 🔥 Cargar datos en tiempo real cuando se cree el ViewModel
+        loadAppsFromDatabaseASharedViewModel()
         Log.w("SharedViewModel", "init SharedViewModel $_blockedApps")
-        loadAppsFromDatabaseASharedViewModer()
+
     }
 
-    private fun loadAppsFromDatabaseASharedViewModer() {
+    private fun inicieDelecturaDeBD() {
+        var locked = mutex_inicieDelecturaDeBD.tryLock()
+        if (!locked) {
+            Log.w("SharedViewModelMUTEX", "inicieDelecturaDeBD ya está en ejecución")
+            return
+        }
+
+        try {
+
+            viewModelScope.launch(Dispatchers.IO) {
+                mutex_Global.withLock { // Bloquea mientras ejecuta esta parte
+                    inicieDeLecturaDeBD = true
+                    Log.e("SharedViewModel3", "inicieDelecturaDeBD(): $inicieDeLecturaDeBD")
+                    _todosApps.value = appDao.getAllApps().first()
+                    _blockedApps.value = blockedDao.getAllBlockedApps().first()
+                    Log.e("SharedViewModel", "APPS DE BD 111: ${_todosApps.value}")
+                } // Se libera el mutex cuando termina
+            }
+
+
+        } catch (e: DeadObjectException) {
+            Log.e("SharedViewModel", "DeadObjectException: ${e.message}")
+        } catch (e: Exception) {
+            Log.e("SharedViewModel", "Error en inicieDeLecturaDeBD: ${e.message}")
+        } finally {
+            if (locked) { // Solo desbloquea si realmente ha adquirido el bloqueo
+                mutex_inicieDelecturaDeBD.unlock()
+            }
+        }
+
+    }
+
+    private fun loadAppsFromDatabaseASharedViewModel() {
         // 🔹 Lanzamos una primera corrutina para obtener la lista de aplicaciones instaladas
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             // 🔥 Observamos la base de datos en tiempo real con Flow
-            ControlParentalApp.dbApps.appDao().getAllApps()
+            appDao.getAllApps()
                 .stateIn(viewModelScope) // Se suscribe solo una vez
                 .collect { apps ->
                     val sortedApps = apps
@@ -71,8 +114,8 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
         }
 
         // 🔹 Lanzamos una segunda corrutina para obtener la lista de aplicaciones bloqueadas
-        viewModelScope.launch {
-            ControlParentalApp.dbApps.blockedDao().getAllBlockedApps()
+        viewModelScope.launch(Dispatchers.IO) {
+            blockedDao.getAllBlockedApps()
                 .stateIn(viewModelScope)
                 .collect { blockedApps ->
                     val sortedBlockedApps = blockedApps
@@ -86,71 +129,30 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    // 🔥 ✅ Para agregar una app a la base de datos ⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰
-    fun addAppBlockListBD(packageName: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-
-            mutex_addApp.withLock {
-                if (blockedAppsProcessing.contains(packageName)) {
-                    Log.w("SharedViewModel1", "Ya se está procesando: $packageName")
-                    return@launch
-                }
-                blockedAppsProcessing.add(packageName)
-            }
-
-            try {
-                val blockedDao = ControlParentalApp.dbApps.blockedDao()
-                val appDao = ControlParentalApp.dbApps.appDao()
-
-                val existingBlockedApp = blockedDao.getBlockedAppByPackageName(packageName)
-                if (existingBlockedApp != null) {
-                    withContext(Dispatchers.Main) {
-                        Log.w("SharedViewModel1", "App ya está bloqueada: $packageName")
-                    }
-                    return@launch
-                }
-
-                val existingAppEnSistema = appDao.getApp(packageName)
-                if (existingAppEnSistema == null) {
-                    withContext(Dispatchers.Main) {
-                        Log.w(
-                            "SharedViewModel1",
-                            "App no encontrada en bd de apps instaladas: $packageName"
-                        )
-                    }
-                    return@launch
-                }
-
-                val newBlockedApp = BlockedEntity(packageName = packageName)
-                blockedDao.insertBlockedApp(newBlockedApp)
-
-                withContext(Dispatchers.Main) {
-                    Log.w("SharedViewModel1", "Nueva App insertada a BLOCKED bd: $packageName")
-                }
-            } catch (e: Exception) {
-                Log.e("SharedViewModel1", "Error al agregar app bloqueada: ${e.message}")
-            } finally {
-                mutex_addApp.withLock {
-                    blockedAppsProcessing.remove(packageName)
-                }
-            }
-        }
-    }
 
     // 🔥 ✅ Función para actualizar la base de datos de aplicaciones ⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰ MUTEX
     suspend fun updateBDApps() {
+
+        if (!inicieDeLecturaDeBD) {
+            inicieDelecturaDeBD()
+        }
+
         val locked = mutex_updateBDApps.tryLock() // Intenta obtener el bloqueo
         if (!locked) {
             Log.w("SharedViewModelMUTEX", "updateBDApps ya está en ejecución")
             return
         }
         try {
-            Log.e("SharedViewModel", "555 999 updateBDApps")
-            val appsNuevas = getNuevasAppsEnSistema()
-            if (appsNuevas.isNotEmpty()) {
-                addAppsAAppsBD(appsNuevas)
-                addAppsABlockedBD(appsNuevas)
+
+            mutex_Global.withLock { // ponemos en la cola de ejecución
+                Log.e("SharedViewModel", "333 updateBDApps")
+                val appsNuevas = getNuevasAppsEnSistema()
+                if (appsNuevas.isNotEmpty()) {
+                    addListaAppsAAppsBD(appsNuevas)
+                    addListaAppsABlockedBD(appsNuevas)
+                }
             }
+
         } catch (e: DeadObjectException) {
             Log.e("SharedViewModel", "DeadObjectException: ${e.message}")
         } catch (e: Exception) {
@@ -162,14 +164,14 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+
     // 🔥 ✅ Función para agregar apps a la base de datos ♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️
-    suspend fun addAppsAAppsBD(appsNuevas: List<ApplicationInfo>) {
-        val pm = getApplication<Application>().packageManager
+    suspend fun addListaAppsAAppsBD(appsNuevas: List<ApplicationInfo>) {
         if (appsNuevas.isEmpty()) return
-        val appDao = ControlParentalApp.dbApps.appDao()
-        for (app in appsNuevas) {
+        val pm = getApplication<Application>().packageManager
+        appDao.insertListaApps(appsNuevas.map { app ->
             //👁️🧠var contentRating = getAppAgeRatingScraper(app.packageName)
-            val newApp = AppEntity(
+            AppEntity( //formamos lista de entidades para BD
                 packageName = app.packageName,
                 appName = app.loadLabel(pm).toString(),
                 appIcon = app.loadIcon(pm).toString(),
@@ -177,43 +179,49 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
                 contentRating = "?",
                 appIsSystemApp = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0
             )
-            appDao.insertApp(newApp)
-            Log.d(
-                "MainAdminActivity",
-                "Nueva App insertada a AppsBD: ${newApp.appName}, " +
-                        "Package: ${newApp.packageName}, " +
-                        "Rating: ${newApp.contentRating}, " +
-                        "System App: ${newApp.appIsSystemApp}, " +
-                        "Category: ${newApp.appCategory}, " +
-                        "Icon: ${newApp.appIcon}"
-            )
-        }
+        })
+        Log.d("MainAdminActivity", "Nueva Lista App insertada a AppsBD: $appsNuevas")
     }
 
-    // 🔥 ✅ Función para agregar apps bloqueadas a la base de datos 👌👌👌👌👌👌👌👌👌👌👌
-    fun addAppsABlockedBD(appsNuevas: List<ApplicationInfo>) {
+    // 🔥 ✅ Función para agregar apps bloqueadas a la base de datos ️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻
+    suspend fun addListaAppsABlockedBD(appsNuevas: List<ApplicationInfo>) {
         if (appsNuevas.isEmpty()) return
-        for (app in appsNuevas) {
-            addAppBlockListBD(app.packageName)
-        }
+        blockedDao.insertListaBlockedApps(appsNuevas.map { app ->
+            BlockedEntity(packageName = app.packageName) //formamos lista de entidades para BD
+        })
+        Log.d("MainAdminActivity", "Nueva Lista App insertada a BlockedBD: $appsNuevas")
+    }
+
+    suspend fun addListaStringAppsABlockedBD(appsNuevas: List<String>) {
+        if (appsNuevas.isEmpty()) return
+        blockedDao.insertListaBlockedApps(appsNuevas.map { app ->
+            BlockedEntity(packageName = app) //formamos lista de entidades para BD
+        })
+        Log.d("MainAdminActivity", "Nueva Lista App insertada a BlockedBD: $appsNuevas")
     }
 
 
-    suspend fun getAppsFromDB(): List<AppEntity> {
-        return ControlParentalApp.dbApps.appDao().getAllApps().first()
-    }
-
-    suspend fun getBlockedAppsFromDB(): List<BlockedEntity> {
-        return ControlParentalApp.dbApps.blockedDao().getAllBlockedApps().first()
-    }
-
-    suspend fun getNuevasAppsEnSistema(): List<ApplicationInfo> {
+    fun getNuevasAppsEnSistema(): List<ApplicationInfo> {
         val appsDeSistema = getAllAppsWithUIdeSistema()
         if (appsDeSistema.isEmpty()) return emptyList()
-        val appsDeBD = getAppsFromDB()
+
+        val appsDeBD = _todosApps.value
+        Log.e("APPS DE BD", "APPS DE BD 222: $appsDeBD")
         val paquetesEnBD = appsDeBD.map { it.packageName }.toSet()
-        return appsDeSistema.filter { it.packageName !in paquetesEnBD }
+
+        val nuevosApps = appsDeSistema.filter { it.packageName !in paquetesEnBD }
+
+        // 🔹 Formateamos la lista para que sea más legible en los logs
+        val listaFormateada = nuevosApps.joinToString(separator = "\n") { app ->
+            "Nombre: ${app.loadLabel(getApplication<Application>().packageManager)}, " +
+                    "Package: ${app.packageName}"
+        }
+
+        Log.e("SharedViewModel", "NUEVOS APPS:\n$listaFormateada")
+
+        return nuevosApps
     }
+
 
     fun getAllAppsWithUIdeSistema(): List<ApplicationInfo> {
         val pm = getApplication<Application>().packageManager
@@ -345,8 +353,6 @@ class SharedViewModel(application: Application) : AndroidViewModel(application) 
             Log.w("filteredList", "filterAndSortAppsByUsage: $sortedList")
         }
     }
-
-
 
 
 }

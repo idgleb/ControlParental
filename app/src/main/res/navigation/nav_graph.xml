@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/mainAdminFragment">
+
+    <!-- Fragmento que representa la pantalla principal de la actividad -->
+    <fragment
+        android:id="@+id/mainAdminFragment"
+        android:name="com.ursolgleb.controlparental.UI.fragments.MainAdminFragment"
+        android:label="Main Admin">
+        <action
+            android:id="@+id/action_mainAdminFragment_to_addAppsFragment"
+            app:destination="@id/addAppsFragment" />
+    </fragment>
+
+    <!-- Fragmento de AddApps -->
+    <fragment
+        android:id="@+id/addAppsFragment"
+        android:name="com.ursolgleb.controlparental.UI.fragments.AddAppsFragment"
+        android:label="Add Apps" />
+</navigation>

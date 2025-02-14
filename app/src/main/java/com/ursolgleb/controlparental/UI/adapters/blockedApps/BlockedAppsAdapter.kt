@@ -6,17 +6,23 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.ControlParentalApp
+import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
 import com.ursolgleb.controlparental.databinding.ItemBlockedAppBinding
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class BlockedAppsAdapter(
+class BlockedAppsAdapter@Inject constructor(
     val blockedApps: MutableList<BlockedEntity>,
-    private val context: Context
+    private val context: Context,
+    appDatabase: AppDatabase
 ) : RecyclerView.Adapter<BlockedAppsViewHolder>() {
+
+    val appDao = appDatabase.appDao()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BlockedAppsViewHolder {
         val binding =
@@ -28,7 +34,7 @@ class BlockedAppsAdapter(
         val blockedApp = blockedApps[position]
 
         CoroutineScope(Dispatchers.IO).launch {
-            val appInfo = ControlParentalApp.dbApps.appDao().getApp(blockedApp.packageName)
+            val appInfo = appDao.getApp(blockedApp.packageName)
             val icon = getAppIcon(blockedApp.packageName, context)
 
             withContext(Dispatchers.Main) {
