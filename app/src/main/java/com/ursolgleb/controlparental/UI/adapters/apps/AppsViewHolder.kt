@@ -9,12 +9,12 @@ import com.ursolgleb.controlparental.databinding.ItemBlockedAppBinding
 class AppsViewHolder(private val binding: ItemAppGrandeBinding) :
     RecyclerView.ViewHolder(binding.root) {
 
-    fun bind(appName: String?, icon: Drawable?, horasDeUso: Double, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    fun bind(appName: String?, icon: Drawable?, formattedTimeDeUso: String, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {
         binding.tvAppName.text = appName ?: "No encontrada"
         Glide.with(binding.ivIconoApp.context)
             .load(icon) // Glide acepta `Drawable` y `Bitmap`
             .into(binding.ivIconoApp)
-        binding.tvHorasDeUso.text = "Horas de uso: $horasDeUso"
+        binding.tvHorasDeUso.text = "Tiempo de uso: $formattedTimeDeUso"
 
         binding.cbApp.setOnCheckedChangeListener(null) // 🔥 Evitar problemas al reciclar el ViewHolder
         binding.cbApp.isChecked = isChecked // 🔥 Restaurar estado del CheckBox

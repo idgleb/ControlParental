@@ -10,5 +10,6 @@ data class AppEntity(
     val appIcon: String,
     val appCategory: String,
     val contentRating: String,
-    val appIsSystemApp: Boolean
+    val appIsSystemApp: Boolean,
+    val tiempoUsoSeconds: Long
 )

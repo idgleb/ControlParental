@@ -7,20 +7,24 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
+import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AppDao {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertApp(app: AppEntity)
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertListaApps(apps: List<AppEntity>)
 
-    @Query("SELECT * FROM apps WHERE packageName = :packageName")
+    @Query("SELECT * FROM apps WHERE packageName = :packageName LIMIT 1")
     suspend fun getApp(packageName: String): AppEntity?
 
-    @Query("SELECT * FROM apps")
+/*    @Query("SELECT * FROM apps")
+    fun getAllApps(): Flow<List<AppEntity>>*/
+
+    @Query("SELECT * FROM apps ORDER BY tiempoUsoSeconds DESC")
     fun getAllApps(): Flow<List<AppEntity>>
 
     @Update

@@ -69,10 +69,9 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
         }
 
         binding.aggregarAppsABlockedBoton.setOnClickListener {
-            //val intent = Intent(requireContext(), AddAppsActivity::class.java)
-            //startActivity(intent)
-            //findNavController().navigate(R.id.action_blockedAppsFragment_to_addAppsFragment)
-
+            val navController = androidx.navigation.Navigation.findNavController(requireActivity(), R.id.nav_host_fragment)
+            // Navega usando la acción definida en el nav_graph.xml
+            navController.navigate(R.id.action_mainAdminFragment_to_addAppsFragment)
         }
 
         binding.delitAllAppBoton.setOnClickListener {
@@ -92,30 +91,13 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
 
     private fun initObservers() {
         // 🔥 Observar cambios en la lista de apps bloqueadas
-
-/*        lifecycleScope.launch {
-            sharedViewModel.blockedApps.collect { newList ->
-                Log.w("BlockedAppsFragment", "Lista de apps bloqueadas actualizada: $newList")
-                blockedAppAdapter?.updateListEnAdaptador(newList)
-                // 🔥 Si la lista está vacía, mostrar "Empty"
-                if (newList.isEmpty()) {
-                    binding.tvEmptyMessage.visibility = View.VISIBLE
-                    binding.rvAppsBloqueadas.visibility = View.GONE
-                } else {
-                    binding.tvEmptyMessage.visibility = View.GONE
-                    binding.rvAppsBloqueadas.visibility = View.VISIBLE
-                }
-            }
-        }*/
-
-
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 
                 sharedViewModel.blockedApps.collect { newList ->
-                    // Aquí binding ya está seguro, porque la colección se detiene cuando la vista se destruye
                     Log.w("BlockedAppsFragment", "Lista de apps bloqueadas actualizada: $newList")
-                    blockedAppAdapter?.updateListEnAdaptador(newList)
+                    binding.tvCantidadAppsBloqueadas.text = newList.size.toString()
+                    blockedAppAdapter?.updateListEnAdaptador(newList.take(3))
                     // 🔥 Si la lista está vacía, mostrar "Empty"
                     if (newList.isEmpty()) {
                         binding.tvEmptyMessage.visibility = View.VISIBLE
@@ -125,13 +107,8 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
                         binding.rvAppsBloqueadas.visibility = View.VISIBLE
                     }
                 }
-
-
             }
         }
-
-
-
     }
 
     private fun initUI(view: View) {

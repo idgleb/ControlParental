@@ -14,6 +14,7 @@ import androidx.room.PrimaryKey
     )]
 )
 data class BlockedEntity(
-    @PrimaryKey val packageName: String
+    @PrimaryKey val packageName: String,
+    val timestamp: Long = System.currentTimeMillis() // Guarda el momento de inserción
 )
 

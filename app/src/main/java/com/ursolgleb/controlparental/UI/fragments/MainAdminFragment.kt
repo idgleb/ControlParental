@@ -1,5 +1,6 @@
 package com.ursolgleb.controlparental.UI.fragments
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -11,6 +12,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.ursolgleb.controlparental.R
+import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.databinding.FragmentMainAdminBinding
 import dagger.hilt.android.AndroidEntryPoint
@@ -57,8 +59,8 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
 
     private fun initListeners() {
         binding.ayudaBoton.setOnClickListener {
-            // Navegar al fragmento AddAppsFragment usando Navigation Component:
-            findNavController().navigate(R.id.action_mainAdminFragment_to_addAppsFragment)
+            val intent = Intent(requireContext(), DesarolloActivity::class.java)
+            startActivity(intent)
         }
     }
 

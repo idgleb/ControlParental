@@ -19,6 +19,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -45,11 +46,14 @@ class SharedViewModel @Inject constructor(
 
     private val mutex_Global = Mutex() // Mutex compartido para sincronización
 
-    private val _todosApps = MutableStateFlow<List<AppEntity>>(emptyList())
-    val todosApps: StateFlow<List<AppEntity>> = _todosApps
+    private val _todosApps = MutableStateFlow<List <AppEntity>>(emptyList())
+    val todosApps: StateFlow<List <AppEntity>> = _todosApps
 
-    private val _blockedApps = MutableStateFlow<List<BlockedEntity>>(emptyList())
-    val blockedApps: StateFlow<List<BlockedEntity>> = _blockedApps
+    private val _blockedApps = MutableStateFlow<List <BlockedEntity>>(emptyList())
+    val blockedApps: StateFlow<List <BlockedEntity>> = _blockedApps
+
+    private val _todosAppsMenosBlaqueados = MutableStateFlow<List <AppEntity>>(emptyList())
+    val todosAppsMenosBlaqueados: StateFlow<List <AppEntity>> = _todosAppsMenosBlaqueados
 
     var inicieDeLecturaDeBD = false
 
@@ -61,11 +65,10 @@ class SharedViewModel @Inject constructor(
         // 🔥 Cargar datos en tiempo real cuando se cree el ViewModel
         loadAppsFromDatabaseASharedViewModel()
         Log.w("SharedViewModel", "init SharedViewModel $_blockedApps")
-
     }
 
     private fun inicieDelecturaDeBD() {
-        var locked = mutex_inicieDelecturaDeBD.tryLock()
+        val locked = mutex_inicieDelecturaDeBD.tryLock()
         if (!locked) {
             Log.w("SharedViewModelMUTEX", "inicieDelecturaDeBD ya está en ejecución")
             return
@@ -77,8 +80,15 @@ class SharedViewModel @Inject constructor(
                 mutex_Global.withLock { // Bloquea mientras ejecuta esta parte
                     inicieDeLecturaDeBD = true
                     Log.e("SharedViewModel3", "inicieDelecturaDeBD(): $inicieDeLecturaDeBD")
+
                     _todosApps.value = appDao.getAllApps().first()
+                    
                     _blockedApps.value = blockedDao.getAllBlockedApps().first()
+
+                    _todosAppsMenosBlaqueados.value = _todosApps.value.filter { app ->
+                        _blockedApps.value.none { it.packageName == app.packageName }
+                    }.sortedByDescending { it.tiempoUsoSeconds }
+
                     Log.e("SharedViewModel", "APPS DE BD 111: ${_todosApps.value}")
                 } // Se libera el mutex cuando termina
             }
@@ -97,36 +107,25 @@ class SharedViewModel @Inject constructor(
     }
 
     private fun loadAppsFromDatabaseASharedViewModel() {
-        // 🔹 Lanzamos una primera corrutina para obtener la lista de aplicaciones instaladas
+
         viewModelScope.launch(Dispatchers.IO) {
-            // 🔥 Observamos la base de datos en tiempo real con Flow
-            appDao.getAllApps()
-                .stateIn(viewModelScope) // Se suscribe solo una vez
-                .collect { apps ->
-                    val sortedApps = apps
-                        .map { app ->
-                            app to getHorasDeUso(app.packageName, 1)
-                        }
-                        .sortedByDescending { (_, horasDeUso) -> horasDeUso } // Ordenamos por horas de uso
-                        .map { (app, _) -> app } // Extraemos solo la lista de apps ordenada
-                    _todosApps.value = sortedApps
-                }
+            combine(
+                appDao.getAllApps(),
+                blockedDao.getAllBlockedApps()
+            ) { apps, blockedApps ->
+                // Aquí puedes combinar o transformar los valores como desees
+
+                _todosAppsMenosBlaqueados.value = apps.filter { app ->
+                    blockedApps.none { it.packageName == app.packageName }
+                }.sortedByDescending { it.tiempoUsoSeconds }
+
+                Pair(apps, blockedApps)
+            }.collect { (apps, blockedApps) ->
+                _todosApps.value = apps
+                _blockedApps.value = blockedApps
+            }
         }
 
-        // 🔹 Lanzamos una segunda corrutina para obtener la lista de aplicaciones bloqueadas
-        viewModelScope.launch(Dispatchers.IO) {
-            blockedDao.getAllBlockedApps()
-                .stateIn(viewModelScope)
-                .collect { blockedApps ->
-                    val sortedBlockedApps = blockedApps
-                        .map { app ->
-                            app to getHorasDeUso(app.packageName, 1)
-                        }
-                        .sortedByDescending { (_, horasDeUso) -> horasDeUso } // Ordenamos por horas de uso
-                        .map { (app, _) -> app } // Extraemos solo la lista de apps ordenada
-                    _blockedApps.value = sortedBlockedApps
-                }
-        }
     }
 
 
@@ -177,7 +176,8 @@ class SharedViewModel @Inject constructor(
                 appIcon = app.loadIcon(pm).toString(),
                 appCategory = app.category.toString(),
                 contentRating = "?",
-                appIsSystemApp = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                appIsSystemApp = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
+                tiempoUsoSeconds = getTiempoDeUsoSeconds(app.packageName, 1)
             )
         })
         Log.d("MainAdminActivity", "Nueva Lista App insertada a AppsBD: $appsNuevas")
@@ -250,15 +250,15 @@ class SharedViewModel @Inject constructor(
         }
     }
 
-    fun getHorasDeUso(packageName: String, dias: Int): Double {
+    fun getTiempoDeUsoSeconds(packageName: String, dias: Int): Long {
         val usageStats = getUsageStats(dias)
         for (usageStat in usageStats) {
             if (usageStat.packageName == packageName) {
-                val horasDeUso = usageStat.totalTimeInForeground / 3600000.0
-                return horasDeUso
+                val segundosDeUso = usageStat.totalTimeInForeground / 1000
+                return segundosDeUso
             }
         }
-        return 0.0
+        return 0
     }
 
     fun getUsageStats(dias: Int): List<UsageStats> {
@@ -266,10 +266,11 @@ class SharedViewModel @Inject constructor(
             getApplication<Application>().getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
                 ?: return emptyList() // Retorna una lista vacía si el servicio no está disponible
         val endTime = System.currentTimeMillis()
-        val startTime = endTime - 1000 * 60 * 60 * 24 * dias // Últimas X dias
-        return usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY, startTime, endTime
-        ).orEmpty()
+        val startTime = endTime - 1000 * 60 * 60 * 24 * dias // Últimas X días
+
+        val aggregatedStats: Map<String, UsageStats> =
+            usageStatsManager.queryAndAggregateUsageStats(startTime, endTime)
+        return aggregatedStats.values.toList()
     }
 
     suspend fun getAppAgeRatingScraper(packageName: String): String {
@@ -327,7 +328,7 @@ class SharedViewModel @Inject constructor(
             val allApps = _todosApps.value
             val sortedList = allApps
                 .map { app ->
-                    app to getHorasDeUso(app.packageName, days) // Calculamos solo una vez
+                    app to getTiempoDeUsoSeconds(app.packageName, days) // Calculamos solo una vez
                 }
                 //.filter { (_, horasDeUso) -> horasDeUso > 0 } // Filtramos solo los que tienen uso
                 .sortedByDescending { (_, horasDeUso) -> horasDeUso } // Ordenamos por horas de uso
@@ -343,7 +344,7 @@ class SharedViewModel @Inject constructor(
             val allApps = _blockedApps.value
             val sortedList = allApps
                 .map { app ->
-                    app to getHorasDeUso(app.packageName, days) // Calculamos solo una vez
+                    app to getTiempoDeUsoSeconds(app.packageName, days) // Calculamos solo una vez
                 }
                 //.filter { (_, horasDeUso) -> horasDeUso > 0 } // Filtramos solo los que tienen uso
                 .sortedByDescending { (_, horasDeUso) -> horasDeUso } // Ordenamos por horas de uso

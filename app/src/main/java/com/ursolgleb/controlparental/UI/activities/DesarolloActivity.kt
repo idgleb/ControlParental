@@ -180,29 +180,31 @@ class DesarolloActivity : AppCompatActivity() {
 
 
         bindDesarollo.getUsageStatsBoton.setOnClickListener {
+
             if (!hasUsageStatsPermission(this)) {
                 requestUsageStatsPermission(this)
                 return@setOnClickListener
             }
-            val listUsageStatus: List<UsageStats> = getUsageStats()
+
             val msg = "Lista de Usage Stats: "
-            Log.d("AppBlockerService", msg)
+            Log.w("AppBlockerService", msg)
             Archivo.appendTextToFile(this, fileName, "\n $msg")
 
+            val listUsageStatus = getUsageStats()
             val pm = packageManager  // Obtener PackageManager
-            val listaUsageStatsTimeMasCero: MutableList<UsageStats> =
-                listUsageStatus.filter { it.totalTimeInForeground > 0 } as MutableList<UsageStats>
+            val listaUsageStatsTimeMasCero = listUsageStatus.filter { it.value.totalTimeInForeground > 0 }
 
             for (usageStats in listaUsageStatsTimeMasCero) {
+
                 val appName = try {
-                    pm.getApplicationLabel(pm.getApplicationInfo(usageStats.packageName, 0))
+                    pm.getApplicationLabel(pm.getApplicationInfo(usageStats.value.packageName, 0))
                         .toString()
                 } catch (e: PackageManager.NameNotFoundException) {
                     "Desconocida"
                 }
 
                 val msg =
-                    "App: $appName - Package: ${usageStats.packageName} - Usage: ${usageStats.totalTimeInForeground}"
+                    "$appName - Pkg: ${usageStats.value.packageName} - Uso: ${usageStats.value.totalTimeInForeground}"
                 Log.d("AppBlockerService", msg)
                 Archivo.appendTextToFile(this, fileName, "\n $msg")
             }
@@ -359,13 +361,11 @@ class DesarolloActivity : AppCompatActivity() {
         context.startActivity(intent)
     }
 
-    fun getUsageStats(): List<UsageStats> {
+    fun getUsageStats(): Map<String, UsageStats> {
         val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val endTime = System.currentTimeMillis()
-        val startTime = endTime - 1000 * 60 * 60 * 24  // Últimas 24 horas
-        return usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY, startTime, endTime
-        )
+        val startTime = endTime - 24 * 60 * 60 * 1000  // 24 horas en milisegundos
+        return usageStatsManager.queryAndAggregateUsageStats(startTime, endTime)
     }
 
     fun getForegroundApp(): String? {

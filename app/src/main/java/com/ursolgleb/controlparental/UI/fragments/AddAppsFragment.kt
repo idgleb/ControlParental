@@ -1,6 +1,7 @@
 package com.ursolgleb.controlparental.UI.fragments
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,7 +9,9 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -66,16 +69,18 @@ class AddAppsFragment : Fragment(R.layout.fragment_add_apps) {
     }
 
     private fun initObservers() {
-        lifecycleScope.launch {
-            sharedViewModel.todosApps.collect { apps ->
-                appAdapter.updateListAppEnAdaptador(apps)
+
+        // 🔥 Observar cambios en la lista de apps bloqueadas
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                sharedViewModel.todosAppsMenosBlaqueados.collect { newList ->
+                    // Aquí binding ya está seguro, porque la colección se detiene cuando la vista se destruye
+                    Log.w("BlockedAppsFragment", "Lista de apps actualizada: $newList")
+                    appAdapter.updateListAppEnAdaptador(newList)
+                }
             }
         }
-    }
 
-    override fun onResume() {
-        super.onResume()
-        lifecycleScope.launch { sharedViewModel.updateBDApps() }
     }
 
     override fun onDestroyView() {

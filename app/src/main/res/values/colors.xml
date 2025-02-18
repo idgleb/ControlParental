@@ -3,6 +3,7 @@
     <color name="black">#FF000000</color>
     <color name="gris">#949494</color>
     <color name="gris_lineas">#DEDEDE</color>
+    <color name="gris_redondo">#C1C1C1</color>
     <color name="white">#FFFFFFFF</color>
     <color name="fondo_scroll">#F0F0F0</color>
     <color name="blue_principal">#009ee3</color>

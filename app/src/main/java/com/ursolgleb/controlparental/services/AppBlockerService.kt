@@ -58,12 +58,15 @@ class AppBlockerService : AccessibilityService() {
 
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val packageName = event.packageName?.toString() ?: return
+
             currentAppEnPrimerPlano = packageName
             blockearSiEnBlackList(packageName)
 
             val msg = "App en primer plano: $packageName"
             Log.w("AppBlockerService111", msg)
             Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
+
+            //base de datos renovar una app
         }
 
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {

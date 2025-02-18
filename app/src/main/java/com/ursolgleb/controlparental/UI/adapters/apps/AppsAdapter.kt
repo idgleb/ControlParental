@@ -29,12 +29,21 @@ class AppsAdapter(
 
     override fun onBindViewHolder(holder: AppsViewHolder, position: Int) {
         val app = apps[position]
+
         CoroutineScope(Dispatchers.IO).launch {
             val icon = sharedViewModel.getAppIcon(app.packageName, context)
-            var horasDeUso = sharedViewModel.getHorasDeUso(app.packageName, 1)
-            horasDeUso = String.format("%.2f", horasDeUso).toDouble()
+
+            //var horasDeUso = sharedViewModel.getHorasDeUso(app.first.packageName, 1)
+            val secondsDeUso = app.tiempoUsoSeconds
+
+            val seconds = secondsDeUso % 60
+            val minutes = (secondsDeUso / 60) % 60
+            val hours = secondsDeUso / 3600
+            val formattedTime = "${hours}h ${minutes}min ${seconds}seg"
+
+
             withContext(Dispatchers.Main) {
-                holder.bind(app.appName, icon, horasDeUso, selectedApps.contains(app.packageName)) { isChecked ->
+                holder.bind(app.appName, icon, formattedTime, selectedApps.contains(app.packageName)) { isChecked ->
                     if (isChecked) {
                         selectedApps.add(app.packageName) // ✅ Agrega a las apps seleccionadas
                     } else {
@@ -49,7 +58,7 @@ class AppsAdapter(
 
     fun getSelectedApps(): Set<String> = selectedApps // 🔥 Método para obtener apps seleccionadas
 
-    // 🔥 ✅ Función para agregar una nueva app bloqueada a la lista y actualizar la UI
+    // 🔥 ✅ Función para agregar una nueva app a la lista y actualizar la UI
     fun addAppEadaptador(newApp: AppEntity) {
         apps.add(newApp)  // Agregar a la lista
         notifyItemInserted(apps.size - 1)  // Notificar el cambio a RecyclerView

@@ -13,7 +13,7 @@ import com.ursolgleb.controlparental.data.local.entities.UsageLimitEntity
 
 @Database(
     entities = [AppEntity::class, BlockedEntity::class, UsageLimitEntity::class],
-    version = 2,  // Incrementa el número (antes era 1)
+    version = 5,  // Incrementa el número (antes era 1)
     exportSchema = true  // Para que Room guarde el esquema de versiones previas
 )
 abstract class AppDatabase : RoomDatabase() {

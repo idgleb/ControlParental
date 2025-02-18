@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.ControlParentalApp
 import com.ursolgleb.controlparental.data.local.AppDatabase
+import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
 import com.ursolgleb.controlparental.databinding.ItemBlockedAppBinding
 import dagger.hilt.android.AndroidEntryPoint
@@ -17,7 +18,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class BlockedAppsAdapter@Inject constructor(
-    val blockedApps: MutableList<BlockedEntity>,
+    val blockedApps: MutableList <BlockedEntity>,
     private val context: Context,
     appDatabase: AppDatabase
 ) : RecyclerView.Adapter<BlockedAppsViewHolder>() {

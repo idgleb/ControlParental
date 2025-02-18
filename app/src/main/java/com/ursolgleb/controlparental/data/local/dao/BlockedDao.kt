@@ -19,7 +19,7 @@ interface BlockedDao {
     @Delete
     suspend fun deleteBlockedApp(app: BlockedEntity)
 
-    @Query("SELECT * FROM blocked")
+    @Query("SELECT * FROM blocked ORDER BY timestamp DESC")
     fun getAllBlockedApps(): Flow<List<BlockedEntity>>
 
     @Query("DELETE FROM blocked")

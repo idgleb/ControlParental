@@ -58,17 +58,10 @@ class MainAdminActivity : AppCompatActivity() {
 
     private fun initListeners() {
         bindAdminMain.ayudaBoton.setOnClickListener {
-        /*    intent = Intent(this, DesarolloActivity::class.java)
-            startActivity(intent)*/
-
-            // Obtén el NavController del NavHostFragment
-            //val navController = findNavController(R.id.nav_host_fragment)
             val navController = androidx.navigation.Navigation.findNavController(this, R.id.nav_host_fragment)
-
             // Navega usando la acción definida en el nav_graph.xml
             navController.navigate(R.id.action_mainAdminFragment_to_addAppsFragment)
         }
-
     }
 
     private fun initObservadores() {
