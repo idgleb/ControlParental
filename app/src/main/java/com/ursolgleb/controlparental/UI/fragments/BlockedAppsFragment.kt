@@ -1,10 +1,14 @@
 package com.ursolgleb.controlparental.UI.fragments
 
-import android.app.Application
+import android.content.Context
+import android.provider.Settings
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.PowerManager
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.ursolgleb.controlparental.R
@@ -19,7 +23,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.ControlParentalApp
-import com.ursolgleb.controlparental.UI.activities.AddAppsActivity
 import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.dao.AppDao
 import com.ursolgleb.controlparental.data.local.dao.BlockedDao
@@ -70,12 +73,11 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
 
         binding.aggregarAppsABlockedBoton.setOnClickListener {
             val navController = androidx.navigation.Navigation.findNavController(requireActivity(), R.id.nav_host_fragment)
-            // Navega usando la acción definida en el nav_graph.xml
-            navController.navigate(R.id.action_mainAdminFragment_to_addAppsFragment)
+            navController.navigate(R.id.action_global_addAppsFragment)
         }
 
         binding.delitAllAppBoton.setOnClickListener {
-            lifecycleScope.launch {
+            lifecycleScope.launch(Dispatchers.IO) {
                 appDao.deleteAllApps()
                 withContext(Dispatchers.Main) {
                     Log.e("BlockedAppsFragment", "Todos Apps delited")
@@ -84,7 +86,11 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
         }
 
         binding.llenarAllAppBoton.setOnClickListener {
-            lifecycleScope.launch { sharedViewModel.updateBDApps() }
+           sharedViewModel.updateBDApps()
+        }
+
+        binding.testBoton.setOnClickListener {
+            Log.e("BlockedAppsFragment", "testBoton ${sharedViewModel.mutexUpdateBDAppsState.value}")
         }
 
     }
@@ -93,7 +99,6 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
         // 🔥 Observar cambios en la lista de apps bloqueadas
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-
                 sharedViewModel.blockedApps.collect { newList ->
                     Log.w("BlockedAppsFragment", "Lista de apps bloqueadas actualizada: $newList")
                     binding.tvCantidadAppsBloqueadas.text = newList.size.toString()
@@ -109,6 +114,25 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
                 }
             }
         }
+
+        // 🔥 Observar si updateBDApps() esta en processo
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                sharedViewModel.mutexUpdateBDAppsState.collect { isLocked ->
+                    // Aquí se actualiza cada vez que cambia el estado del mutex.
+                    if (isLocked) {
+                        // Mostrar un indicador de carga o bloquear la UI.
+                        Log.d("UI", "La operación updateBDApps está en curso")
+                        binding.progressBarUpdateBD.visibility = View.VISIBLE
+                    } else {
+                        // Ocultar el indicador de carga o desbloquear la UI.
+                        Log.d("UI", "La operación updateBDApps ha finalizado")
+                        binding.progressBarUpdateBD.visibility = View.GONE
+                    }
+                }
+            }
+        }
+
     }
 
     private fun initUI(view: View) {
@@ -122,6 +146,7 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        Log.e("BlockedAppsFragment", "onDestroyView")
         _binding = null // 🔥 Evitar memory leaks
     }
 }

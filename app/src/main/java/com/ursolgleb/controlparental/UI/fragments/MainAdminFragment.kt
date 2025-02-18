@@ -8,6 +8,7 @@ import android.view.ViewTreeObserver
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -24,9 +25,8 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
     private var _binding: FragmentMainAdminBinding? = null
     private val binding get() = _binding!!
 
-    // Si deseas compartir el mismo SharedViewModel con otros fragmentos en la misma actividad, usa:
-    // private val sharedViewModel: SharedViewModel by activityViewModels()
-    private val sharedViewModel: SharedViewModel by viewModels()
+    private val sharedViewModel: SharedViewModel by activityViewModels()
+
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -50,8 +50,6 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
     private fun initUI() {
         initHeightDeSvInfo()
 
-        // Si deseas mostrar el fragmento BlockedAppsFragment dentro de este fragmento,
-        // utiliza childFragmentManager:
         childFragmentManager.beginTransaction()
             .replace(R.id.fragment_apps_bloqueadas, BlockedAppsFragment())
             .commit()
@@ -84,7 +82,7 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
 
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch { sharedViewModel.updateBDApps() }
+        sharedViewModel.updateBDApps()
     }
 
     override fun onDestroyView() {

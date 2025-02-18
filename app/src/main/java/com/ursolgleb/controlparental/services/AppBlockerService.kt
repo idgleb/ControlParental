@@ -12,7 +12,6 @@ import com.ursolgleb.controlparental.utils.Archivo
 import com.ursolgleb.controlparental.utils.Launcher
 import java.util.Locale
 import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
-import com.ursolgleb.controlparental.allowedApps
 import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.log.LogBlockedAppEntity
 import dagger.hilt.android.AndroidEntryPoint
@@ -170,10 +169,6 @@ class AppBlockerService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-
-        allowedApps.apps.add(Launcher.getDefaultLauncherPackageName(this))
-
-        allowedApps.showApps(this)
 
         val msg = "Servicio de accesibilidad iniciado"
         Log.w("AppBlockerService", msg)

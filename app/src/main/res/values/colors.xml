@@ -2,12 +2,13 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="gris">#949494</color>
+    <color name="gris_checkbox">#B4B4B4</color>
     <color name="gris_lineas">#DEDEDE</color>
     <color name="gris_redondo">#C1C1C1</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="fondo_scroll">#F0F0F0</color>
+    <color name="fondo_scroll">#F4F4F4</color>
     <color name="blue_principal">#009ee3</color>
-    <color name="fondo_principal">#0080B8</color>
+    <color name="fondo_principal">#006FA0</color>
     <color name="boton_secundario">#86B4FF</color>
     <color name="boton_secundario2">#479AD1</color>
     <color name="text_boton">#FFFFFF</color>

@@ -7,6 +7,7 @@ import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
 class ControlParentalApp: Application()  {
+
     companion object{
         lateinit var dbLogs: LogAppBlockerDatabase
             private set

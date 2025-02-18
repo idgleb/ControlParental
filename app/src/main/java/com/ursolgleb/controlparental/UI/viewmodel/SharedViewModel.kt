@@ -42,6 +42,9 @@ class SharedViewModel @Inject constructor(
     private val blockedDao = appDatabase.blockedDao()
 
     private val mutex_updateBDApps = Mutex()
+    private val _mutexUpdateBDAppsState = MutableStateFlow(false)
+    val mutexUpdateBDAppsState: StateFlow<Boolean> = _mutexUpdateBDAppsState
+
     private val mutex_inicieDelecturaDeBD = Mutex()
 
     private val mutex_Global = Mutex() // Mutex compartido para sincronización
@@ -130,35 +133,42 @@ class SharedViewModel @Inject constructor(
 
 
     // 🔥 ✅ Función para actualizar la base de datos de aplicaciones ⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰ MUTEX
-    suspend fun updateBDApps() {
+    fun updateBDApps() {
 
-        if (!inicieDeLecturaDeBD) {
-            inicieDelecturaDeBD()
-        }
-
-        val locked = mutex_updateBDApps.tryLock() // Intenta obtener el bloqueo
-        if (!locked) {
-            Log.w("SharedViewModelMUTEX", "updateBDApps ya está en ejecución")
-            return
-        }
-        try {
-
-            mutex_Global.withLock { // ponemos en la cola de ejecución
-                Log.e("SharedViewModel", "333 updateBDApps")
-                val appsNuevas = getNuevasAppsEnSistema()
-                if (appsNuevas.isNotEmpty()) {
-                    addListaAppsAAppsBD(appsNuevas)
-                    addListaAppsABlockedBD(appsNuevas)
-                }
+        viewModelScope.launch(Dispatchers.IO) {
+            if (!inicieDeLecturaDeBD) {
+                inicieDelecturaDeBD()
             }
 
-        } catch (e: DeadObjectException) {
-            Log.e("SharedViewModel", "DeadObjectException: ${e.message}")
-        } catch (e: Exception) {
-            Log.e("SharedViewModel", "Error en updateBDApps: ${e.message}")
-        } finally {
-            if (locked) { // Solo desbloquea si realmente ha adquirido el bloqueo
-                mutex_updateBDApps.unlock()
+            val locked = mutex_updateBDApps.tryLock() // Intenta obtener el bloqueo
+            if (!locked) {
+                // Ya estaba bloqueado; actualizamos el stateFlow
+                _mutexUpdateBDAppsState.value = mutex_updateBDApps.isLocked
+                Log.w("SharedViewModelMUTEX", "updateBDApps ya está en ejecución")
+                return@launch
+            }
+            // Actualizamos el stateFlow al adquirir el lock
+            _mutexUpdateBDAppsState.value = true
+            try {
+                mutex_Global.withLock { // ponemos en la cola de ejecución
+                    Log.e("SharedViewModel", "333 updateBDApps")
+                    val appsNuevas = getNuevasAppsEnSistema()
+                    if (appsNuevas.isNotEmpty()) {
+                        addListaAppsAAppsBD(appsNuevas)
+                        addListaAppsABlockedBD(appsNuevas)
+                    }
+                }
+
+            } catch (e: DeadObjectException) {
+                Log.e("SharedViewModel", "DeadObjectException: ${e.message}")
+            } catch (e: Exception) {
+                Log.e("SharedViewModel", "Error en updateBDApps: ${e.message}")
+            } finally {
+                if (locked) { // Solo desbloquea si realmente ha adquirido el bloqueo
+                    // Liberamos el lock y actualizamos el stateFlow
+                    mutex_updateBDApps.unlock()
+                    _mutexUpdateBDAppsState.value = false
+                }
             }
         }
     }

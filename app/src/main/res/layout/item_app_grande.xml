@@ -58,8 +58,9 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                android:scaleX="1.8"
-                android:scaleY="1.8"/>
+                android:scaleX="1.5"
+                android:scaleY="1.5"
+                app:buttonTint="@color/checkbox_selector"/>
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>

@@ -19,4 +19,9 @@
         android:id="@+id/addAppsFragment"
         android:name="com.ursolgleb.controlparental.UI.fragments.AddAppsFragment"
         android:label="Add Apps" />
+
+    <!-- Acción global para navegar a addAppsFragment -->
+    <action
+        android:id="@+id/action_global_addAppsFragment"
+        app:destination="@id/addAppsFragment" />
 </navigation>

@@ -40,7 +40,6 @@ import com.ursolgleb.controlparental.utils.FileWatcher
 import com.ursolgleb.controlparental.utils.Launcher
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.receiver.UpdateAppsBloquedasReceiver
-import com.ursolgleb.controlparental.allowedApps
 import com.ursolgleb.controlparental.databinding.ActivityDesarolloBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -239,10 +238,6 @@ class DesarolloActivity : AppCompatActivity() {
             Log.e("AppBlockerService", msg)
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
             Archivo.appendTextToFile(this, fileName, "\n $msg")
-        }
-
-        bindDesarollo.showAllowedAppsBoton.setOnClickListener {
-            allowedApps.showApps(this)
         }
 
         bindDesarollo.clearFileBoton.setOnClickListener {

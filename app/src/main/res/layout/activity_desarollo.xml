@@ -107,13 +107,6 @@
             android:text="get Secure Settings"
             android:textSize="20sp"/>
 
-        <Button
-            android:id="@+id/showAllowedAppsBoton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="show Allowed Apps"
-            android:textSize="20sp"/>
-
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/clearFileBoton"
             android:layout_width="match_parent"

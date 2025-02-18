@@ -49,8 +49,8 @@ class AddAppsFragment : Fragment(R.layout.fragment_add_apps) {
     }
 
     private fun initListeners() {
+
         binding.btnBack.setOnClickListener {
-            // Usando Navigation Component para regresar:
             findNavController().popBackStack()
         }
 
@@ -60,7 +60,6 @@ class AddAppsFragment : Fragment(R.layout.fragment_add_apps) {
                 lifecycleScope.launch {
                     sharedViewModel.addListaStringAppsABlockedBD(selectedApps.toList())
                 }
-                // Regresar al fragmento anterior
                 findNavController().popBackStack()
             } else {
                 Toast.makeText(requireContext(), "No has seleccionado ninguna app", Toast.LENGTH_SHORT).show()
@@ -74,7 +73,6 @@ class AddAppsFragment : Fragment(R.layout.fragment_add_apps) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 sharedViewModel.todosAppsMenosBlaqueados.collect { newList ->
-                    // Aquí binding ya está seguro, porque la colección se detiene cuando la vista se destruye
                     Log.w("BlockedAppsFragment", "Lista de apps actualizada: $newList")
                     appAdapter.updateListAppEnAdaptador(newList)
                 }
