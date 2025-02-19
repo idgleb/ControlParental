@@ -9,15 +9,11 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.databinding.FragmentMainAdminBinding
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
@@ -51,7 +47,7 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
         initHeightDeSvInfo()
 
         childFragmentManager.beginTransaction()
-            .replace(R.id.fragment_apps_bloqueadas, BlockedAppsFragment())
+            .replace(R.id.fragment_apps_bloqueadas, BlockedAppsCardFragment())
             .commit()
     }
 

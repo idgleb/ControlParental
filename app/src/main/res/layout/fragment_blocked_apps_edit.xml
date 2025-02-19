@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_add_apps"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -33,7 +34,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="Marca las Apps que quieres bloquear"
+            android:text="Preciona la App para moverla a otra lista"
             android:textColor="@color/white"
             android:textSize="15sp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -41,6 +42,36 @@
             app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:id="@+id/llTituloAppsBloqueadas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:background="@color/white"
+        android:elevation="6dp"
+        app:layout_constraintTop_toBottomOf="@id/barra_arriba">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:text="🔒 Apps Bloqueadas"
+            android:textSize="18sp"
+            android:textStyle="normal" />
+
+        <TextView
+            android:id="@+id/tvCantidadAppsBloqueadas"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_background"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="3dp"
+            android:textSize="10sp"
+            tools:text="30" />
+    </LinearLayout>
+
 
 
     <ScrollView
@@ -50,7 +81,7 @@
         android:background="@color/fondo_scroll"
         android:scrollbars="none"
         app:layout_constraintBottom_toTopOf="@id/barra_baja"
-        app:layout_constraintTop_toBottomOf="@id/barra_arriba">
+        app:layout_constraintTop_toBottomOf="@id/llTituloAppsBloqueadas">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -63,10 +94,25 @@
                 android:paddingHorizontal="11dp"
                 app:layout_constraintTop_toTopOf="parent">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvApps"
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="match_parent">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvBlockedAppsEdit"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+
+
+                    <ProgressBar
+                        android:id="@+id/progressBarUpdateBD"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_gravity="center"
+                        android:elevation="8dp"
+                        android:visibility="gone" />
+                </FrameLayout>
 
             </LinearLayout>
 
@@ -74,13 +120,24 @@
 
     </ScrollView>
 
+    <TextView
+        android:id="@+id/tvEmptyMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="No hay aplicaciones bloqueadas"
+        android:textColor="@color/gris"
+        android:textSize="18sp"
+        android:visibility="visible"
+        app:layout_constraintTop_toBottomOf="@id/llTituloAppsBloqueadas"
+        app:layout_constraintBottom_toTopOf="@id/barra_baja"/>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/barra_baja"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/white"
-        android:elevation="5dp"
+        android:elevation="6dp"
         android:padding="11dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
@@ -95,7 +152,7 @@
             android:drawableTint="@color/white"
             android:minWidth="0dp"
             android:minHeight="0dp"
-            android:text="Agregar Apps"
+            android:text="Agregar apps a lista de Apps Bloqueadas"
             android:textAllCaps="false"
             android:textColor="@color/text_boton"
             android:textSize="15sp"

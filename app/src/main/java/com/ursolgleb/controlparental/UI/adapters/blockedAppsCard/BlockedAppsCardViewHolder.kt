@@ -1,11 +1,11 @@
-package com.ursolgleb.controlparental.UI.adapters.blockedApps
+package com.ursolgleb.controlparental.UI.adapters.blockedAppsCard
 
 import android.graphics.drawable.Drawable
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.ursolgleb.controlparental.databinding.ItemBlockedAppBinding
 
-class BlockedAppsViewHolder(private val binding: ItemBlockedAppBinding) :
+class BlockedAppsCardViewHolder(private val binding: ItemBlockedAppBinding) :
     RecyclerView.ViewHolder(binding.root) {
 
     fun bind(appName: String?, icon: Drawable?) {

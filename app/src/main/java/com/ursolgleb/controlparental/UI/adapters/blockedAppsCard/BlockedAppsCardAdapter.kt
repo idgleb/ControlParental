@@ -1,37 +1,34 @@
-package com.ursolgleb.controlparental.UI.adapters.blockedApps
+package com.ursolgleb.controlparental.UI.adapters.blockedAppsCard
 
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.ursolgleb.controlparental.ControlParentalApp
 import com.ursolgleb.controlparental.data.local.AppDatabase
-import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
 import com.ursolgleb.controlparental.databinding.ItemBlockedAppBinding
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-class BlockedAppsAdapter@Inject constructor(
+class BlockedAppsCardAdapter@Inject constructor(
     val blockedApps: MutableList <BlockedEntity>,
     private val context: Context,
     appDatabase: AppDatabase
-) : RecyclerView.Adapter<BlockedAppsViewHolder>() {
+) : RecyclerView.Adapter<BlockedAppsCardViewHolder>() {
 
     val appDao = appDatabase.appDao()
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BlockedAppsViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BlockedAppsCardViewHolder {
         val binding =
             ItemBlockedAppBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return BlockedAppsViewHolder(binding)
+        return BlockedAppsCardViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: BlockedAppsViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: BlockedAppsCardViewHolder, position: Int) {
         val blockedApp = blockedApps[position]
 
         CoroutineScope(Dispatchers.IO).launch {

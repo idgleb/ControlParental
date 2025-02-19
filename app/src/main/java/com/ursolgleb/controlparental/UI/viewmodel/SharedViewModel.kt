@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -52,8 +51,11 @@ class SharedViewModel @Inject constructor(
     private val _todosApps = MutableStateFlow<List <AppEntity>>(emptyList())
     val todosApps: StateFlow<List <AppEntity>> = _todosApps
 
-    private val _blockedApps = MutableStateFlow<List <BlockedEntity>>(emptyList())
-    val blockedApps: StateFlow<List <BlockedEntity>> = _blockedApps
+    private val _blockedPkg = MutableStateFlow<List <BlockedEntity>>(emptyList())
+    val blockedPkg: StateFlow<List <BlockedEntity>> = _blockedPkg
+
+    private val _blockedApps = MutableStateFlow<List <AppEntity>>(emptyList())
+    val blockedApps: StateFlow<List <AppEntity>> = _blockedApps
 
     private val _todosAppsMenosBlaqueados = MutableStateFlow<List <AppEntity>>(emptyList())
     val todosAppsMenosBlaqueados: StateFlow<List <AppEntity>> = _todosAppsMenosBlaqueados
@@ -67,7 +69,7 @@ class SharedViewModel @Inject constructor(
 
         // 🔥 Cargar datos en tiempo real cuando se cree el ViewModel
         loadAppsFromDatabaseASharedViewModel()
-        Log.w("SharedViewModel", "init SharedViewModel $_blockedApps")
+        Log.w("SharedViewModel", "init SharedViewModel $_blockedPkg")
     }
 
     private fun inicieDelecturaDeBD() {
@@ -86,10 +88,14 @@ class SharedViewModel @Inject constructor(
 
                     _todosApps.value = appDao.getAllApps().first()
                     
-                    _blockedApps.value = blockedDao.getAllBlockedApps().first()
+                    _blockedPkg.value = blockedDao.getAllBlockedApps().first()
+
+                    _blockedApps.value = _todosApps.value.filter { app ->
+                        _blockedPkg.value.any { it.packageName == app.packageName }
+                    }
 
                     _todosAppsMenosBlaqueados.value = _todosApps.value.filter { app ->
-                        _blockedApps.value.none { it.packageName == app.packageName }
+                        _blockedPkg.value.none { it.packageName == app.packageName }
                     }.sortedByDescending { it.tiempoUsoSeconds }
 
                     Log.e("SharedViewModel", "APPS DE BD 111: ${_todosApps.value}")
@@ -115,17 +121,21 @@ class SharedViewModel @Inject constructor(
             combine(
                 appDao.getAllApps(),
                 blockedDao.getAllBlockedApps()
-            ) { apps, blockedApps ->
+            ) { apps, blockedPkg ->
                 // Aquí puedes combinar o transformar los valores como desees
 
                 _todosAppsMenosBlaqueados.value = apps.filter { app ->
-                    blockedApps.none { it.packageName == app.packageName }
+                    blockedPkg.none { it.packageName == app.packageName }
                 }.sortedByDescending { it.tiempoUsoSeconds }
 
-                Pair(apps, blockedApps)
-            }.collect { (apps, blockedApps) ->
+                Pair(apps, blockedPkg)
+            }.collect { (apps, blockedPkg) ->
                 _todosApps.value = apps
-                _blockedApps.value = blockedApps
+                _blockedPkg.value = blockedPkg
+
+                _blockedApps.value = _todosApps.value.filter { app ->
+                    _blockedPkg.value.any { it.packageName == app.packageName }
+                }
             }
         }
 
@@ -351,7 +361,7 @@ class SharedViewModel @Inject constructor(
 
     fun sort_blockedAppsByUsage(days: Int) {
         viewModelScope.launch {
-            val allApps = _blockedApps.value
+            val allApps = _blockedPkg.value
             val sortedList = allApps
                 .map { app ->
                     app to getTiempoDeUsoSeconds(app.packageName, days) // Calculamos solo una vez
@@ -360,7 +370,7 @@ class SharedViewModel @Inject constructor(
                 .sortedByDescending { (_, horasDeUso) -> horasDeUso } // Ordenamos por horas de uso
                 .map { (app, _) -> app } // Extraemos solo la lista de apps ordenada
 
-            _blockedApps.value = sortedList // Actualiza el flujo con la lista ordenada
+            _blockedPkg.value = sortedList // Actualiza el flujo con la lista ordenada
             Log.w("filteredList", "filterAndSortAppsByUsage: $sortedList")
         }
     }

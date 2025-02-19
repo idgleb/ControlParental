@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental.UI.adapters.apps
+package com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear
 
 import android.content.Context
 import android.util.Log
@@ -7,27 +7,28 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
+import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
 import com.ursolgleb.controlparental.databinding.ItemAppGrandeBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class AppsAdapter(
+class blockedAppsEditAdapter(
     val apps: MutableList<AppEntity>,
     private val context: Context,
     private val sharedViewModel: SharedViewModel
-) : RecyclerView.Adapter<AppsViewHolder>() {
+) : RecyclerView.Adapter<blockedAppsEditViewHolder>() {
 
     private val selectedApps = mutableSetOf<String>() // 🔥 Almacena los paquetes de apps seleccionadas
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppsViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): blockedAppsEditViewHolder {
         val binding =
-            ItemAppGrandeBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return AppsViewHolder(binding)
+            ItemAppEditBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return blockedAppsEditViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: AppsViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: blockedAppsEditViewHolder, position: Int) {
         val app = apps[position]
 
         CoroutineScope(Dispatchers.IO).launch {
@@ -66,7 +67,7 @@ class AppsAdapter(
     }
 
     // 🔥 ✅ Función para actualizar toda la lista
-    fun updateListAppEnAdaptador(newList: List<AppEntity>) {
+    fun updateListEnAdaptador(newList: List<AppEntity>) {
         Log.w("AppsAdapter", "updateListAppEnAdaptador")
         apps.clear()
         apps.addAll(newList)

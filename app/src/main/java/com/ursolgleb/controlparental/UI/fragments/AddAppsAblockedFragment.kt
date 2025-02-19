@@ -2,13 +2,10 @@ package com.ursolgleb.controlparental.UI.fragments
 
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -16,19 +13,19 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.UI.adapters.apps.AppsAdapter
+import com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear.MarcarAppsParaBloquearAdapter
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
-import com.ursolgleb.controlparental.databinding.FragmentAddAppsBinding
+import com.ursolgleb.controlparental.databinding.FragmentAddAppsABlockedBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class AddAppsFragment : Fragment(R.layout.fragment_add_apps) {
+class AddAppsAblockedFragment : Fragment(R.layout.fragment_add_apps_a_blocked) {
 
-    private var _binding: FragmentAddAppsBinding? = null
+    private var _binding: FragmentAddAppsABlockedBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var appAdapter: AppsAdapter
+    private lateinit var marcarAppsParaBloquearAdapter: MarcarAppsParaBloquearAdapter
     private val sharedViewModel: SharedViewModel by activityViewModels()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -40,12 +37,12 @@ class AddAppsFragment : Fragment(R.layout.fragment_add_apps) {
     }
 
     private fun initUI(view: View) {
-        _binding = FragmentAddAppsBinding.bind(view)
+        _binding = FragmentAddAppsABlockedBinding.bind(view)
 
-        appAdapter = AppsAdapter(mutableListOf(), requireContext(), sharedViewModel)
-        binding.rvApps.adapter = appAdapter
-        binding.rvApps.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvApps.setRecycledViewPool(RecyclerView.RecycledViewPool())
+        marcarAppsParaBloquearAdapter = MarcarAppsParaBloquearAdapter(mutableListOf(), requireContext(), sharedViewModel)
+        binding.rvMarcarAppsParaBloquear.adapter = marcarAppsParaBloquearAdapter
+        binding.rvMarcarAppsParaBloquear.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvMarcarAppsParaBloquear.setRecycledViewPool(RecyclerView.RecycledViewPool())
     }
 
     private fun initListeners() {
@@ -55,7 +52,7 @@ class AddAppsFragment : Fragment(R.layout.fragment_add_apps) {
         }
 
         binding.aggregarAppsABlockedBoton.setOnClickListener {
-            val selectedApps = appAdapter.getSelectedApps() // Obtener apps seleccionadas
+            val selectedApps = marcarAppsParaBloquearAdapter.getSelectedApps() // Obtener apps seleccionadas
             if (selectedApps.isNotEmpty()) {
                 lifecycleScope.launch {
                     sharedViewModel.addListaStringAppsABlockedBD(selectedApps.toList())
@@ -69,12 +66,12 @@ class AddAppsFragment : Fragment(R.layout.fragment_add_apps) {
 
     private fun initObservers() {
 
-        // 🔥 Observar cambios en la lista de apps bloqueadas
+        // 🔥 Observar cambios en la lista de todosAppsMenosBlaqueados
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 sharedViewModel.todosAppsMenosBlaqueados.collect { newList ->
                     Log.w("BlockedAppsFragment", "Lista de apps actualizada: $newList")
-                    appAdapter.updateListAppEnAdaptador(newList)
+                    marcarAppsParaBloquearAdapter.updateListEnAdaptador(newList)
                 }
             }
         }

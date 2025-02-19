@@ -1,12 +1,11 @@
-package com.ursolgleb.controlparental.UI.adapters.apps
+package com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear
 
 import android.graphics.drawable.Drawable
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.ursolgleb.controlparental.databinding.ItemAppGrandeBinding
-import com.ursolgleb.controlparental.databinding.ItemBlockedAppBinding
 
-class AppsViewHolder(private val binding: ItemAppGrandeBinding) :
+class MarcarAppsParaBloquearViewHolder(private val binding: ItemAppGrandeBinding) :
     RecyclerView.ViewHolder(binding.root) {
 
     fun bind(appName: String?, icon: Drawable?, formattedTimeDeUso: String, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {

@@ -1,32 +1,24 @@
 package com.ursolgleb.controlparental.UI.fragments
 
-import android.content.Context
-import android.provider.Settings
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.os.PowerManager
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.UI.adapters.blockedApps.BlockedAppsAdapter
+import com.ursolgleb.controlparental.UI.adapters.blockedAppsCard.BlockedAppsCardAdapter
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.fragment.findNavController
+import androidx.navigation.Navigation
 import androidx.recyclerview.widget.RecyclerView
-import com.ursolgleb.controlparental.ControlParentalApp
 import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.dao.AppDao
 import com.ursolgleb.controlparental.data.local.dao.BlockedDao
-import com.ursolgleb.controlparental.databinding.FragmentBlockedAppsBinding
+import com.ursolgleb.controlparental.databinding.FragmentBlockedAppsCardBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,17 +26,17 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
+class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
 
     @Inject
     lateinit var appDatabase: AppDatabase
     lateinit var appDao: AppDao
     lateinit var blockedDao: BlockedDao
 
-    private var _binding: FragmentBlockedAppsBinding? = null
+    private var _binding: FragmentBlockedAppsCardBinding? = null
     private val binding get() = _binding!!
 
-    private var blockedAppAdapter: BlockedAppsAdapter? = null
+    private var blockedAppCardAdapter: BlockedAppsCardAdapter? = null
     private val sharedViewModel: SharedViewModel by activityViewModels()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -72,9 +64,22 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
         }
 
         binding.aggregarAppsABlockedBoton.setOnClickListener {
-            val navController = androidx.navigation.Navigation.findNavController(requireActivity(), R.id.nav_host_fragment)
-            navController.navigate(R.id.action_global_addAppsFragment)
+            val navController = Navigation.findNavController(
+                requireActivity(),
+                R.id.nav_host_fragment
+            )
+            navController.navigate(R.id.action_global_addAppsAblockedFragment)
         }
+
+        binding.cvAppsBlocked.setOnClickListener {
+            navegarABlockedAppsEdit()
+        }
+        binding.tvEmptyMessage.setOnClickListener {
+            navegarABlockedAppsEdit()
+        }
+
+
+
 
         binding.delitAllAppBoton.setOnClickListener {
             lifecycleScope.launch(Dispatchers.IO) {
@@ -86,29 +91,40 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
         }
 
         binding.llenarAllAppBoton.setOnClickListener {
-           sharedViewModel.updateBDApps()
+            sharedViewModel.updateBDApps()
         }
 
         binding.testBoton.setOnClickListener {
-            Log.e("BlockedAppsFragment", "testBoton ${sharedViewModel.mutexUpdateBDAppsState.value}")
+            Log.e(
+                "BlockedAppsFragment",
+                "testBoton ${sharedViewModel.mutexUpdateBDAppsState.value}"
+            )
         }
 
+    }
+
+    private fun navegarABlockedAppsEdit() {
+        val navController = Navigation.findNavController(
+            requireActivity(),
+            R.id.nav_host_fragment
+        )
+        navController.navigate(R.id.action_global_blockedAppsEditFragment)
     }
 
     private fun initObservers() {
         // 🔥 Observar cambios en la lista de apps bloqueadas
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                sharedViewModel.blockedApps.collect { newList ->
+                sharedViewModel.blockedPkg.collect { newList ->
                     Log.w("BlockedAppsFragment", "Lista de apps bloqueadas actualizada: $newList")
                     binding.tvCantidadAppsBloqueadas.text = newList.size.toString()
-                    blockedAppAdapter?.updateListEnAdaptador(newList.take(3))
+                    blockedAppCardAdapter?.updateListEnAdaptador(newList.take(3))
                     // 🔥 Si la lista está vacía, mostrar "Empty"
                     if (newList.isEmpty()) {
-                        binding.tvEmptyMessage.visibility = View.VISIBLE
+                        binding.tvEmptyMessage.text = "No hay aplicaciones bloqueadas"
                         binding.rvAppsBloqueadas.visibility = View.GONE
                     } else {
-                        binding.tvEmptyMessage.visibility = View.GONE
+                        binding.tvEmptyMessage.text = ""
                         binding.rvAppsBloqueadas.visibility = View.VISIBLE
                     }
                 }
@@ -136,11 +152,12 @@ class BlockedAppsFragment : Fragment(R.layout.fragment_blocked_apps) {
     }
 
     private fun initUI(view: View) {
-        _binding = FragmentBlockedAppsBinding.bind(view)
+        _binding = FragmentBlockedAppsCardBinding.bind(view)
 
-        blockedAppAdapter = BlockedAppsAdapter(mutableListOf(), requireContext(), appDatabase)
+        blockedAppCardAdapter =
+            BlockedAppsCardAdapter(mutableListOf(), requireContext(), appDatabase)
         binding.rvAppsBloqueadas.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvAppsBloqueadas.adapter = blockedAppAdapter
+        binding.rvAppsBloqueadas.adapter = blockedAppCardAdapter
         binding.rvAppsBloqueadas.setRecycledViewPool(RecyclerView.RecycledViewPool()) // ✅ Optimización
     }
 

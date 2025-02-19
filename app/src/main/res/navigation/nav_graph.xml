@@ -11,17 +11,25 @@
         android:label="Main Admin">
         <action
             android:id="@+id/action_mainAdminFragment_to_addAppsFragment"
-            app:destination="@id/addAppsFragment" />
+            app:destination="@id/addAppsAblockedFragment" />
     </fragment>
 
     <!-- Fragmento de AddApps -->
     <fragment
-        android:id="@+id/addAppsFragment"
-        android:name="com.ursolgleb.controlparental.UI.fragments.AddAppsFragment"
+        android:id="@+id/addAppsAblockedFragment"
+        android:name="com.ursolgleb.controlparental.UI.fragments.AddAppsAblockedFragment"
         android:label="Add Apps" />
+    <fragment
+        android:id="@+id/blockedAppsEditFragment"
+        android:name="com.ursolgleb.controlparental.UI.fragments.BlockedAppsEditFragment"
+        android:label="Blocked Apps" />
 
     <!-- Acción global para navegar a addAppsFragment -->
     <action
-        android:id="@+id/action_global_addAppsFragment"
-        app:destination="@id/addAppsFragment" />
+        android:id="@+id/action_global_addAppsAblockedFragment"
+        app:destination="@id/addAppsAblockedFragment" />
+    <action
+        android:id="@+id/action_global_blockedAppsEditFragment"
+        app:destination="@id/blockedAppsEditFragment" />
+
 </navigation>
