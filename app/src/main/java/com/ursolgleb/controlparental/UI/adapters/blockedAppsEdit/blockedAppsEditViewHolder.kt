@@ -14,7 +14,7 @@ class blockedAppsEditViewHolder(private val binding: ItemAppEditBinding) :
         Glide.with(binding.ivIconoApp.context)
             .load(icon) // Glide acepta `Drawable` y `Bitmap`
             .into(binding.ivIconoApp)
-        binding.tvHorasDeUso.text = "Tiempo de uso: $formattedTimeDeUso"
+        binding.tvHorasDeUso.text = "Uso hoy: $formattedTimeDeUso"
 
         binding.itemAppEdit.setOnClickListener {
             //

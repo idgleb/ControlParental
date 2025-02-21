@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.databinding.ItemAppGrandeBinding
+import com.ursolgleb.controlparental.utils.Fun
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -19,7 +20,7 @@ class MarcarAppsParaBloquearAdapter(
     private val sharedViewModel: SharedViewModel
 ) : RecyclerView.Adapter<MarcarAppsParaBloquearViewHolder>() {
 
-    private val selectedApps = mutableSetOf<String>() // 🔥 Almacena los paquetes de apps seleccionadas
+    private val selectedApps = mutableSetOf<AppEntity>() // 🔥 Almacena los paquetes de apps seleccionadas
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MarcarAppsParaBloquearViewHolder {
         val binding =
@@ -33,21 +34,14 @@ class MarcarAppsParaBloquearAdapter(
         CoroutineScope(Dispatchers.IO).launch {
             val icon = sharedViewModel.getAppIcon(app.packageName, context)
 
-            //var horasDeUso = sharedViewModel.getHorasDeUso(app.first.packageName, 1)
-            val secondsDeUso = app.tiempoUsoSeconds
-
-            val seconds = secondsDeUso % 60
-            val minutes = (secondsDeUso / 60) % 60
-            val hours = secondsDeUso / 3600
-            val formattedTime = "${hours}h ${minutes}min ${seconds}seg"
-
+            val formattedTimeDeUso = Fun.formatearTiempoDeUso(app.tiempoUsoSegundosHoy)
 
             withContext(Dispatchers.Main) {
-                holder.bind(app.appName, icon, formattedTime, selectedApps.contains(app.packageName)) { isChecked ->
+                holder.bind(app.appName, icon, formattedTimeDeUso, selectedApps.contains(app)) { isChecked ->
                     if (isChecked) {
-                        selectedApps.add(app.packageName) // ✅ Agrega a las apps seleccionadas
+                        selectedApps.add(app) // ✅ Agrega a las apps seleccionadas
                     } else {
-                        selectedApps.remove(app.packageName) // ✅ Elimina si se desmarca
+                        selectedApps.remove(app) // ✅ Elimina si se desmarca
                     }
                 }
             }
@@ -56,7 +50,7 @@ class MarcarAppsParaBloquearAdapter(
 
     override fun getItemCount(): Int = apps.size
 
-    fun getSelectedApps(): Set<String> = selectedApps // 🔥 Método para obtener apps seleccionadas
+    fun getSelectedApps(): Set<AppEntity> = selectedApps // 🔥 Método para obtener apps seleccionadas
 
     // 🔥 ✅ Función para agregar una nueva app a la lista y actualizar la UI
     fun addAppEadaptador(newApp: AppEntity) {

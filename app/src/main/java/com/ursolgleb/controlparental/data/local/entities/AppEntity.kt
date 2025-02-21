@@ -6,10 +6,15 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "apps")
 data class AppEntity(
     @PrimaryKey val packageName: String,
-    val appName: String,
-    val appIcon: String,
-    val appCategory: String,
-    val contentRating: String,
-    val appIsSystemApp: Boolean,
-    val tiempoUsoSeconds: Long
+    var appName: String,
+    var appIcon: String,
+    var appCategory: String,
+    var contentRating: String,
+    var appIsSystemApp: Boolean,
+    var tiempoUsoSegundosHoy: Long,
+    var tiempoUsoSegundosSemana: Long,
+    var tiempoUsoSegundosMes: Long,
+    var blocked: Boolean,
+    var usoLimitPorDiaMinutos: Int,
+    var entretenimiento: Boolean
 )

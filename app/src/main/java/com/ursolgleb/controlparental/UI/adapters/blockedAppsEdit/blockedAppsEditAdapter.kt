@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
-import com.ursolgleb.controlparental.databinding.ItemAppGrandeBinding
+import com.ursolgleb.controlparental.utils.Fun
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,17 +34,10 @@ class blockedAppsEditAdapter(
         CoroutineScope(Dispatchers.IO).launch {
             val icon = sharedViewModel.getAppIcon(app.packageName, context)
 
-            //var horasDeUso = sharedViewModel.getHorasDeUso(app.first.packageName, 1)
-            val secondsDeUso = app.tiempoUsoSeconds
-
-            val seconds = secondsDeUso % 60
-            val minutes = (secondsDeUso / 60) % 60
-            val hours = secondsDeUso / 3600
-            val formattedTime = "${hours}h ${minutes}min ${seconds}seg"
-
+            val formattedTimeDeUso = Fun.formatearTiempoDeUso(app.tiempoUsoSegundosHoy)
 
             withContext(Dispatchers.Main) {
-                holder.bind(app.appName, icon, formattedTime, selectedApps.contains(app.packageName)) { isChecked ->
+                holder.bind(app.appName, icon, formattedTimeDeUso, selectedApps.contains(app.packageName)) { isChecked ->
                     if (isChecked) {
                         selectedApps.add(app.packageName) // ✅ Agrega a las apps seleccionadas
                     } else {
@@ -54,6 +47,8 @@ class blockedAppsEditAdapter(
             }
         }
     }
+
+
 
     override fun getItemCount(): Int = apps.size
 

@@ -55,7 +55,7 @@ class AddAppsAblockedFragment : Fragment(R.layout.fragment_add_apps_a_blocked) {
             val selectedApps = marcarAppsParaBloquearAdapter.getSelectedApps() // Obtener apps seleccionadas
             if (selectedApps.isNotEmpty()) {
                 lifecycleScope.launch {
-                    sharedViewModel.addListaStringAppsABlockedBD(selectedApps.toList())
+                    sharedViewModel.addAppsABlockedBD(selectedApps.toList())
                 }
                 findNavController().popBackStack()
             } else {

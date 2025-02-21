@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.data.local.AppDatabase
+import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
 import com.ursolgleb.controlparental.databinding.ItemBlockedAppBinding
 import kotlinx.coroutines.CoroutineScope
@@ -15,7 +16,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class BlockedAppsCardAdapter@Inject constructor(
-    val blockedApps: MutableList <BlockedEntity>,
+    val blockedApps: MutableList <AppEntity>,
     private val context: Context,
     appDatabase: AppDatabase
 ) : RecyclerView.Adapter<BlockedAppsCardViewHolder>() {
@@ -32,11 +33,11 @@ class BlockedAppsCardAdapter@Inject constructor(
         val blockedApp = blockedApps[position]
 
         CoroutineScope(Dispatchers.IO).launch {
-            val appInfo = appDao.getApp(blockedApp.packageName)
+
             val icon = getAppIcon(blockedApp.packageName, context)
 
             withContext(Dispatchers.Main) {
-                holder.bind(appInfo?.appName, icon)
+                holder.bind(blockedApp.appName, icon)
             }
         }
     }
@@ -55,14 +56,14 @@ class BlockedAppsCardAdapter@Inject constructor(
     }
 
     // 🔥 ✅ Función para agregar una nueva app bloqueada a la lista y actualizar la UI
-    fun addBlockedAppEadaptador(newBlockedApp: BlockedEntity) {
+    fun addBlockedAppEadaptador(newBlockedApp: AppEntity) {
         blockedApps.add(newBlockedApp)  // Agregar a la lista
         notifyItemInserted(blockedApps.size - 1)  // Notificar el cambio a RecyclerView
 
     }
 
     // 🔥 ✅ Función para actualizar toda la lista
-    fun updateListEnAdaptador(newList: List<BlockedEntity>) {
+    fun updateListEnAdaptador(newList: List<AppEntity>) {
         blockedApps.clear()
         blockedApps.addAll(newList)
         notifyDataSetChanged()

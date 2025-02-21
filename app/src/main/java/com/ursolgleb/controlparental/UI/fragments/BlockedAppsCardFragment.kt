@@ -56,7 +56,7 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
 
         binding.delitBlackedAppBoton.setOnClickListener {
             lifecycleScope.launch(Dispatchers.IO) {
-                blockedDao.deleteAllBlockedApps()
+                appDao.unblockAllApps()
                 withContext(Dispatchers.Main) {
                     Log.w("BlockedAppsFragment", "Apps delited")
                 }
@@ -115,7 +115,7 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
         // 🔥 Observar cambios en la lista de apps bloqueadas
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                sharedViewModel.blockedPkg.collect { newList ->
+                sharedViewModel.blockedApps.collect { newList ->
                     Log.w("BlockedAppsFragment", "Lista de apps bloqueadas actualizada: $newList")
                     binding.tvCantidadAppsBloqueadas.text = newList.size.toString()
                     blockedAppCardAdapter?.updateListEnAdaptador(newList.take(3))

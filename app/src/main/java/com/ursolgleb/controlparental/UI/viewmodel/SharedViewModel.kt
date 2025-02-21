@@ -15,11 +15,11 @@ import androidx.lifecycle.viewModelScope
 import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
+import com.ursolgleb.controlparental.utils.Fun
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -29,6 +29,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Calendar
 import javax.inject.Inject
 
 @HiltViewModel
@@ -38,7 +39,6 @@ class SharedViewModel @Inject constructor(
 ) : AndroidViewModel(application) {
 
     private val appDao = appDatabase.appDao()
-    private val blockedDao = appDatabase.blockedDao()
 
     private val mutex_updateBDApps = Mutex()
     private val _mutexUpdateBDAppsState = MutableStateFlow(false)
@@ -48,17 +48,14 @@ class SharedViewModel @Inject constructor(
 
     private val mutex_Global = Mutex() // Mutex compartido para sincronización
 
-    private val _todosApps = MutableStateFlow<List <AppEntity>>(emptyList())
-    val todosApps: StateFlow<List <AppEntity>> = _todosApps
+    private val _todosApps = MutableStateFlow<List<AppEntity>>(emptyList())
+    val todosApps: StateFlow<List<AppEntity>> = _todosApps
 
-    private val _blockedPkg = MutableStateFlow<List <BlockedEntity>>(emptyList())
-    val blockedPkg: StateFlow<List <BlockedEntity>> = _blockedPkg
+    private val _blockedApps = MutableStateFlow<List<AppEntity>>(emptyList())
+    val blockedApps: StateFlow<List<AppEntity>> = _blockedApps
 
-    private val _blockedApps = MutableStateFlow<List <AppEntity>>(emptyList())
-    val blockedApps: StateFlow<List <AppEntity>> = _blockedApps
-
-    private val _todosAppsMenosBlaqueados = MutableStateFlow<List <AppEntity>>(emptyList())
-    val todosAppsMenosBlaqueados: StateFlow<List <AppEntity>> = _todosAppsMenosBlaqueados
+    private val _todosAppsMenosBlaqueados = MutableStateFlow<List<AppEntity>>(emptyList())
+    val todosAppsMenosBlaqueados: StateFlow<List<AppEntity>> = _todosAppsMenosBlaqueados
 
     var inicieDeLecturaDeBD = false
 
@@ -66,10 +63,8 @@ class SharedViewModel @Inject constructor(
         Log.w("SharedViewModel3", "init SharedViewModel $inicieDeLecturaDeBD")
         // 🔥 Carga inicial de datos de la base de datos
         inicieDelecturaDeBD()
-
         // 🔥 Cargar datos en tiempo real cuando se cree el ViewModel
         loadAppsFromDatabaseASharedViewModel()
-        Log.w("SharedViewModel", "init SharedViewModel $_blockedPkg")
     }
 
     private fun inicieDelecturaDeBD() {
@@ -87,16 +82,8 @@ class SharedViewModel @Inject constructor(
                     Log.e("SharedViewModel3", "inicieDelecturaDeBD(): $inicieDeLecturaDeBD")
 
                     _todosApps.value = appDao.getAllApps().first()
-                    
-                    _blockedPkg.value = blockedDao.getAllBlockedApps().first()
-
-                    _blockedApps.value = _todosApps.value.filter { app ->
-                        _blockedPkg.value.any { it.packageName == app.packageName }
-                    }
-
-                    _todosAppsMenosBlaqueados.value = _todosApps.value.filter { app ->
-                        _blockedPkg.value.none { it.packageName == app.packageName }
-                    }.sortedByDescending { it.tiempoUsoSeconds }
+                    _blockedApps.value = _todosApps.value.filter { it.blocked }
+                    _todosAppsMenosBlaqueados.value = _todosApps.value.filter { !it.blocked }
 
                     Log.e("SharedViewModel", "APPS DE BD 111: ${_todosApps.value}")
                 } // Se libera el mutex cuando termina
@@ -118,25 +105,12 @@ class SharedViewModel @Inject constructor(
     private fun loadAppsFromDatabaseASharedViewModel() {
 
         viewModelScope.launch(Dispatchers.IO) {
-            combine(
-                appDao.getAllApps(),
-                blockedDao.getAllBlockedApps()
-            ) { apps, blockedPkg ->
-                // Aquí puedes combinar o transformar los valores como desees
-
-                _todosAppsMenosBlaqueados.value = apps.filter { app ->
-                    blockedPkg.none { it.packageName == app.packageName }
-                }.sortedByDescending { it.tiempoUsoSeconds }
-
-                Pair(apps, blockedPkg)
-            }.collect { (apps, blockedPkg) ->
+            appDao.getAllApps().collect { apps ->
                 _todosApps.value = apps
-                _blockedPkg.value = blockedPkg
-
-                _blockedApps.value = _todosApps.value.filter { app ->
-                    _blockedPkg.value.any { it.packageName == app.packageName }
-                }
+                _blockedApps.value = apps.filter { it.blocked }
+                _todosAppsMenosBlaqueados.value = apps.filter { !it.blocked }
             }
+
         }
 
     }
@@ -164,8 +138,7 @@ class SharedViewModel @Inject constructor(
                     Log.e("SharedViewModel", "333 updateBDApps")
                     val appsNuevas = getNuevasAppsEnSistema()
                     if (appsNuevas.isNotEmpty()) {
-                        addListaAppsAAppsBD(appsNuevas)
-                        addListaAppsABlockedBD(appsNuevas)
+                        addListaAppsBD(appsNuevas)
                     }
                 }
 
@@ -185,11 +158,19 @@ class SharedViewModel @Inject constructor(
 
 
     // 🔥 ✅ Función para agregar apps a la base de datos ♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️
-    suspend fun addListaAppsAAppsBD(appsNuevas: List<ApplicationInfo>) {
+    suspend fun addListaAppsBD(appsNuevas: List<ApplicationInfo>) {
         if (appsNuevas.isEmpty()) return
         val pm = getApplication<Application>().packageManager
         appDao.insertListaApps(appsNuevas.map { app ->
             //👁️🧠var contentRating = getAppAgeRatingScraper(app.packageName)
+            val entretenimiento = when (app.category) {
+                ApplicationInfo.CATEGORY_GAME,
+                ApplicationInfo.CATEGORY_AUDIO,
+                ApplicationInfo.CATEGORY_VIDEO -> true
+
+                else -> false
+            }
+
             AppEntity( //formamos lista de entidades para BD
                 packageName = app.packageName,
                 appName = app.loadLabel(pm).toString(),
@@ -197,27 +178,25 @@ class SharedViewModel @Inject constructor(
                 appCategory = app.category.toString(),
                 contentRating = "?",
                 appIsSystemApp = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
-                tiempoUsoSeconds = getTiempoDeUsoSeconds(app.packageName, 1)
+                tiempoUsoSegundosHoy = getTiempoDeUsoSeconds(app.packageName, 0),
+                tiempoUsoSegundosSemana = getTiempoDeUsoSeconds(app.packageName, 7),
+                tiempoUsoSegundosMes = getTiempoDeUsoSeconds(app.packageName, 30),
+                blocked = true,
+                usoLimitPorDiaMinutos = 0,
+                entretenimiento = entretenimiento
             )
         })
         Log.d("MainAdminActivity", "Nueva Lista App insertada a AppsBD: $appsNuevas")
     }
 
-    // 🔥 ✅ Función para agregar apps bloqueadas a la base de datos ️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻
-    suspend fun addListaAppsABlockedBD(appsNuevas: List<ApplicationInfo>) {
+    // 🔥 ✅ Función para blaquear apps en la base de datos ️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️
+    suspend fun addAppsABlockedBD(appsNuevas: List<AppEntity>) {
         if (appsNuevas.isEmpty()) return
-        blockedDao.insertListaBlockedApps(appsNuevas.map { app ->
-            BlockedEntity(packageName = app.packageName) //formamos lista de entidades para BD
-        })
-        Log.d("MainAdminActivity", "Nueva Lista App insertada a BlockedBD: $appsNuevas")
-    }
-
-    suspend fun addListaStringAppsABlockedBD(appsNuevas: List<String>) {
-        if (appsNuevas.isEmpty()) return
-        blockedDao.insertListaBlockedApps(appsNuevas.map { app ->
-            BlockedEntity(packageName = app) //formamos lista de entidades para BD
-        })
-        Log.d("MainAdminActivity", "Nueva Lista App insertada a BlockedBD: $appsNuevas")
+        for (app in appsNuevas) {
+            app.blocked = true
+        }
+        appDao.insertListaApps(appsNuevas)
+        Log.d("MainAdminActivity", "Nueva Lista Apps bloqueada: $appsNuevas")
     }
 
 
@@ -241,7 +220,6 @@ class SharedViewModel @Inject constructor(
 
         return nuevosApps
     }
-
 
     fun getAllAppsWithUIdeSistema(): List<ApplicationInfo> {
         val pm = getApplication<Application>().packageManager
@@ -284,20 +262,34 @@ class SharedViewModel @Inject constructor(
     fun getUsageStats(dias: Int): List<UsageStats> {
         val usageStatsManager =
             getApplication<Application>().getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
-                ?: return emptyList() // Retorna una lista vacía si el servicio no está disponible
-        val endTime = System.currentTimeMillis()
-        val startTime = endTime - 1000 * 60 * 60 * 24 * dias // Últimas X días
+                ?: return emptyList() // Retorna lista vacía si el servicio no está disponible
+
+        val calendar = Calendar.getInstance().apply {
+            add(
+                Calendar.DAY_OF_YEAR,
+                -dias
+            ) // Restar la cantidad de días(0 es hoy, -1 Desde ayer a las 00:00:00  hasta ahora., etc)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        val startTime = calendar.timeInMillis // 00:00:00 del día correspondiente
+        val endTime = System.currentTimeMillis() // Ahora mismo
 
         val aggregatedStats: Map<String, UsageStats> =
             usageStatsManager.queryAndAggregateUsageStats(startTime, endTime)
+
         return aggregatedStats.values.toList()
     }
+
 
     suspend fun getAppAgeRatingScraper(packageName: String): String {
         //val url = "https://play.google.com/store/apps/details?id=$packageName&hl=en"
         val url = "https://play.google.com/store/apps/details?id=$packageName"
         return withContext(Dispatchers.IO) {
-            if (!isUrlExists(url)) {
+            if (!Fun.isUrlExists(url)) {
                 Log.w("MainAdminActivity", "La app no existe en Google Play")
                 return@withContext ""
             }
@@ -323,57 +315,8 @@ class SharedViewModel @Inject constructor(
         }
     }
 
-    fun isUrlExists(url: String): Boolean {
-        return try {
-            val connection = (URL(url).openConnection() as HttpURLConnection).apply {
-                requestMethod = "HEAD"
-                connectTimeout = 3000 // Reducimos timeout para mejorar rapidez
-                readTimeout = 3000
-                instanceFollowRedirects = true // Permite seguir redirecciones
-                setRequestProperty(
-                    "User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-                ) // User-Agent real
-            }
-            connection.responseCode in 200..399 // Acepta respuestas 2xx y redirecciones 3xx
-        } catch (e: Exception) {
-            false // Si hay error, asumimos que la URL no existe
-        }
-    }
 
 
-    ////////////////////
-    fun sort_todosAppsByUsage(days: Int) {
-        viewModelScope.launch {
-            val allApps = _todosApps.value
-            val sortedList = allApps
-                .map { app ->
-                    app to getTiempoDeUsoSeconds(app.packageName, days) // Calculamos solo una vez
-                }
-                //.filter { (_, horasDeUso) -> horasDeUso > 0 } // Filtramos solo los que tienen uso
-                .sortedByDescending { (_, horasDeUso) -> horasDeUso } // Ordenamos por horas de uso
-                .map { (app, _) -> app } // Extraemos solo la lista de apps ordenada
-
-            _todosApps.value = sortedList // Actualiza el flujo con la lista ordenada
-            Log.w("filteredList", "filterAndSortAppsByUsage: $sortedList")
-        }
-    }
-
-    fun sort_blockedAppsByUsage(days: Int) {
-        viewModelScope.launch {
-            val allApps = _blockedPkg.value
-            val sortedList = allApps
-                .map { app ->
-                    app to getTiempoDeUsoSeconds(app.packageName, days) // Calculamos solo una vez
-                }
-                //.filter { (_, horasDeUso) -> horasDeUso > 0 } // Filtramos solo los que tienen uso
-                .sortedByDescending { (_, horasDeUso) -> horasDeUso } // Ordenamos por horas de uso
-                .map { (app, _) -> app } // Extraemos solo la lista de apps ordenada
-
-            _blockedPkg.value = sortedList // Actualiza el flujo con la lista ordenada
-            Log.w("filteredList", "filterAndSortAppsByUsage: $sortedList")
-        }
-    }
 
 
 }

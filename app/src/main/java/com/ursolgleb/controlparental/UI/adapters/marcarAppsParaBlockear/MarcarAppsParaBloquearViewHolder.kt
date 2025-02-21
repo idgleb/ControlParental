@@ -13,7 +13,7 @@ class MarcarAppsParaBloquearViewHolder(private val binding: ItemAppGrandeBinding
         Glide.with(binding.ivIconoApp.context)
             .load(icon) // Glide acepta `Drawable` y `Bitmap`
             .into(binding.ivIconoApp)
-        binding.tvHorasDeUso.text = "Tiempo de uso: $formattedTimeDeUso"
+        binding.tvHorasDeUso.text = "Uso hoy: $formattedTimeDeUso"
 
         binding.cbApp.setOnCheckedChangeListener(null) // 🔥 Evitar problemas al reciclar el ViewHolder
         binding.cbApp.isChecked = isChecked // 🔥 Restaurar estado del CheckBox
