@@ -19,7 +19,7 @@ abstract class LogAppBlockerDatabase : RoomDatabase() {
                     context.applicationContext,
                     LogAppBlockerDatabase::class.java,
                     "app_blocker.db"
-                ).build()
+                ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }

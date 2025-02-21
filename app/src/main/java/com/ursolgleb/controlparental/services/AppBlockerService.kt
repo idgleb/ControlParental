@@ -13,6 +13,7 @@ import com.ursolgleb.controlparental.utils.Launcher
 import java.util.Locale
 import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.data.local.AppDatabase
+import com.ursolgleb.controlparental.data.local.dao.BlockedDao
 import com.ursolgleb.controlparental.data.log.LogBlockedAppEntity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -25,14 +26,17 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class AppBlockerService : AccessibilityService() {
 
+    /*    @Inject
+        lateinit var appDatabase: AppDatabase
+        val blockedDao = appDatabase.blockedDao()*/
+
     @Inject
     lateinit var appDatabase: AppDatabase
-
-    val blockedDao = appDatabase.blockedDao()
+    private lateinit var blockedDao: BlockedDao
 
     private var isBlockerEnabled = false
     private var currentAppEnPrimerPlano: String? = null
-    val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     private val blockedWords = listOf(
         "app"
@@ -41,32 +45,33 @@ class AppBlockerService : AccessibilityService() {
         "app"
     )
 
+    override fun onCreate() {
+        super.onCreate()
+        blockedDao = appDatabase.blockedDao()
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
 
         if (event == null) return
 
-        if (event.packageName == "com.ursolgleb.controlparental"
-        //&& event.className != "android.widget.TextView"
-        ) {
-            return
-        }
+        if (event.packageName == "com.ursolgleb.controlparental") return
+
 
         val eventDetales = getEventDetails(event)
         Log.d("AppBlockerService", eventDetales)
         Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $eventDetales")
 
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            val packageName = event.packageName?.toString() ?: return
 
-            currentAppEnPrimerPlano = packageName
-            blockearSiEnBlackList(packageName)
+        val packageName = event.packageName?.toString() ?: return
 
-            val msg = "App en primer plano: $packageName"
-            Log.w("AppBlockerService111", msg)
-            Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
+        currentAppEnPrimerPlano = packageName
+        //base de datos renovar una app
+        blockearSiEnBlackList(packageName)
 
-            //base de datos renovar una app
-        }
+        var msg = "App en primer plano: $packageName"
+        Log.w("AppBlockerService111", msg)
+        Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
+
 
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
             val packageName = event.packageName?.toString() ?: return
@@ -125,13 +130,14 @@ class AppBlockerService : AccessibilityService() {
                 Log.w("AppBlockerService", msg)
                 Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
                 //performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
+                performGlobalAction(GLOBAL_ACTION_HOME)
                 isBlockerEnabled = false
             }
         }
 
         val isOnHomeScreen =
             Launcher.getDefaultLauncherPackageName(this) == event.packageName
-        val msg = "Está 888 en la pantalla de inicio? $isOnHomeScreen"
+        msg = "Está 888 en la pantalla de inicio? $isOnHomeScreen"
         Log.w("AppBlockerService", msg)
         Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
 
@@ -146,6 +152,8 @@ class AppBlockerService : AccessibilityService() {
             } else {
                 Log.w("AppBlockerService111", "blockedApp == null false")
                 performGlobalAction(GLOBAL_ACTION_BACK)
+                performGlobalAction(GLOBAL_ACTION_HOME)
+                //performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
                 isBlockerEnabled = true
                 saveBlockedAppBaseDeDatos(packageName)
                 val msg = "Bloqueando app: $packageName"

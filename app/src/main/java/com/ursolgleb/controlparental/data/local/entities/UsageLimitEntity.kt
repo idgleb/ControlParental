@@ -15,6 +15,6 @@ import androidx.room.PrimaryKey
 data class UsageLimitEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val packageName: String,
-    val maxUsageMinutes: Int // Límite en minutos por día
+    val maxUsageMinutesPorDia: Int // Límite en minutos por día
 )
 
