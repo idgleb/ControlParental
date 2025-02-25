@@ -1,0 +1,10 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Estado cuando está presionado -->
+    <item android:drawable="@drawable/oval_button_presed" android:state_pressed="true"/>
+
+    <!-- Estado cuando está enfocado (para Android TV o teclado) -->
+    <item android:drawable="@drawable/oval_button_focus" android:state_focused="true"/>
+
+    <!-- Estado normal -->
+    <item android:drawable="@drawable/oval_button"/>
+</selector>

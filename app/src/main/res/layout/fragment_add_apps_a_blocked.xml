@@ -11,22 +11,24 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/blue_principal"
-        android:padding="15dp"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="6dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnBack"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:paddingStart="4dp"
+            android:background="@drawable/oval_boton_selector"
+            android:drawableStart="@drawable/arrow_back_scaled"
+            android:drawableTint="@color/white"
             android:contentDescription="Botón Atrás"
-            android:padding="0dp"
-            android:src="@drawable/baseline_arrow_back_24"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/white" />
+            app:layout_constraintTop_toTopOf="parent"/>
 
 
         <TextView
@@ -89,7 +91,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
-            android:background="@drawable/rounded_button_principal_selector"
+            android:background="@drawable/radius_button_principal_selector"
             android:drawableStart="@drawable/baseline_add_circle_outline_24"
             android:drawablePadding="0dp"
             android:drawableTint="@color/white"

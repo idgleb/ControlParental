@@ -1,0 +1,8 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:top="2dp"
+        android:start="2dp"
+        android:width="11dp"
+        android:height="11dp"
+        android:drawable="@drawable/flecha_mas_aladerecha" />
+</layer-list>

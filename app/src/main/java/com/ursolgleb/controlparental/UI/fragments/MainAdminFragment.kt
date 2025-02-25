@@ -9,19 +9,24 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.databinding.FragmentMainAdminBinding
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
 
+    @Inject
+    lateinit var appDataRepository: AppDataRepository
+
     private var _binding: FragmentMainAdminBinding? = null
     private val binding get() = _binding!!
 
-    private val sharedViewModel: SharedViewModel by activityViewModels()
+    //private val sharedViewModel: SharedViewModel by activityViewModels()
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -78,7 +83,7 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
 
     override fun onResume() {
         super.onResume()
-        sharedViewModel.updateBDApps()
+        appDataRepository.updateBDApps(requireContext())
     }
 
     override fun onDestroyView() {

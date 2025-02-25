@@ -6,6 +6,10 @@ import android.graphics.Rect
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.ursolgleb.controlparental.AppDataRepository
 
 import com.ursolgleb.controlparental.ControlParentalApp
 import com.ursolgleb.controlparental.utils.Archivo
@@ -13,6 +17,7 @@ import com.ursolgleb.controlparental.utils.Launcher
 import java.util.Locale
 import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.data.local.AppDatabase
+import com.ursolgleb.controlparental.data.local.dao.AppDao
 import com.ursolgleb.controlparental.data.local.dao.BlockedDao
 import com.ursolgleb.controlparental.data.log.LogBlockedAppEntity
 import dagger.hilt.android.AndroidEntryPoint
@@ -26,13 +31,10 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class AppBlockerService : AccessibilityService() {
 
-    /*    @Inject
-        lateinit var appDatabase: AppDatabase
-        val blockedDao = appDatabase.blockedDao()*/
-
     @Inject
-    lateinit var appDatabase: AppDatabase
-    private lateinit var blockedDao: BlockedDao
+    lateinit var appDataRepository: AppDataRepository
+
+    private lateinit var appDao: AppDao
 
     private var isBlockerEnabled = false
     private var currentAppEnPrimerPlano: String? = null
@@ -47,7 +49,8 @@ class AppBlockerService : AccessibilityService() {
 
     override fun onCreate() {
         super.onCreate()
-        blockedDao = appDatabase.blockedDao()
+        observarAppsEnBD()
+        appDao = appDataRepository.appDatabase.appDao()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -145,15 +148,12 @@ class AppBlockerService : AccessibilityService() {
 
     private fun blockearSiEnBlackList(packageName: String) {
         coroutineScope.launch {
-            val blockedApp = blockedDao.getBlockedAppByPackageName(packageName)
-            if (blockedApp == null) {
-                Log.w("AppBlockerService111", "blockedApp == null true")
-                return@launch
-            } else {
-                Log.w("AppBlockerService111", "blockedApp == null false")
+            val blockedApps = appDataRepository.blockedAppsFlow.value // Obtener la lista actual de apps bloqueadas
+            if (blockedApps.any { it.packageName == packageName }) { // Chequear si el package está bloqueado
+                Log.w("AppBlockerService111", "El paquete $packageName está en la lista negra. Bloqueando...")
                 performGlobalAction(GLOBAL_ACTION_BACK)
                 performGlobalAction(GLOBAL_ACTION_HOME)
-                //performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
+                // performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
                 isBlockerEnabled = true
                 saveBlockedAppBaseDeDatos(packageName)
                 val msg = "Bloqueando app: $packageName"
@@ -166,9 +166,12 @@ class AppBlockerService : AccessibilityService() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(this@AppBlockerService, msg, Toast.LENGTH_SHORT).show()
                 }
+            } else {
+                Log.w("AppBlockerService111", "El paquete $packageName NO está en la lista negra.")
             }
         }
     }
+
 
     override fun onDestroy() {
         super.onDestroy()
@@ -316,5 +319,32 @@ class AppBlockerService : AccessibilityService() {
             }
         }
     }
+
+    private fun observarAppsEnBD() {
+
+        coroutineScope.launch {
+            appDataRepository.todosAppsFlow.collect { todosApps ->
+                Log.d("AppBlockerService", "Apps bloqueadas actualizadas: $todosApps")
+            }
+        }
+
+        coroutineScope.launch {
+            appDataRepository.blockedAppsFlow.collect { blockedApps ->
+                Log.d("AppBlockerService", "Apps bloqueadas actualizadas: $blockedApps")
+            }
+        }
+
+        coroutineScope.launch {
+            appDataRepository.todosAppsMenosBloqueadosFlow.collect { todosAppsMenosBlaqueados ->
+                Log.d(
+                    "AppBlockerService",
+                    "Apps bloqueadas actualizadas: $todosAppsMenosBlaqueados"
+                )
+            }
+        }
+
+
+    }
+
 
 }

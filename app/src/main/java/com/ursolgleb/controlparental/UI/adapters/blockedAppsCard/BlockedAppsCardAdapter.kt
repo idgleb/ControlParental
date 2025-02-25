@@ -5,6 +5,7 @@ import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
@@ -17,11 +18,10 @@ import javax.inject.Inject
 
 class BlockedAppsCardAdapter@Inject constructor(
     val blockedApps: MutableList <AppEntity>,
-    private val context: Context,
-    appDatabase: AppDatabase
+    val appDataRepository: AppDataRepository
 ) : RecyclerView.Adapter<BlockedAppsCardViewHolder>() {
 
-    val appDao = appDatabase.appDao()
+    val appDao = appDataRepository.appDatabase.appDao()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BlockedAppsCardViewHolder {
         val binding =
@@ -34,7 +34,7 @@ class BlockedAppsCardAdapter@Inject constructor(
 
         CoroutineScope(Dispatchers.IO).launch {
 
-            val icon = getAppIcon(blockedApp.packageName, context)
+            val icon = appDataRepository.getAppIcon(blockedApp.packageName, appDataRepository.context)
 
             withContext(Dispatchers.Main) {
                 holder.bind(blockedApp.appName, icon)
@@ -43,17 +43,6 @@ class BlockedAppsCardAdapter@Inject constructor(
     }
 
     override fun getItemCount(): Int = blockedApps.size
-
-    private suspend fun getAppIcon(packageName: String, context: Context): Drawable? {
-        return withContext(Dispatchers.IO) {
-            try {
-                val packageManager = context.packageManager
-                packageManager.getApplicationIcon(packageName)
-            } catch (e: Exception) {
-                null
-            }
-        }
-    }
 
     // 🔥 ✅ Función para agregar una nueva app bloqueada a la lista y actualizar la UI
     fun addBlockedAppEadaptador(newBlockedApp: AppEntity) {

@@ -8,8 +8,10 @@
     <color name="white">#FFFFFFFF</color>
     <color name="fondo_scroll">#F4F4F4</color>
     <color name="blue_principal">#009ee3</color>
+    <color name="blue_light">#BFECFF</color>
     <color name="fondo_principal">#006FA0</color>
     <color name="boton_secundario">#86B4FF</color>
+    <color name="boton_transporente">#0086B4FF</color>
     <color name="boton_secundario2">#479AD1</color>
     <color name="text_boton">#FFFFFF</color>
     <color name="mercadopago">#00A650</color>

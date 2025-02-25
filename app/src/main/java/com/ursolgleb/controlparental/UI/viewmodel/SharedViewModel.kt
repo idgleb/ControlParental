@@ -12,6 +12,7 @@ import android.os.DeadObjectException
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
@@ -34,11 +35,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SharedViewModel @Inject constructor(
-    application: Application,
-    appDatabase: AppDatabase
+    private val appDataRepository: AppDataRepository,
+    application: Application
 ) : AndroidViewModel(application) {
 
-    private val appDao = appDatabase.appDao()
+    private val appDao = appDataRepository.appDatabase.appDao()
 
     private val mutex_updateBDApps = Mutex()
     private val _mutexUpdateBDAppsState = MutableStateFlow(false)
@@ -61,61 +62,30 @@ class SharedViewModel @Inject constructor(
 
     init {
         Log.w("SharedViewModel3", "init SharedViewModel $inicieDeLecturaDeBD")
-        // 🔥 Carga inicial de datos de la base de datos
-        inicieDelecturaDeBD()
-        // 🔥 Cargar datos en tiempo real cuando se cree el ViewModel
-        loadAppsFromDatabaseASharedViewModel()
+        observarDatosDesdeRepositorio()
     }
 
-    private fun inicieDelecturaDeBD() {
-        val locked = mutex_inicieDelecturaDeBD.tryLock()
-        if (!locked) {
-            Log.w("SharedViewModelMUTEX", "inicieDelecturaDeBD ya está en ejecución")
-            return
-        }
-
-        try {
-
-            viewModelScope.launch(Dispatchers.IO) {
-                mutex_Global.withLock { // Bloquea mientras ejecuta esta parte
-                    inicieDeLecturaDeBD = true
-                    Log.e("SharedViewModel3", "inicieDelecturaDeBD(): $inicieDeLecturaDeBD")
-
-                    _todosApps.value = appDao.getAllApps().first()
-                    _blockedApps.value = _todosApps.value.filter { it.blocked }
-                    _todosAppsMenosBlaqueados.value = _todosApps.value.filter { !it.blocked }
-
-                    Log.e("SharedViewModel", "APPS DE BD 111: ${_todosApps.value}")
-                } // Se libera el mutex cuando termina
-            }
-
-
-        } catch (e: DeadObjectException) {
-            Log.e("SharedViewModel", "DeadObjectException: ${e.message}")
-        } catch (e: Exception) {
-            Log.e("SharedViewModel", "Error en inicieDeLecturaDeBD: ${e.message}")
-        } finally {
-            if (locked) { // Solo desbloquea si realmente ha adquirido el bloqueo
-                mutex_inicieDelecturaDeBD.unlock()
-            }
-        }
-
-    }
-
-    private fun loadAppsFromDatabaseASharedViewModel() {
-
-        viewModelScope.launch(Dispatchers.IO) {
-            appDao.getAllApps().collect { apps ->
+    private fun observarDatosDesdeRepositorio() {
+        viewModelScope.launch {
+            appDataRepository.todosAppsFlow.collect { apps ->
                 _todosApps.value = apps
-                _blockedApps.value = apps.filter { it.blocked }
-                _todosAppsMenosBlaqueados.value = apps.filter { !it.blocked }
             }
-
         }
 
+        viewModelScope.launch {
+            appDataRepository.blockedAppsFlow.collect { blockedApps ->
+                _blockedApps.value = blockedApps
+            }
+        }
+
+        viewModelScope.launch {
+            appDataRepository.todosAppsMenosBloqueadosFlow.collect { appsNoBloqueados ->
+                _todosAppsMenosBlaqueados.value = appsNoBloqueados
+            }
+        }
     }
 
-
+/*
     // 🔥 ✅ Función para actualizar la base de datos de aplicaciones ⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰⏰ MUTEX
     fun updateBDApps() {
 
@@ -155,7 +125,6 @@ class SharedViewModel @Inject constructor(
             }
         }
     }
-
 
     // 🔥 ✅ Función para agregar apps a la base de datos ♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️♻️
     suspend fun addListaAppsBD(appsNuevas: List<ApplicationInfo>) {
@@ -198,7 +167,6 @@ class SharedViewModel @Inject constructor(
         appDao.insertListaApps(appsNuevas)
         Log.d("MainAdminActivity", "Nueva Lista Apps bloqueada: $appsNuevas")
     }
-
 
     fun getNuevasAppsEnSistema(): List<ApplicationInfo> {
         val appsDeSistema = getAllAppsWithUIdeSistema()
@@ -284,7 +252,6 @@ class SharedViewModel @Inject constructor(
         return aggregatedStats.values.toList()
     }
 
-
     suspend fun getAppAgeRatingScraper(packageName: String): String {
         //val url = "https://play.google.com/store/apps/details?id=$packageName&hl=en"
         val url = "https://play.google.com/store/apps/details?id=$packageName"
@@ -313,10 +280,7 @@ class SharedViewModel @Inject constructor(
                 ""
             }
         }
-    }
-
-
-
+    }*/
 
 
 }

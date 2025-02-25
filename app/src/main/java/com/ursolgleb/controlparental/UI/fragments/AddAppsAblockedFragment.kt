@@ -12,21 +12,26 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear.MarcarAppsParaBloquearAdapter
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.databinding.FragmentAddAppsABlockedBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class AddAppsAblockedFragment : Fragment(R.layout.fragment_add_apps_a_blocked) {
+
+    @Inject
+    lateinit var appDataRepository: AppDataRepository
 
     private var _binding: FragmentAddAppsABlockedBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var marcarAppsParaBloquearAdapter: MarcarAppsParaBloquearAdapter
-    private val sharedViewModel: SharedViewModel by activityViewModels()
+    //private val sharedViewModel: SharedViewModel by activityViewModels()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -39,7 +44,7 @@ class AddAppsAblockedFragment : Fragment(R.layout.fragment_add_apps_a_blocked) {
     private fun initUI(view: View) {
         _binding = FragmentAddAppsABlockedBinding.bind(view)
 
-        marcarAppsParaBloquearAdapter = MarcarAppsParaBloquearAdapter(mutableListOf(), requireContext(), sharedViewModel)
+        marcarAppsParaBloquearAdapter = MarcarAppsParaBloquearAdapter(mutableListOf(), appDataRepository)
         binding.rvMarcarAppsParaBloquear.adapter = marcarAppsParaBloquearAdapter
         binding.rvMarcarAppsParaBloquear.layoutManager = LinearLayoutManager(requireContext())
         binding.rvMarcarAppsParaBloquear.setRecycledViewPool(RecyclerView.RecycledViewPool())
@@ -55,7 +60,7 @@ class AddAppsAblockedFragment : Fragment(R.layout.fragment_add_apps_a_blocked) {
             val selectedApps = marcarAppsParaBloquearAdapter.getSelectedApps() // Obtener apps seleccionadas
             if (selectedApps.isNotEmpty()) {
                 lifecycleScope.launch {
-                    sharedViewModel.addAppsABlockedBD(selectedApps.toList())
+                    appDataRepository.addAppsABlockedBD(selectedApps.toList())
                 }
                 findNavController().popBackStack()
             } else {
@@ -69,7 +74,7 @@ class AddAppsAblockedFragment : Fragment(R.layout.fragment_add_apps_a_blocked) {
         // 🔥 Observar cambios en la lista de todosAppsMenosBlaqueados
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                sharedViewModel.todosAppsMenosBlaqueados.collect { newList ->
+                appDataRepository.todosAppsMenosBloqueadosFlow.collect { newList ->
                     Log.w("BlockedAppsFragment", "Lista de apps actualizada: $newList")
                     marcarAppsParaBloquearAdapter.updateListEnAdaptador(newList)
                 }

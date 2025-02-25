@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.databinding.ItemAppGrandeBinding
@@ -13,12 +14,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 class MarcarAppsParaBloquearAdapter(
     val apps: MutableList<AppEntity>,
-    private val context: Context,
-    private val sharedViewModel: SharedViewModel
+    val appDataRepository: AppDataRepository
 ) : RecyclerView.Adapter<MarcarAppsParaBloquearViewHolder>() {
+
 
     private val selectedApps = mutableSetOf<AppEntity>() // 🔥 Almacena los paquetes de apps seleccionadas
 
@@ -32,7 +34,7 @@ class MarcarAppsParaBloquearAdapter(
         val app = apps[position]
 
         CoroutineScope(Dispatchers.IO).launch {
-            val icon = sharedViewModel.getAppIcon(app.packageName, context)
+            val icon = appDataRepository.getAppIcon(app.packageName, appDataRepository.context)
 
             val formattedTimeDeUso = Fun.formatearTiempoDeUso(app.tiempoUsoSegundosHoy)
 

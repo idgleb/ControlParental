@@ -12,21 +12,26 @@ import androidx.navigation.Navigation
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear.blockedAppsEditAdapter
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.databinding.FragmentBlockedAppsEditBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
+
+    @Inject
+    lateinit var appDataRepository: AppDataRepository
 
     private var _binding: FragmentBlockedAppsEditBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var blockedAppsEditAdapter: blockedAppsEditAdapter
-    private val sharedViewModel: SharedViewModel by activityViewModels()
+    //private val sharedViewModel: SharedViewModel by activityViewModels()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -39,7 +44,7 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
     private fun initUI(view: View) {
         _binding = FragmentBlockedAppsEditBinding.bind(view)
 
-        blockedAppsEditAdapter = blockedAppsEditAdapter(mutableListOf(), requireContext(), sharedViewModel)
+        blockedAppsEditAdapter = blockedAppsEditAdapter(mutableListOf(), appDataRepository)
         binding.rvBlockedAppsEdit.adapter = blockedAppsEditAdapter
         binding.rvBlockedAppsEdit.layoutManager = LinearLayoutManager(requireContext())
         binding.rvBlockedAppsEdit.setRecycledViewPool(RecyclerView.RecycledViewPool())
@@ -65,7 +70,7 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
         // 🔥 Observar cambios en la lista de todosAppsMenosBlaqueados
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                sharedViewModel.todosAppsMenosBlaqueados.collect { newList ->
+                appDataRepository.todosAppsMenosBloqueadosFlow.collect { newList ->
                     Log.w("BlockedAppsFragment", "Lista EDIT de apps actualizada: $newList")
                     blockedAppsEditAdapter.updateListEnAdaptador(newList)
                 }
@@ -75,7 +80,7 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
         // 🔥 Observar cambios en la lista de apps bloqueadas
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                sharedViewModel.blockedApps.collect { newList ->
+                appDataRepository.blockedAppsFlow.collect { newList ->
                     Log.w("BlockedAppsFragment", "Lista EDIT de apps bloqueadas actualizada: $newList")
                     binding.tvCantidadAppsBloqueadas.text = newList.size.toString()
                     blockedAppsEditAdapter.updateListEnAdaptador(newList)
@@ -94,7 +99,7 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
         // 🔥 Observar si updateBDApps() esta en processo
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                sharedViewModel.mutexUpdateBDAppsState.collect { isLocked ->
+                appDataRepository.mutexUpdateBDAppsState.collect { isLocked ->
                     // Aquí se actualiza cada vez que cambia el estado del mutex.
                     if (isLocked) {
                         // Mostrar un indicador de carga o bloquear la UI.

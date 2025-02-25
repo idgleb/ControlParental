@@ -1,0 +1,8 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Estado cuando el botón está presionado -->
+    <item android:drawable="@drawable/radius_button_principal_pressed" android:state_pressed="true"/>
+    <!-- Estado cuando está enfocado (para Android TV o teclado) -->
+    <item android:drawable="@drawable/radius_button_focus" android:state_focused="true"/>
+    <!-- Estado normal del botón -->
+    <item android:drawable="@drawable/radius_button_principal"/>
+</selector>

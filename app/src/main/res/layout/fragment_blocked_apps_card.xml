@@ -38,7 +38,7 @@
                     android:id="@+id/tvCantidadAppsBloqueadas"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/rounded_background"
+                    android:background="@drawable/radius_background"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="3dp"
                     android:textSize="10sp"
@@ -52,28 +52,27 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <TextView
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/ayudaBoton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="4dp"
-                        android:text="Modificar"
+                        android:background="@drawable/radius_button_transporente_selector"
+                        android:clickable="false"
+                        android:drawableEnd="@drawable/flecha_mas_aladerecha_scaled"
+                        android:drawablePadding="0dp"
+                        android:drawableTint="@color/blue_principal"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:padding="6dp"
+                        android:text="Ver"
+                        android:textAllCaps="false"
                         android:textColor="@color/blue_principal"
-                        android:textStyle="bold"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toStartOf="@id/tvAppName2"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-
-                    <View
-                        android:id="@+id/tvAppName2"
-                        android:layout_width="11dp"
-                        android:layout_height="11dp"
-                        android:layout_marginTop="2dp"
-                        android:background="@drawable/flecha_mas_aladerecha"
-                        android:backgroundTint="@color/blue_principal"
-                        app:layout_constraintBottom_toBottomOf="parent"
+                        android:textSize="14sp"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        tools:layout_editor_absoluteY="0dp" />
+
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -123,7 +122,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="16dp"
-                android:background="@drawable/rounded_button_principal_selector"
+                android:background="@drawable/radius_button_principal_selector"
                 android:drawableStart="@drawable/baseline_add_circle_outline_24"
                 android:drawablePadding="0dp"
                 android:drawableTint="@color/white"
