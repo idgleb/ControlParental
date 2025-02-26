@@ -44,7 +44,8 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
     private fun initUI(view: View) {
         _binding = FragmentBlockedAppsEditBinding.bind(view)
 
-        blockedAppsEditAdapter = blockedAppsEditAdapter(mutableListOf(), appDataRepository)
+        blockedAppsEditAdapter =
+            blockedAppsEditAdapter(mutableListOf(), appDataRepository, childFragmentManager)
         binding.rvBlockedAppsEdit.adapter = blockedAppsEditAdapter
         binding.rvBlockedAppsEdit.layoutManager = LinearLayoutManager(requireContext())
         binding.rvBlockedAppsEdit.setRecycledViewPool(RecyclerView.RecycledViewPool())
@@ -81,7 +82,10 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 appDataRepository.blockedAppsFlow.collect { newList ->
-                    Log.w("BlockedAppsFragment", "Lista EDIT de apps bloqueadas actualizada: $newList")
+                    Log.w(
+                        "BlockedAppsFragment",
+                        "Lista EDIT de apps bloqueadas actualizada: $newList"
+                    )
                     binding.tvCantidadAppsBloqueadas.text = newList.size.toString()
                     blockedAppsEditAdapter.updateListEnAdaptador(newList)
                     // 🔥 Si la lista está vacía, mostrar "Empty"

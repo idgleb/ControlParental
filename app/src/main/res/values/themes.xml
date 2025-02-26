@@ -2,6 +2,10 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.ControlParental" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:statusBarColor">@color/fondo_principal</item>
+        <item name="android:navigationBarColor">@android:color/black</item> <!-- 🔥 Barra de navegación negra -->
+        <item name="android:windowTranslucentNavigation">false</item> <!-- 🔥 Evita transparencia -->
+
+
     </style>
 
     <style name="Theme.ControlParental" parent="Base.Theme.ControlParental" />

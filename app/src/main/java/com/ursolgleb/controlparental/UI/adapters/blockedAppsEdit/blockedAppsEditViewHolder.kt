@@ -1,26 +1,36 @@
 package com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear
 
 import android.graphics.drawable.Drawable
+import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.ursolgleb.controlparental.UI.fragments.BottomSheetFragment
 import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
 import com.ursolgleb.controlparental.databinding.ItemAppGrandeBinding
 
-class blockedAppsEditViewHolder(private val binding: ItemAppEditBinding) :
-    RecyclerView.ViewHolder(binding.root) {
+class blockedAppsEditViewHolder(
+    private val binding: ItemAppEditBinding,
+    private val fragmentManager: androidx.fragment.app.FragmentManager
+) : RecyclerView.ViewHolder(binding.root) {
 
-    fun bind(appName: String?, icon: Drawable?, formattedTimeDeUso: String, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    fun bind(
+        appName: String?,
+        icon: Drawable?,
+        formattedTimeDeUso: String,
+        isChecked: Boolean,
+        onCheckedChange: (Boolean) -> Unit
+    ) {
         binding.tvAppName.text = appName ?: "No encontrada"
         Glide.with(binding.ivIconoApp.context)
-            .load(icon) // Glide acepta `Drawable` y `Bitmap`
+            .load(icon)
             .into(binding.ivIconoApp)
         binding.tvHorasDeUso.text = "Uso hoy: $formattedTimeDeUso"
 
         binding.itemAppEdit.setOnClickListener {
-            //
+            Log.w("BottomSheetFragment", "onClick")
+            val bottomSheet = BottomSheetFragment()
+            bottomSheet.show(fragmentManager, "BottomSheetDialog") // ✅ Mostrar correctamente
         }
-
-
     }
-
 }
+

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bottom_sheet_background"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center_horizontal">
+
+    <!-- Indicador para deslizar con esquinas redondeadas -->
+    <View
+        android:layout_width="35dp"
+        android:layout_height="4dp"
+        android:background="@drawable/rounded_indicator"
+        android:layout_marginBottom="10dp"
+        android:layout_gravity="center"/>
+
+
+    <TextView
+        android:id="@+id/bottomSheetTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Opciones"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:paddingBottom="8dp"/>
+
+    <Button
+        android:id="@+id/opcion1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Opción 1"/>
+
+    <Button
+        android:id="@+id/opcion2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Opción 2"/>
+
+    <Button
+        android:id="@+id/cerrar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cerrar"
+        android:textColor="@android:color/holo_red_dark"/>
+</LinearLayout>

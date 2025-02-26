@@ -19,6 +19,7 @@ import javax.inject.Inject
 class blockedAppsEditAdapter(
     val apps: MutableList<AppEntity>,
     val appDataRepository: AppDataRepository,
+    private val fragmentManager: androidx.fragment.app.FragmentManager
 ) : RecyclerView.Adapter<blockedAppsEditViewHolder>() {
 
     private val selectedApps = mutableSetOf<String>() // 🔥 Almacena los paquetes de apps seleccionadas
@@ -26,7 +27,7 @@ class blockedAppsEditAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): blockedAppsEditViewHolder {
         val binding =
             ItemAppEditBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return blockedAppsEditViewHolder(binding)
+        return blockedAppsEditViewHolder(binding, fragmentManager)
     }
 
     override fun onBindViewHolder(holder: blockedAppsEditViewHolder, position: Int) {
