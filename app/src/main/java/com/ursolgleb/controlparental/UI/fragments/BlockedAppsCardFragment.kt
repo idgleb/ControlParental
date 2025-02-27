@@ -146,6 +146,19 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
             }
         }
 
+        // 🔥 Observar si se necesita mostrar el mostrarBottomSheetActualizada
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                appDataRepository.mostrarBottomSheetActualizada.collect { isTrue ->
+                    if (isTrue) {
+                        // Mostrar un indicador de carga o bloquear la UI.
+                        val bottomSheetActualizada = BottomSheetActualizadaFragment()
+                        bottomSheetActualizada.show(parentFragmentManager, "BottomSheetDialog")
+                    }
+                }
+            }
+        }
+
     }
 
     private fun initUI(view: View) {

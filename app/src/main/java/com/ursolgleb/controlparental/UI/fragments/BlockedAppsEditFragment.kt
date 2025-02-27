@@ -18,6 +18,7 @@ import com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear.blockedA
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.databinding.FragmentBlockedAppsEditBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -49,6 +50,8 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
         binding.rvBlockedAppsEdit.adapter = blockedAppsEditAdapter
         binding.rvBlockedAppsEdit.layoutManager = LinearLayoutManager(requireContext())
         binding.rvBlockedAppsEdit.setRecycledViewPool(RecyclerView.RecycledViewPool())
+
+
     }
 
     private fun initListeners() {
@@ -103,6 +106,19 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
                         // Ocultar el indicador de carga o desbloquear la UI.
                         Log.d("UI", "La operación updateBDApps ha finalizado")
                         binding.progressBarUpdateBD.visibility = View.GONE
+                    }
+                }
+            }
+        }
+
+        // 🔥 Observar si se necesita mostrar el mostrarBottomSheetActualizada
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                appDataRepository.mostrarBottomSheetActualizada.collect { isTrue ->
+                    if (isTrue) {
+                        // Mostrar un indicador de carga o bloquear la UI.
+                        val bottomSheetActualizada = BottomSheetActualizadaFragment()
+                        bottomSheetActualizada.show(parentFragmentManager, "BottomSheetDialog")
                     }
                 }
             }

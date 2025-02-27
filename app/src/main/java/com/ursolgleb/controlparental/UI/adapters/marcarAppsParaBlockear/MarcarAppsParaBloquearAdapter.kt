@@ -63,7 +63,7 @@ class MarcarAppsParaBloquearAdapter(
 
     // 🔥 ✅ Función para actualizar toda la lista
     fun updateListEnAdaptador(newList: List<AppEntity>) {
-        Log.w("AppsAdapter", "updateListAppEnAdaptador")
+        Log.w("AppsAdapter", "updateListAppEn MarcarAppsParaBloquearAdapter")
         apps.clear()
         apps.addAll(newList)
         notifyDataSetChanged()

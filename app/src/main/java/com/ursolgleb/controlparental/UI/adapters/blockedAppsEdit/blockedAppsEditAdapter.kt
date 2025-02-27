@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
+import com.ursolgleb.controlparental.UI.fragments.BottomSheetActualizadaFragment
 import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
@@ -22,7 +23,9 @@ class blockedAppsEditAdapter(
     private val fragmentManager: androidx.fragment.app.FragmentManager
 ) : RecyclerView.Adapter<blockedAppsEditViewHolder>() {
 
-    private val selectedApps = mutableSetOf<String>() // 🔥 Almacena los paquetes de apps seleccionadas
+    private val selectedApps =
+        mutableSetOf<String>() // 🔥 Almacena los paquetes de apps seleccionadas
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): blockedAppsEditViewHolder {
         val binding =
@@ -39,7 +42,12 @@ class blockedAppsEditAdapter(
             val formattedTimeDeUso = Fun.formatearTiempoDeUso(app.tiempoUsoSegundosHoy)
 
             withContext(Dispatchers.Main) {
-                holder.bind(app, icon, formattedTimeDeUso, selectedApps.contains(app.packageName)) { isChecked ->
+                holder.bind(
+                    app,
+                    icon,
+                    formattedTimeDeUso,
+                    selectedApps.contains(app.packageName)
+                ) { isChecked ->
                     if (isChecked) {
                         selectedApps.add(app.packageName) // ✅ Agrega a las apps seleccionadas
                     } else {
@@ -49,7 +57,6 @@ class blockedAppsEditAdapter(
             }
         }
     }
-
 
 
     override fun getItemCount(): Int = apps.size
@@ -65,7 +72,7 @@ class blockedAppsEditAdapter(
 
     // 🔥 ✅ Función para actualizar toda la lista
     fun updateListEnAdaptador(newList: List<AppEntity>) {
-        Log.w("AppsAdapter", "updateListAppEnAdaptador")
+        Log.w("AppsAdapter", "updateListAppEn blockedAppsEditAdapter")
         apps.clear()
         apps.addAll(newList)
         notifyDataSetChanged()

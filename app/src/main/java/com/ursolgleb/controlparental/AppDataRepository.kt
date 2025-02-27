@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.os.DeadObjectException
 import android.util.Log
+import com.ursolgleb.controlparental.UI.fragments.BottomSheetActualizadaFragment
 import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.dao.AppDao
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
@@ -47,6 +48,7 @@ class AppDataRepository @Inject constructor(
     val blockedAppsFlow = MutableStateFlow<List<AppEntity>>(emptyList())
     val todosAppsMenosBloqueadosFlow = MutableStateFlow<List<AppEntity>>(emptyList())
     val mutexUpdateBDAppsState = MutableStateFlow(false)
+    val mostrarBottomSheetActualizada = MutableStateFlow(false)
 
     fun inicieDelecturaDeBD() {
         val locked = mutexInicieDelecturaDeBD.tryLock()
@@ -58,7 +60,7 @@ class AppDataRepository @Inject constructor(
         coroutineScope.launch {
             try {
                 mutexGlobal.withLock {
-                    Log.e("ControlParentalApp", "Iniciando lectura de la base de datos")
+                    Log.e("ControlParentalApp", "Iniciando inicieDelecturaDeBD")
 
                     val apps = appDao.getAllApps().first()
 
@@ -69,6 +71,7 @@ class AppDataRepository @Inject constructor(
                         apps.filter { !it.blocked }
 
                     Log.e("ControlParentalApp", "Apps cargadas en la base de datos: ${apps.size}")
+                    cargarAppsEnBackgroundDesdeBD()
                 }
             } catch (e: DeadObjectException) {
                 Log.e("ControlParentalApp", "DeadObjectException: ${e.message}")
@@ -83,15 +86,24 @@ class AppDataRepository @Inject constructor(
     }
 
     fun cargarAppsEnBackgroundDesdeBD() {
+
+
         coroutineScope.launch {
             appDatabase.appDao().getAllApps().collect { apps ->
                 todosAppsFlow.value = apps
-                blockedAppsFlow.value = apps.filter { it.blocked }
-                todosAppsMenosBloqueadosFlow.value = apps.filter { !it.blocked }
+                val blockedApps = apps.filter { it.blocked }
 
+                if (blockedApps.toList() != blockedAppsFlow.value.toList()) { // ✅ Compara contenido, no referencias
+                    blockedAppsFlow.value = blockedApps.toList() // ✅ Nueva instancia, garantiza emisión
+                    mostrarBottomSheetActualizada.value = true
+                }
+
+                todosAppsMenosBloqueadosFlow.value = apps.filter { !it.blocked }
                 Log.d("ControlParentalApp", "Apps cargadas desde la base de datos: ${apps.size}")
             }
         }
+
+
     }
 
 

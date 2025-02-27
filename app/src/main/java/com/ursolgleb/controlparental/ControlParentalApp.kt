@@ -20,7 +20,6 @@ class ControlParentalApp: Application()  {
         super.onCreate()
         dbLogs = LogAppBlockerDatabase.getDatabase(this)
         appDataRepository.inicieDelecturaDeBD()
-        appDataRepository.cargarAppsEnBackgroundDesdeBD()
         appDataRepository.updateBDApps()
 
     }

@@ -4,10 +4,10 @@ import android.graphics.drawable.Drawable
 import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.ursolgleb.controlparental.UI.fragments.BottomSheetFragment
+import com.ursolgleb.controlparental.UI.fragments.BottomSheetActualizadaFragment
+import com.ursolgleb.controlparental.UI.fragments.BottomSheetMoverFragment
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
-import com.ursolgleb.controlparental.databinding.ItemAppGrandeBinding
 
 class blockedAppsEditViewHolder(
     private val binding: ItemAppEditBinding,
@@ -29,8 +29,9 @@ class blockedAppsEditViewHolder(
 
         binding.itemAppEdit.setOnClickListener {
             Log.w("BottomSheetFragment", "onClick")
-            val bottomSheet = BottomSheetFragment(app, icon)
-            bottomSheet.show(fragmentManager, "BottomSheetDialog")
+            val bottomSheetSheetMover = BottomSheetMoverFragment(app, icon)
+            bottomSheetSheetMover.show(fragmentManager, "BottomSheetDialog")
+
         }
     }
 }
