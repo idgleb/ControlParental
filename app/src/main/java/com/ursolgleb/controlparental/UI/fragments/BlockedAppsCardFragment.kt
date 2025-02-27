@@ -88,8 +88,7 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
         }
 
         binding.llenarAllAppBoton.setOnClickListener {
-            //sharedViewModel.updateBDApps()
-            appDataRepository.updateBDApps(requireContext())
+            appDataRepository.updateBDApps()
         }
 
         binding.testBoton.setOnClickListener {

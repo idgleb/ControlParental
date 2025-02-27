@@ -39,7 +39,7 @@ class blockedAppsEditAdapter(
             val formattedTimeDeUso = Fun.formatearTiempoDeUso(app.tiempoUsoSegundosHoy)
 
             withContext(Dispatchers.Main) {
-                holder.bind(app.appName, icon, formattedTimeDeUso, selectedApps.contains(app.packageName)) { isChecked ->
+                holder.bind(app, icon, formattedTimeDeUso, selectedApps.contains(app.packageName)) { isChecked ->
                     if (isChecked) {
                         selectedApps.add(app.packageName) // ✅ Agrega a las apps seleccionadas
                     } else {

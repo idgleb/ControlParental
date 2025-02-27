@@ -68,16 +68,6 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
 
     private fun initObservers() {
 
-        // 🔥 Observar cambios en la lista de todosAppsMenosBlaqueados
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                appDataRepository.todosAppsMenosBloqueadosFlow.collect { newList ->
-                    Log.w("BlockedAppsFragment", "Lista EDIT de apps actualizada: $newList")
-                    blockedAppsEditAdapter.updateListEnAdaptador(newList)
-                }
-            }
-        }
-
         // 🔥 Observar cambios en la lista de apps bloqueadas
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

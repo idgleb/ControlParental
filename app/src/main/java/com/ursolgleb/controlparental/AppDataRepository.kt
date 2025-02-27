@@ -15,6 +15,7 @@ import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.utils.Fun
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -29,9 +30,11 @@ import javax.inject.Singleton
 
 @Singleton
 class AppDataRepository @Inject constructor(
-     val appDatabase: AppDatabase,
-     val context: Context
+    val appDatabase: AppDatabase,
+    val context: Context
 ) {
+
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     private val appDao: AppDao = appDatabase.appDao()
 
@@ -52,7 +55,7 @@ class AppDataRepository @Inject constructor(
             return
         }
 
-        CoroutineScope(Dispatchers.IO).launch {
+        coroutineScope.launch {
             try {
                 mutexGlobal.withLock {
                     Log.e("ControlParentalApp", "Iniciando lectura de la base de datos")
@@ -80,7 +83,7 @@ class AppDataRepository @Inject constructor(
     }
 
     fun cargarAppsEnBackgroundDesdeBD() {
-        CoroutineScope(Dispatchers.IO).launch {
+        coroutineScope.launch {
             appDatabase.appDao().getAllApps().collect { apps ->
                 todosAppsFlow.value = apps
                 blockedAppsFlow.value = apps.filter { it.blocked }
@@ -93,8 +96,8 @@ class AppDataRepository @Inject constructor(
 
 
     // 🔥 ✅ Actualizar la base de datos de aplicaciones
-    fun updateBDApps(context: Context) {
-        CoroutineScope(Dispatchers.IO).launch {
+    fun updateBDApps() {
+        coroutineScope.launch {
             val locked = mutexUpdateBDApps.tryLock()
             if (!locked) {
                 mutexUpdateBDAppsState.value = mutexUpdateBDApps.isLocked
@@ -127,6 +130,7 @@ class AppDataRepository @Inject constructor(
         val pm = context.packageManager
 
         val nuevasEntidades = appsNuevas.map { app ->
+
             val entretenimiento = app.category in listOf(
                 ApplicationInfo.CATEGORY_GAME,
                 ApplicationInfo.CATEGORY_AUDIO,
@@ -146,6 +150,8 @@ class AppDataRepository @Inject constructor(
                 usoLimitPorDiaMinutos = 0,
                 entretenimiento = entretenimiento
             )
+
+
         }
 
         appDao.insertListaApps(nuevasEntidades)
@@ -153,11 +159,44 @@ class AppDataRepository @Inject constructor(
     }
 
     // 🔥 ✅ Bloquear apps en la BD
-    suspend fun addAppsABlockedBD(appsNuevas: List<AppEntity>) {
+    suspend fun addAppsASiempreBloqueadasBD(appsNuevas: List<AppEntity>) {
         if (appsNuevas.isEmpty()) return
-        val appsBloqueadas = appsNuevas.map { it.copy(blocked = true) }
+        val appsBloqueadas = appsNuevas.map {
+            it.copy(
+                blocked = true,
+                usoLimitPorDiaMinutos = 0,
+                entretenimiento = false
+            )
+        }
         appDao.insertListaApps(appsBloqueadas)
         Log.d("AppDataRepository", "Nueva Lista Apps bloqueadas: ${appsNuevas.size}")
+    }
+
+    suspend fun addAppsASiempreDisponiblesBD(appsNuevas: List<AppEntity>) {
+        if (appsNuevas.isEmpty()) return
+        val appsBloqueadas = appsNuevas.map {
+            it.copy(
+                blocked = false,
+                usoLimitPorDiaMinutos = 0,
+                entretenimiento = false
+            )
+        }
+        appDao.insertListaApps(appsBloqueadas)
+        Log.d("AppDataRepository", "Nueva Lista Apps bloqueadas: ${appsNuevas.size}")
+    }
+
+    suspend fun addAppsAEntretenimientoBD(appsNuevas: List<AppEntity>) {
+        if (appsNuevas.isEmpty()) return
+        val appsBloqueadas = appsNuevas.map { it.copy(blocked = false, entretenimiento = true) }
+        appDao.insertListaApps(appsBloqueadas)
+        Log.d("AppDataRepository", "Nueva Lista Apps bloqueadas: ${appsNuevas.size}")
+    }
+
+    fun addNuevaPkgBD(pkgName: String) {
+        val listaApplicationInfo = listOfNotNull(getApplicationInfo(context, pkgName))
+        coroutineScope.launch {
+            addListaAppsBD(listaApplicationInfo, context)
+        }
     }
 
     // 🔥 ✅ Obtener nuevas apps instaladas en el sistema
@@ -179,12 +218,19 @@ class AppDataRepository @Inject constructor(
         val pm = context.packageManager
         val installedApps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
 
-        return installedApps.filter { app ->
-            val intent = Intent(Intent.ACTION_MAIN, null)
-            intent.setPackage(app.packageName)
-            pm.queryIntentActivities(intent, 0).isNotEmpty()
-        }
+        return installedApps.filter { app -> siTieneUI(context, app.packageName) }
     }
+
+    fun siTieneUI(context: Context, packageName: String): Boolean {
+        val pm = context.packageManager
+        val intent = Intent(Intent.ACTION_MAIN, null)
+        intent.setPackage(packageName)
+        return pm.queryIntentActivities(intent, 0).isNotEmpty()
+    }
+
+    fun siEsNuevoPkg(packageName: String): Boolean =
+        todosAppsFlow.value.none { it.packageName == packageName }
+
 
     // 🔥 ✅ Obtener el tiempo de uso de una app
     fun getTiempoDeUsoSeconds(context: Context, packageName: String, dias: Int): Long {
@@ -244,6 +290,17 @@ class AppDataRepository @Inject constructor(
         }
     }
 
+    fun getApplicationInfo(context: Context, packageName: String): ApplicationInfo? {
+        return try {
+            val pm = context.packageManager
+            pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+        } catch (e: PackageManager.NameNotFoundException) {
+            e.printStackTrace()
+            null // Si no se encuentra la app, retorna null
+        }
+    }
+
+
     // 🔥 ✅ Obtener estadísticas de uso de apps
     fun getUsageStats(context: Context, dias: Int): List<UsageStats> {
         val usageStatsManager =
@@ -265,6 +322,10 @@ class AppDataRepository @Inject constructor(
             usageStatsManager.queryAndAggregateUsageStats(startTime, endTime)
 
         return aggregatedStats.values.toList()
+    }
+
+    fun clear() {
+        coroutineScope.cancel() // ✅ Cancelar todas las corrutinas cuando ya no sea necesario
     }
 
 

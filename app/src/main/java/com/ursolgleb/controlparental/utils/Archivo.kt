@@ -7,8 +7,15 @@ class Archivo {
     companion object {
         fun appendTextToFile(context: Context, fileName: String, text: String) {
             val file = File(context.filesDir, fileName)
+
+            // Verifica el tamaño del archivo (2 MB = 2,097,152 bytes)
+            if (file.exists() && file.length() >= 2_097_152) {
+                file.writeText("") // 🔥 Vacía el archivo si supera los 2 MB
+            }
+
             file.appendText(text) // Agrega texto sin borrar lo anterior
         }
+
 
         fun readTextFromFile(context: Context, fileName: String): String {
             val file = File(context.filesDir, fileName)
@@ -25,6 +32,7 @@ class Archivo {
                 file.writeText("") // Sobrescribe el archivo con una cadena vacía
             }
         }
+
 
 
     }

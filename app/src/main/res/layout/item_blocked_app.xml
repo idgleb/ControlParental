@@ -16,7 +16,8 @@
         <ImageView
             android:id="@+id/ivIconoApp"
             android:layout_width="20dp"
-            android:layout_height="20dp"/>
+            android:layout_height="20dp"
+            tools:background="@color/boton_secundario" />
 
         <TextView
             android:id="@+id/textViewPackageName"

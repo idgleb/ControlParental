@@ -5,7 +5,6 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -15,7 +14,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear.MarcarAppsParaBloquearAdapter
-import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.databinding.FragmentAddAppsABlockedBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -60,7 +58,7 @@ class AddAppsAblockedFragment : Fragment(R.layout.fragment_add_apps_a_blocked) {
             val selectedApps = marcarAppsParaBloquearAdapter.getSelectedApps() // Obtener apps seleccionadas
             if (selectedApps.isNotEmpty()) {
                 lifecycleScope.launch {
-                    appDataRepository.addAppsABlockedBD(selectedApps.toList())
+                    appDataRepository.addAppsASiempreBloqueadasBD(selectedApps.toList())
                 }
                 findNavController().popBackStack()
             } else {

@@ -83,7 +83,7 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
 
     override fun onResume() {
         super.onResume()
-        appDataRepository.updateBDApps(requireContext())
+        //appDataRepository.updateBDApps(requireContext())
     }
 
     override fun onDestroyView() {

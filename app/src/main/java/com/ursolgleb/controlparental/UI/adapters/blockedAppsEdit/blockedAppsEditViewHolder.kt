@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.ursolgleb.controlparental.UI.fragments.BottomSheetFragment
+import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
 import com.ursolgleb.controlparental.databinding.ItemAppGrandeBinding
 
@@ -14,13 +15,13 @@ class blockedAppsEditViewHolder(
 ) : RecyclerView.ViewHolder(binding.root) {
 
     fun bind(
-        appName: String?,
+        app: AppEntity,
         icon: Drawable?,
         formattedTimeDeUso: String,
         isChecked: Boolean,
         onCheckedChange: (Boolean) -> Unit
     ) {
-        binding.tvAppName.text = appName ?: "No encontrada"
+        binding.tvAppName.text = app.appName
         Glide.with(binding.ivIconoApp.context)
             .load(icon)
             .into(binding.ivIconoApp)
@@ -28,8 +29,8 @@ class blockedAppsEditViewHolder(
 
         binding.itemAppEdit.setOnClickListener {
             Log.w("BottomSheetFragment", "onClick")
-            val bottomSheet = BottomSheetFragment()
-            bottomSheet.show(fragmentManager, "BottomSheetDialog") // ✅ Mostrar correctamente
+            val bottomSheet = BottomSheetFragment(app, icon)
+            bottomSheet.show(fragmentManager, "BottomSheetDialog")
         }
     }
 }

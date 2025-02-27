@@ -1,18 +1,8 @@
 package com.ursolgleb.controlparental
 
 import android.app.Application
-import android.os.DeadObjectException
-import android.util.Log
-import androidx.lifecycle.viewModelScope
-import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.log.LogAppBlockerDatabase
 import dagger.hilt.android.HiltAndroidApp
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -31,7 +21,13 @@ class ControlParentalApp: Application()  {
         dbLogs = LogAppBlockerDatabase.getDatabase(this)
         appDataRepository.inicieDelecturaDeBD()
         appDataRepository.cargarAppsEnBackgroundDesdeBD()
+        appDataRepository.updateBDApps()
 
+    }
+
+    override fun onTerminate() {
+        super.onTerminate()
+        appDataRepository.clear() // ✅ Cancela las corrutinas al cerrar la app
     }
 
 
