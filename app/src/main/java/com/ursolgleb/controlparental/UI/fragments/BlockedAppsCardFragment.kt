@@ -2,23 +2,18 @@ package com.ursolgleb.controlparental.UI.fragments
 
 import android.os.Bundle
 import android.util.Log
-import android.view.MotionEvent
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.adapters.blockedAppsCard.BlockedAppsCardAdapter
-import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
-import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.Navigation
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
-import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.dao.AppDao
-import com.ursolgleb.controlparental.data.local.dao.BlockedDao
 import com.ursolgleb.controlparental.databinding.FragmentBlockedAppsCardBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +33,6 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
     private val binding get() = _binding!!
 
     private var blockedAppCardAdapter: BlockedAppsCardAdapter? = null
-    //private val sharedViewModel: SharedViewModel by activityViewModels()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -149,7 +143,7 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
         // 🔥 Observar si se necesita mostrar el mostrarBottomSheetActualizada
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                appDataRepository.mostrarBottomSheetActualizada.collect { isTrue ->
+                appDataRepository.mostrarBottomSheetActualizadaFlow.collect { isTrue ->
                     if (isTrue) {
                         // Mostrar un indicador de carga o bloquear la UI.
                         val bottomSheetActualizada = BottomSheetActualizadaFragment()

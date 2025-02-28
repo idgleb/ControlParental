@@ -9,7 +9,6 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.os.DeadObjectException
 import android.util.Log
-import com.ursolgleb.controlparental.UI.fragments.BottomSheetActualizadaFragment
 import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.dao.AppDao
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
@@ -39,76 +38,85 @@ class AppDataRepository @Inject constructor(
 
     private val appDao: AppDao = appDatabase.appDao()
 
-    private val mutexInicieDelecturaDeBD = Mutex()
+    private var isInicieDeLecturaTermina = false
 
+    private val mutexInicieDelecturaDeBD = Mutex()
     private val mutexUpdateBDApps = Mutex()
     private val mutexGlobal = Mutex()
 
     val todosAppsFlow = MutableStateFlow<List<AppEntity>>(emptyList())
     val blockedAppsFlow = MutableStateFlow<List<AppEntity>>(emptyList())
     val todosAppsMenosBloqueadosFlow = MutableStateFlow<List<AppEntity>>(emptyList())
+
     val mutexUpdateBDAppsState = MutableStateFlow(false)
-    val mostrarBottomSheetActualizada = MutableStateFlow(false)
+    val mostrarBottomSheetActualizadaFlow = MutableStateFlow(false)
 
     fun inicieDelecturaDeBD() {
         val locked = mutexInicieDelecturaDeBD.tryLock()
         if (!locked) {
-            Log.w("ControlParentalApp", "inicieDelecturaDeBD ya está en ejecución")
+            Log.w("AppDataRepository", "inicieDelecturaDeBD ya está en ejecución")
             return
         }
 
         coroutineScope.launch {
             try {
                 mutexGlobal.withLock {
-                    Log.e("ControlParentalApp", "Iniciando inicieDelecturaDeBD")
-
+                    Log.e("AppDataRepository", "Iniciando inicieDelecturaDeBD")
                     val apps = appDao.getAllApps().first()
-
                     // 🔥 Guardamos los datos en el repositorio compartido
                     todosAppsFlow.value = apps
                     blockedAppsFlow.value = apps.filter { it.blocked }
                     todosAppsMenosBloqueadosFlow.value =
                         apps.filter { !it.blocked }
-
-                    Log.e("ControlParentalApp", "Apps cargadas en la base de datos: ${apps.size}")
-                    cargarAppsEnBackgroundDesdeBD()
+                    Log.e(
+                        "AppDataRepository",
+                        "Apps cargadas de BD en inicieDelecturaDeBD: ${apps.size}"
+                    )
                 }
             } catch (e: DeadObjectException) {
-                Log.e("ControlParentalApp", "DeadObjectException: ${e.message}")
+                Log.e("AppDataRepository", "DeadObjectException: ${e.message}")
             } catch (e: Exception) {
-                Log.e("ControlParentalApp", "Error en inicieDelecturaDeBD: ${e.message}")
+                Log.e("AppDataRepository", "Error en inicieDelecturaDeBD: ${e.message}")
             } finally {
-                if (locked) {
-                    mutexInicieDelecturaDeBD.unlock()
-                }
+                cargarAppsEnBackgroundDesdeBD()
+                isInicieDeLecturaTermina = true
+                Log.e("AppDataRepository", "inicieDelecturaDeBD finalizada")
+                if (locked) mutexInicieDelecturaDeBD.unlock()
+                updateBDApps()
             }
         }
     }
 
-    fun cargarAppsEnBackgroundDesdeBD() {
-
-
+    private fun cargarAppsEnBackgroundDesdeBD() {
         coroutineScope.launch {
             appDatabase.appDao().getAllApps().collect { apps ->
                 todosAppsFlow.value = apps
                 val blockedApps = apps.filter { it.blocked }
 
                 if (blockedApps.toList() != blockedAppsFlow.value.toList()) { // ✅ Compara contenido, no referencias
-                    blockedAppsFlow.value = blockedApps.toList() // ✅ Nueva instancia, garantiza emisión
-                    mostrarBottomSheetActualizada.value = true
+                    blockedAppsFlow.value =
+                        blockedApps.toList() // ✅ Nueva instancia, garantiza emisión
+                    mostrarBottomSheetActualizadaFlow.value = true
                 }
 
                 todosAppsMenosBloqueadosFlow.value = apps.filter { !it.blocked }
-                Log.d("ControlParentalApp", "Apps cargadas desde la base de datos: ${apps.size}")
+
+                Log.d(
+                    "AppDataRepository",
+                    "Apps cargadas de BD en cargarAppsEnBackgroundDesdeBD: ${apps.size}"
+                )
             }
         }
-
-
     }
-
 
     // 🔥 ✅ Actualizar la base de datos de aplicaciones
     fun updateBDApps() {
+
+        if (!isInicieDeLecturaTermina) {
+            inicieDelecturaDeBD()
+            return
+        }
+
         coroutineScope.launch {
             val locked = mutexUpdateBDApps.tryLock()
             if (!locked) {
@@ -123,7 +131,7 @@ class AppDataRepository @Inject constructor(
                     Log.e("AppDataRepository", "Ejecutando updateBDApps")
                     val appsNuevas = getNuevasAppsEnSistema(context)
                     if (appsNuevas.isNotEmpty()) {
-                        addListaAppsBD(appsNuevas, context)
+                        addListaAppsBD(appsNuevas)
                     }
                 }
             } catch (e: Exception) {
@@ -131,13 +139,14 @@ class AppDataRepository @Inject constructor(
             } finally {
                 mutexUpdateBDApps.unlock()
                 mutexUpdateBDAppsState.value = false
+                Log.e("AppDataRepository", "updateBDApps finalizada")
             }
         }
 
     }
 
     // 🔥 ✅ Agregar nuevas apps a la BD
-    suspend fun addListaAppsBD(appsNuevas: List<ApplicationInfo>, context: Context) {
+    suspend fun addListaAppsBD(appsNuevas: List<ApplicationInfo>) {
         if (appsNuevas.isEmpty()) return
         val pm = context.packageManager
 
@@ -155,9 +164,9 @@ class AppDataRepository @Inject constructor(
                 appCategory = app.category.toString(),
                 contentRating = "?",
                 appIsSystemApp = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
-                tiempoUsoSegundosHoy = getTiempoDeUsoSeconds(context, app.packageName, 0),
-                tiempoUsoSegundosSemana = getTiempoDeUsoSeconds(context, app.packageName, 7),
-                tiempoUsoSegundosMes = getTiempoDeUsoSeconds(context, app.packageName, 30),
+                tiempoUsoSegundosHoy = getTiempoDeUsoSeconds(app.packageName, 0),
+                tiempoUsoSegundosSemana = getTiempoDeUsoSeconds(app.packageName, 7),
+                tiempoUsoSegundosMes = getTiempoDeUsoSeconds(app.packageName, 30),
                 blocked = true,
                 usoLimitPorDiaMinutos = 0,
                 entretenimiento = entretenimiento
@@ -180,8 +189,16 @@ class AppDataRepository @Inject constructor(
                 entretenimiento = false
             )
         }
-        appDao.insertListaApps(appsBloqueadas)
         Log.d("AppDataRepository", "Nueva Lista Apps bloqueadas: ${appsNuevas.size}")
+
+        try {
+            withContext(Dispatchers.IO) { // ✅ Mover la operación a un contexto seguro
+                appDao.insertListaApps(appsBloqueadas)
+            }
+            Log.d("AppDataRepository", "Nueva Lista 77 Apps bloqueadas: ${appsNuevas.size}")
+        } catch (e: Exception) {
+            Log.e("AppDataRepository", "Error al insertar apps bloqueadas en la BD: ${e.message}")
+        }
     }
 
     suspend fun addAppsASiempreDisponiblesBD(appsNuevas: List<AppEntity>) {
@@ -194,20 +211,20 @@ class AppDataRepository @Inject constructor(
             )
         }
         appDao.insertListaApps(appsBloqueadas)
-        Log.d("AppDataRepository", "Nueva Lista Apps bloqueadas: ${appsNuevas.size}")
+        Log.d("AppDataRepository", "Nueva Lista Apps desponibles: ${appsNuevas.size}")
     }
 
     suspend fun addAppsAEntretenimientoBD(appsNuevas: List<AppEntity>) {
         if (appsNuevas.isEmpty()) return
         val appsBloqueadas = appsNuevas.map { it.copy(blocked = false, entretenimiento = true) }
         appDao.insertListaApps(appsBloqueadas)
-        Log.d("AppDataRepository", "Nueva Lista Apps bloqueadas: ${appsNuevas.size}")
+        Log.d("AppDataRepository", "Nueva Lista Apps Entretenimiento: ${appsNuevas.size}")
     }
 
-    fun addNuevaPkgBD(pkgName: String) {
-        val listaApplicationInfo = listOfNotNull(getApplicationInfo(context, pkgName))
+    fun addNuevoPkgBD(pkgName: String) {
+        val listaApplicationInfo = listOfNotNull(getApplicationInfo(pkgName))
         coroutineScope.launch {
-            addListaAppsBD(listaApplicationInfo, context)
+            addListaAppsBD(listaApplicationInfo)
         }
     }
 
@@ -245,7 +262,7 @@ class AppDataRepository @Inject constructor(
 
 
     // 🔥 ✅ Obtener el tiempo de uso de una app
-    fun getTiempoDeUsoSeconds(context: Context, packageName: String, dias: Int): Long {
+    fun getTiempoDeUsoSeconds(packageName: String, dias: Int): Long {
         val usageStatsManager =
             context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
                 ?: return 0
@@ -302,7 +319,7 @@ class AppDataRepository @Inject constructor(
         }
     }
 
-    fun getApplicationInfo(context: Context, packageName: String): ApplicationInfo? {
+    fun getApplicationInfo(packageName: String): ApplicationInfo? {
         return try {
             val pm = context.packageManager
             pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
@@ -339,6 +356,52 @@ class AppDataRepository @Inject constructor(
     fun clear() {
         coroutineScope.cancel() // ✅ Cancelar todas las corrutinas cuando ya no sea necesario
     }
+
+    fun renovarTiempoUsoApp(pkgName: String) {
+        val app = todosAppsFlow.value.find { it.packageName == pkgName }
+        if (app != null) {
+            coroutineScope.launch {
+                appDao.updateApp(
+                    app.copy(
+                        tiempoUsoSegundosHoy = getTiempoDeUsoSeconds(pkgName, 0),
+                        tiempoUsoSegundosSemana = getTiempoDeUsoSeconds(pkgName, 7),
+                        tiempoUsoSegundosMes = getTiempoDeUsoSeconds(pkgName, 30)
+                    )
+                )
+            }
+            Log.w("AppDataRepository", "Renovar tiempo de uso de app: $pkgName")
+        }
+    }
+
+    suspend fun updateTiempoUsoApps() = withContext(Dispatchers.IO) {
+        val listaAppsCambiados = mutableListOf<AppEntity>()
+
+        todosAppsFlow.value.forEach { app ->
+            val tiempoHoy = getTiempoDeUsoSeconds(app.packageName, 0)
+            val tiempoSemana = getTiempoDeUsoSeconds(app.packageName, 7)
+            val tiempoMes = getTiempoDeUsoSeconds(app.packageName, 30)
+
+            if (app.tiempoUsoSegundosHoy != tiempoHoy ||
+                app.tiempoUsoSegundosSemana != tiempoSemana ||
+                app.tiempoUsoSegundosMes != tiempoMes) {
+
+                listaAppsCambiados.add(
+                    app.copy(
+                        tiempoUsoSegundosHoy = tiempoHoy,
+                        tiempoUsoSegundosSemana = tiempoSemana,
+                        tiempoUsoSegundosMes = tiempoMes
+                    )
+                )
+            }
+        }
+
+        if (listaAppsCambiados.isNotEmpty()) {
+            appDao.insertListaApps(listaAppsCambiados)
+        }
+    }
+
+
+
 
 
 }

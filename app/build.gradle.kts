@@ -1,9 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("kotlin-kapt") // 🔴 Agregar esta línea para habilitar KAPT
+    id("kotlin-kapt") //  Agregar esta línea para habilitar KAPT
 
     id("dagger.hilt.android.plugin")
+    id("com.google.dagger.hilt.android") // 👈 Plugin de Hilt
+
 
 }
 
@@ -74,6 +76,7 @@ dependencies {
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -92,8 +95,35 @@ dependencies {
 
 
 
+
+    // WorkManager con Hilt (opcional si usas WorkManager)
+    implementation("androidx.hilt:hilt-work:1.0.0")
+    kapt("androidx.hilt:hilt-compiler:1.0.0")
+
+
+
     implementation ("com.google.dagger:hilt-android:2.49")
     kapt ("com.google.dagger:hilt-compiler:2.49")
+
+    val work_version = "2.9.1"
+
+    // (Java only)
+    implementation("androidx.work:work-runtime:$work_version")
+
+    // Kotlin + coroutines
+    implementation("androidx.work:work-runtime-ktx:$work_version")
+
+    // optional - RxJava2 support
+    implementation("androidx.work:work-rxjava2:$work_version")
+
+    // optional - GCMNetworkManager support
+    implementation("androidx.work:work-gcm:$work_version")
+
+    // optional - Test helpers
+    androidTestImplementation("androidx.work:work-testing:$work_version")
+
+    // optional - Multiprocess support
+    implementation("androidx.work:work-multiprocess:$work_version")
 
 
 

@@ -5,12 +5,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
-import android.widget.Toast
-import androidx.lifecycle.lifecycleScope
-import com.bumptech.glide.Glide
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -18,7 +12,6 @@ import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.utils.NavBarUtils
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -39,7 +32,7 @@ class BottomSheetActualizadaFragment : BottomSheetDialogFragment() {
 
         NavBarUtils.aplicarEstiloNavBar(this.dialog as Dialog)
 
-        appDataRepository.mostrarBottomSheetActualizada.value = false
+        appDataRepository.mostrarBottomSheetActualizadaFlow.value = false
 
     }
 

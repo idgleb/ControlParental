@@ -18,6 +18,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
+import com.ursolgleb.controlparental.databinding.BottomSheetMoverLayoutBinding
 import com.ursolgleb.controlparental.utils.NavBarUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -32,11 +33,15 @@ class BottomSheetMoverFragment(
     @Inject
     lateinit var appDataRepository: AppDataRepository
 
+    private var _binding: BottomSheetMoverLayoutBinding? = null
+    private val binding get() = _binding!!
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        return inflater.inflate(R.layout.bottom_sheet_mover_layout, container, false)
+        _binding = BottomSheetMoverLayoutBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -44,42 +49,59 @@ class BottomSheetMoverFragment(
 
         NavBarUtils.aplicarEstiloNavBar(this.dialog as Dialog)
 
-        // 🔥 Establecer nombre e icono de la app
-        val ivIconoApp = view.findViewById<ImageView>(R.id.ivIconoApp)
-        val tvAppName = view.findViewById<TextView>(R.id.tvAppName)
+        initUI()
 
-        tvAppName.text = app.appName
+        initListeners()
+
+
+    }
+
+    private fun initUI() {
+
+        binding.tvAppName.text = app.appName
         Glide.with(requireContext())
             .load(icon)
-            .into(ivIconoApp)
+            .into(binding.ivIconoApp)
 
 
-        val moverSiempreDisponiblesBoton =
-            view.findViewById<Button>(R.id.moverSiempreDisponiblesBoton)
-        val moverEntretenimientoBoton = view.findViewById<Button>(R.id.moverEntretenimientoBoton)
-        val moverSiempreBloqueadas = view.findViewById<Button>(R.id.moverSiempreBloqueadas)
+        binding.moverSiempreBloqueadasLinearMarcado.visibility =
+            if (app.blocked) View.VISIBLE else View.INVISIBLE
+        binding.moverSiempreBloqueadasLinear.visibility =
+            if (app.blocked) View.INVISIBLE else View.VISIBLE
 
-        moverSiempreDisponiblesBoton.setOnClickListener {
+        binding.moverEntretenimientoLinearMarcado.visibility =
+            if (app.entretenimiento) View.VISIBLE else View.INVISIBLE
+        binding.moverEntretenimientoLinear.visibility =
+            if (app.entretenimiento) View.INVISIBLE else View.VISIBLE
+
+        val esSiempreDisponible = !app.blocked && !app.entretenimiento
+        binding.moverSiempreDisponiblesLinearMarcado.visibility =
+            if (esSiempreDisponible) View.VISIBLE else View.INVISIBLE
+        binding.moverSiempreDisponiblesLinear.visibility =
+            if (esSiempreDisponible) View.INVISIBLE else View.VISIBLE
+
+
+    }
+
+    private fun initListeners() {
+        binding.moverSiempreDisponiblesBoton.setOnClickListener {
             lifecycleScope.launch {
                 appDataRepository.addAppsASiempreDisponiblesBD(listOf(app))
             }
-
             dismiss()
         }
 
-        moverEntretenimientoBoton.setOnClickListener {
+        binding.moverEntretenimientoBoton.setOnClickListener {
             lifecycleScope.launch {
                 appDataRepository.addAppsAEntretenimientoBD(listOf(app))
             }
-            Toast.makeText(requireContext(), "Lista actualizada", Toast.LENGTH_SHORT).show()
             dismiss()
         }
 
-        moverSiempreBloqueadas.setOnClickListener {
+        binding.moverSiempreBloqueadas.setOnClickListener {
             lifecycleScope.launch {
                 appDataRepository.addAppsASiempreBloqueadasBD(listOf(app))
             }
-            Toast.makeText(requireContext(), "Lista actualizada", Toast.LENGTH_SHORT).show()
             dismiss()
         }
     }
@@ -97,6 +119,11 @@ class BottomSheetMoverFragment(
             }
         }
         return dialog
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
 

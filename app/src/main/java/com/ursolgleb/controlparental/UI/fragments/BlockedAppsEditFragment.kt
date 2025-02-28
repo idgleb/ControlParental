@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -15,10 +14,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear.blockedAppsEditAdapter
-import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.databinding.FragmentBlockedAppsEditBinding
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -114,7 +111,7 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
         // 🔥 Observar si se necesita mostrar el mostrarBottomSheetActualizada
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                appDataRepository.mostrarBottomSheetActualizada.collect { isTrue ->
+                appDataRepository.mostrarBottomSheetActualizadaFlow.collect { isTrue ->
                     if (isTrue) {
                         // Mostrar un indicador de carga o bloquear la UI.
                         val bottomSheetActualizada = BottomSheetActualizadaFragment()

@@ -1,53 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    xmlns:tools="http://schemas.android.com/tools"
     android:background="@drawable/bottom_sheet_background"
+    android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center_horizontal">
+    android:padding="16dp">
 
     <!-- Indicador para deslizar con esquinas redondeadas -->
     <View
         android:layout_width="35dp"
         android:layout_height="4dp"
-        android:background="@drawable/rounded_indicator"
+        android:layout_gravity="center"
         android:layout_marginBottom="10dp"
-        android:layout_gravity="center"/>
+        android:background="@drawable/rounded_indicator" />
 
-    <ImageView
-        android:id="@+id/ivIconoApp"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_margin="16dp"
-        tools:background="@color/boton_secundario" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="16dp"
-        android:gravity="center">
+        android:paddingVertical="12dp">
 
         <TextView
             android:id="@+id/bottomSheetTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
             android:text="Mover"
             android:textSize="18sp"
-            android:textStyle="bold"
-            />
+            android:textStyle="bold" />
 
+        <ImageView
+            android:id="@+id/ivIconoApp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginTop="1dp"
+            tools:background="@color/boton_secundario" />
 
 
         <TextView
             android:id="@+id/tvAppName"
-            android:layout_marginHorizontal="8dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            tools:text="Nombre App"
-            android:textSize="18dp" />
+            android:layout_marginStart="3dp"
+            android:layout_marginEnd="8dp"
+            android:textSize="17dp"
+            android:textStyle="bold"
+            tools:text="Nombre App" />
 
         <TextView
             android:id="@+id/bottomSheetTitleEnd"
@@ -55,43 +58,249 @@
             android:layout_height="wrap_content"
             android:text="a:"
             android:textSize="18sp"
-            android:textStyle="bold"
-            />
+            android:textStyle="bold" />
 
     </LinearLayout>
 
 
-
-
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_marginVertical="16dp"
         android:gravity="center"
-        android:layout_marginVertical="16dp">
+        android:orientation="horizontal">
 
-        <Button
+        <FrameLayout
             android:id="@+id/moverSiempreDisponiblesBoton"
-            android:layout_width="120dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="♾️ Siempre disponible"
-            android:layout_margin="4dp"/>
+            app:layout_constraintEnd_toStartOf="@id/moverEntretenimientoBoton"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
-        <Button
+            <LinearLayout
+                android:id="@+id/moverSiempreDisponiblesLinear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageButton
+                    android:layout_width="65dp"
+                    android:layout_height="65dp"
+                    android:layout_marginHorizontal="16dp"
+                    android:background="@drawable/mover_a_disponibles"
+                    android:clickable="false"
+                    android:focusable="false" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:gravity="center"
+                    android:paddingVertical="3dp"
+                    android:text="Siempre\ndisponible"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/moverSiempreDisponiblesLinearMarcado"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="invisible">
+
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ImageButton
+                        android:layout_width="65dp"
+                        android:layout_height="65dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:background="@drawable/mover_a_disponibles_marcado"
+                        android:clickable="false"
+                        android:focusable="false" />
+
+                    <View
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="62dp"
+                        android:layout_marginTop="43dp"
+                        android:background="@drawable/ok_round_blue" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:gravity="center"
+                    android:paddingVertical="3dp"
+                    android:text="Siempre\ndisponible"
+                    android:textColor="@color/fondo_principal"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+        </FrameLayout>
+
+
+        <FrameLayout
             android:id="@+id/moverEntretenimientoBoton"
-            android:layout_width="120dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="⌚ Entretenimiento (bajo de horario)"
-            android:layout_margin="4dp"/>
+            app:layout_constraintEnd_toStartOf="@id/moverSiempreBloqueadas"
+            app:layout_constraintStart_toEndOf="@id/moverSiempreDisponiblesBoton"
+            app:layout_constraintTop_toTopOf="parent">
 
-        <Button
+            <LinearLayout
+                android:id="@+id/moverEntretenimientoLinear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageButton
+                    android:layout_width="65dp"
+                    android:layout_height="65dp"
+                    android:layout_marginHorizontal="16dp"
+                    android:background="@drawable/mover_a_entretenimiento"
+                    android:clickable="false"
+                    android:focusable="false" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:gravity="center"
+                    android:paddingVertical="3dp"
+                    android:text="Entretenimiento\n(bajo de horario)"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/moverEntretenimientoLinearMarcado"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="invisible">
+
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ImageButton
+                        android:layout_width="65dp"
+                        android:layout_height="65dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:background="@drawable/mover_a_entretenimiento_marcado"
+                        android:clickable="false"
+                        android:focusable="false" />
+
+                    <View
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="62dp"
+                        android:layout_marginTop="43dp"
+                        android:background="@drawable/ok_round_blue" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:gravity="center"
+                    android:paddingVertical="3dp"
+                    android:text="Entretenimiento\n(bajo de horario)"
+                    android:textColor="@color/fondo_principal"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+
+        <FrameLayout
             android:id="@+id/moverSiempreBloqueadas"
-            android:layout_width="120dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🔒 Siempre bloqueado"
-            android:layout_margin="4dp"/>
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/moverEntretenimientoBoton"
+            app:layout_constraintTop_toTopOf="parent">
 
-    </LinearLayout>
+            <LinearLayout
+                android:id="@+id/moverSiempreBloqueadasLinear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageButton
+                    android:layout_width="65dp"
+                    android:layout_height="65dp"
+                    android:layout_marginHorizontal="16dp"
+                    android:background="@drawable/mover_a_bloqueadas"
+                    android:clickable="false"
+                    android:focusable="false" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:gravity="center"
+                    android:paddingVertical="3dp"
+                    android:text="Siempre\nbloqueado"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/moverSiempreBloqueadasLinearMarcado"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="invisible">
+
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ImageButton
+                        android:layout_width="65dp"
+                        android:layout_height="65dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:background="@drawable/mover_a_bloqueadas_marcado"
+                        android:clickable="false"
+                        android:focusable="false" />
+
+                    <View
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="62dp"
+                        android:layout_marginTop="43dp"
+                        android:background="@drawable/ok_round_blue" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:gravity="center"
+                    android:paddingVertical="3dp"
+                    android:text="Siempre\nbloqueado"
+                    android:textColor="@color/fondo_principal"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+        </FrameLayout>
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 
 </LinearLayout>

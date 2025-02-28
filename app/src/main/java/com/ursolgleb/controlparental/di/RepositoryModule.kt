@@ -12,10 +12,10 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object AppModule {
+object RepositoryModule {
 
-    @Singleton
     @Provides
+    @Singleton
     fun provideAppDataRepository(
         appDatabase: AppDatabase,
         @ApplicationContext context: Context
@@ -23,3 +23,5 @@ object AppModule {
         return AppDataRepository(appDatabase, context)
     }
 }
+
+

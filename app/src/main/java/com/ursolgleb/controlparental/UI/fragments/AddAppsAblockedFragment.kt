@@ -16,6 +16,8 @@ import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear.MarcarAppsParaBloquearAdapter
 import com.ursolgleb.controlparental.databinding.FragmentAddAppsABlockedBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -48,6 +50,7 @@ class AddAppsAblockedFragment : Fragment(R.layout.fragment_add_apps_a_blocked) {
         binding.rvMarcarAppsParaBloquear.setRecycledViewPool(RecyclerView.RecycledViewPool())
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     private fun initListeners() {
 
         binding.btnBack.setOnClickListener {
@@ -57,7 +60,7 @@ class AddAppsAblockedFragment : Fragment(R.layout.fragment_add_apps_a_blocked) {
         binding.aggregarAppsABlockedBoton.setOnClickListener {
             val selectedApps = marcarAppsParaBloquearAdapter.getSelectedApps() // Obtener apps seleccionadas
             if (selectedApps.isNotEmpty()) {
-                lifecycleScope.launch {
+                GlobalScope.launch {
                     appDataRepository.addAppsASiempreBloqueadasBD(selectedApps.toList())
                 }
                 findNavController().popBackStack()
@@ -75,6 +78,19 @@ class AddAppsAblockedFragment : Fragment(R.layout.fragment_add_apps_a_blocked) {
                 appDataRepository.todosAppsMenosBloqueadosFlow.collect { newList ->
                     Log.w("BlockedAppsFragment", "Lista de apps actualizada: $newList")
                     marcarAppsParaBloquearAdapter.updateListEnAdaptador(newList)
+                }
+            }
+        }
+
+        // 🔥 Observar si se necesita mostrar el mostrarBottomSheetActualizada
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                appDataRepository.mostrarBottomSheetActualizadaFlow.collect { isTrue ->
+                    if (isTrue) {
+                        // Mostrar un indicador de carga o bloquear la UI.
+                        val bottomSheetActualizada = BottomSheetActualizadaFragment()
+                        bottomSheetActualizada.show(parentFragmentManager, "BottomSheetDialog")
+                    }
                 }
             }
         }

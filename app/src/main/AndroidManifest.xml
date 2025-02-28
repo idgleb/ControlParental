@@ -38,6 +38,7 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="tiramisu">
 
+
         <activity
             android:name=".UI.activities.ContainerActivity"
             android:exported="true">
