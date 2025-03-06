@@ -36,26 +36,23 @@ class blockedAppsEditAdapter(
     override fun onBindViewHolder(holder: blockedAppsEditViewHolder, position: Int) {
         val app = apps[position]
 
-        CoroutineScope(Dispatchers.IO).launch {
-            val icon = appDataRepository.getAppIcon(app.packageName, appDataRepository.context)
+        val icon = appDataRepository.getAppIcon(app.packageName)
 
-            val formattedTimeDeUso = Fun.formatearTiempoDeUso(app.tiempoUsoSegundosHoy)
+        val formattedTimeDeUso = Fun.formatearTiempoDeUso(app.tiempoUsoSegundosHoy)
 
-            withContext(Dispatchers.Main) {
-                holder.bind(
-                    app,
-                    icon,
-                    formattedTimeDeUso,
-                    selectedApps.contains(app.packageName)
-                ) { isChecked ->
-                    if (isChecked) {
-                        selectedApps.add(app.packageName) // ✅ Agrega a las apps seleccionadas
-                    } else {
-                        selectedApps.remove(app.packageName) // ✅ Elimina si se desmarca
-                    }
-                }
+        holder.bind(
+            app,
+            icon,
+            formattedTimeDeUso,
+            selectedApps.contains(app.packageName)
+        ) { isChecked ->
+            if (isChecked) {
+                selectedApps.add(app.packageName) // ✅ Agrega a las apps seleccionadas
+            } else {
+                selectedApps.remove(app.packageName) // ✅ Elimina si se desmarca
             }
         }
+
     }
 
 

@@ -16,8 +16,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-class BlockedAppsCardAdapter@Inject constructor(
-    val blockedApps: MutableList <AppEntity>,
+class BlockedAppsCardAdapter @Inject constructor(
+    val blockedApps: MutableList<AppEntity>,
     val appDataRepository: AppDataRepository
 ) : RecyclerView.Adapter<BlockedAppsCardViewHolder>() {
 
@@ -31,15 +31,8 @@ class BlockedAppsCardAdapter@Inject constructor(
 
     override fun onBindViewHolder(holder: BlockedAppsCardViewHolder, position: Int) {
         val blockedApp = blockedApps[position]
-
-        CoroutineScope(Dispatchers.IO).launch {
-
-            val icon = appDataRepository.getAppIcon(blockedApp.packageName, appDataRepository.context)
-
-            withContext(Dispatchers.Main) {
-                holder.bind(blockedApp.appName, icon)
-            }
-        }
+        val icon = appDataRepository.getAppIcon(blockedApp.packageName)
+        holder.bind(blockedApp.appName, icon)
     }
 
     override fun getItemCount(): Int = blockedApps.size

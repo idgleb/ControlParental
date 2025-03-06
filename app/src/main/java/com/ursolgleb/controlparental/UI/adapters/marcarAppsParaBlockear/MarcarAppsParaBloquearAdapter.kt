@@ -22,9 +22,13 @@ class MarcarAppsParaBloquearAdapter(
 ) : RecyclerView.Adapter<MarcarAppsParaBloquearViewHolder>() {
 
 
-    private val selectedApps = mutableSetOf<AppEntity>() // 🔥 Almacena los paquetes de apps seleccionadas
+    private val selectedApps =
+        mutableSetOf<AppEntity>() // 🔥 Almacena los paquetes de apps seleccionadas
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MarcarAppsParaBloquearViewHolder {
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int
+    ): MarcarAppsParaBloquearViewHolder {
         val binding =
             ItemAppGrandeBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return MarcarAppsParaBloquearViewHolder(binding)
@@ -33,26 +37,29 @@ class MarcarAppsParaBloquearAdapter(
     override fun onBindViewHolder(holder: MarcarAppsParaBloquearViewHolder, position: Int) {
         val app = apps[position]
 
-        CoroutineScope(Dispatchers.IO).launch {
-            val icon = appDataRepository.getAppIcon(app.packageName, appDataRepository.context)
+        val icon = appDataRepository.getAppIcon(app.packageName)
 
-            val formattedTimeDeUso = Fun.formatearTiempoDeUso(app.tiempoUsoSegundosHoy)
+        val formattedTimeDeUso = Fun.formatearTiempoDeUso(app.tiempoUsoSegundosHoy)
 
-            withContext(Dispatchers.Main) {
-                holder.bind(app.appName, icon, formattedTimeDeUso, selectedApps.contains(app)) { isChecked ->
-                    if (isChecked) {
-                        selectedApps.add(app) // ✅ Agrega a las apps seleccionadas
-                    } else {
-                        selectedApps.remove(app) // ✅ Elimina si se desmarca
-                    }
-                }
+        holder.bind(
+            app.appName,
+            icon,
+            formattedTimeDeUso,
+            selectedApps.contains(app)
+        ) { isChecked ->
+            if (isChecked) {
+                selectedApps.add(app) // ✅ Agrega a las apps seleccionadas
+            } else {
+                selectedApps.remove(app) // ✅ Elimina si se desmarca
             }
         }
+
     }
 
     override fun getItemCount(): Int = apps.size
 
-    fun getSelectedApps(): Set<AppEntity> = selectedApps // 🔥 Método para obtener apps seleccionadas
+    fun getSelectedApps(): Set<AppEntity> =
+        selectedApps // 🔥 Método para obtener apps seleccionadas
 
     // 🔥 ✅ Función para agregar una nueva app a la lista y actualizar la UI
     fun addAppEadaptador(newApp: AppEntity) {

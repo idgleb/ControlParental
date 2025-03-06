@@ -48,6 +48,14 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
 
     private fun initListeners() {
 
+        binding.aggregarAppsABlockedBoton.setOnClickListener {
+            val navController = Navigation.findNavController(
+                requireActivity(),
+                R.id.nav_host_fragment
+            )
+            navController.navigate(R.id.action_global_addAppsAblockedFragment)
+        }
+
         binding.delitBlackedAppBoton.setOnClickListener {
             lifecycleScope.launch(Dispatchers.IO) {
                 appDao.unblockAllApps()
@@ -55,14 +63,6 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
                     Log.w("BlockedAppsFragment", "Apps delited")
                 }
             }
-        }
-
-        binding.aggregarAppsABlockedBoton.setOnClickListener {
-            val navController = Navigation.findNavController(
-                requireActivity(),
-                R.id.nav_host_fragment
-            )
-            navController.navigate(R.id.action_global_addAppsAblockedFragment)
         }
 
         binding.cvAppsBlocked.setOnClickListener {
@@ -86,10 +86,14 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
         }
 
         binding.testBoton.setOnClickListener {
-            Log.e(
-                "BlockedAppsFragment",
-                "testBoton ${appDataRepository.mutexUpdateBDAppsState.value}"
-            )
+            val pkgName = "com.ursolgleb.controlparental"
+            Log.e("MioParametro", "testBoton")
+
+            val listPkgName = listOf(pkgName)
+            val tiempoDeUso = appDataRepository.getTiempoDeUsoSeconds(listPkgName) { app -> app }
+
+            Log.e("MioParametro", "getTiempoDeUsoSeconds $pkgName: $tiempoDeUso")
+
         }
 
     }
@@ -125,7 +129,7 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
         // 🔥 Observar si updateBDApps() esta en processo
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                appDataRepository.mutexUpdateBDAppsState.collect { isLocked ->
+                appDataRepository.mutexUpdateBDAppsStateFlow.collect { isLocked ->
                     // Aquí se actualiza cada vez que cambia el estado del mutex.
                     if (isLocked) {
                         // Mostrar un indicador de carga o bloquear la UI.
@@ -144,6 +148,10 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 appDataRepository.mostrarBottomSheetActualizadaFlow.collect { isTrue ->
+                    Log.e(
+                        "MioParametro",
+                        "BlockedAppsCardFragment mostrarBottomSheetActualizadaFlow: $isTrue"
+                    )
                     if (isTrue) {
                         // Mostrar un indicador de carga o bloquear la UI.
                         val bottomSheetActualizada = BottomSheetActualizadaFragment()

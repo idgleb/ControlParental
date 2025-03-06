@@ -25,12 +25,14 @@ class AppUsageWorker(
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
-        Log.d("AppUsageWorker", "Ejecutando updateTiempoUsoApps...")
+        Log.e("MioParametro", "Ejecutando doWork()...")
 
         // ✅ Recuperar `AppDataRepository` manualmente usando `EntryPoints`
         val appDataRepository = EntryPointAccessors
             .fromApplication(applicationContext, AppUsageWorkerEntryPoint::class.java)
             .getAppDataRepository()
+
+        Log.w("MioParametro", "Worker blockedAppsFlow: ${appDataRepository.blockedAppsFlow.value.map { it.appName }}")
 
 
         // ✅ Llamar a updateTiempoUsoApps()
@@ -44,7 +46,7 @@ class AppUsageWorker(
 
     private fun scheduleNextWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<AppUsageWorker>()
-            .setInitialDelay(10, TimeUnit.SECONDS)
+            .setInitialDelay(30, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(

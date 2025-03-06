@@ -1,5 +1,6 @@
 package com.ursolgleb.controlparental.data.local.dao
 
+import android.util.Log
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -39,5 +40,23 @@ interface AppDao {
 
     @Query("DELETE FROM apps")
     suspend fun deleteAllApps()
+
+    @Query("UPDATE apps SET tiempoUsoSegundosHoy = :hoy, tiempoUsoSegundosSemana = :semana, tiempoUsoSegundosMes = :mes WHERE packageName = :packageName")
+    suspend fun updateUsageTimesForApp(packageName: String, hoy: Long, semana: Long, mes: Long)
+
+    suspend fun updateUsageTimes(usageMap: MutableMap<String, MutableList<Long>>) {
+        usageMap.forEach { (packageName, usageTimes) ->
+            if (usageTimes.size == 3) {
+                updateUsageTimesForApp(packageName, usageTimes[0], usageTimes[1], usageTimes[2])
+            } else {
+                // Manejar el caso en que la lista no tiene el tamaño esperado (3)
+                // Podrías lanzar una excepción, registrar un error, o simplemente ignorar la entrada
+                Log.e(
+                    "AppDao",
+                    "Lista de tiempos de uso incorrecta para $packageName: ${usageTimes.size} elementos"
+                )
+            }
+        }
+    }
 
 }

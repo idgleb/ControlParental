@@ -93,7 +93,7 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
         // 🔥 Observar si updateBDApps() esta en processo
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                appDataRepository.mutexUpdateBDAppsState.collect { isLocked ->
+                appDataRepository.mutexUpdateBDAppsStateFlow.collect { isLocked ->
                     // Aquí se actualiza cada vez que cambia el estado del mutex.
                     if (isLocked) {
                         // Mostrar un indicador de carga o bloquear la UI.
