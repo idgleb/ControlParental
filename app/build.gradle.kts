@@ -125,6 +125,8 @@ dependencies {
     // optional - Multiprocess support
     implementation("androidx.work:work-multiprocess:$work_version")
 
+    implementation(libs.gson)
+
 
 
 }

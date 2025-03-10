@@ -86,13 +86,13 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
         }
 
         binding.testBoton.setOnClickListener {
-            val pkgName = "com.ursolgleb.controlparental"
+/*            val pkgName = "com.ursolgleb.controlparental"
             Log.e("MioParametro", "testBoton")
-
             val listPkgName = listOf(pkgName)
             val tiempoDeUso = appDataRepository.getTiempoDeUsoSeconds(listPkgName) { app -> app }
+            Log.e("MioParametro", "getTiempoDeUsoSeconds $pkgName: $tiempoDeUso")*/
 
-            Log.e("MioParametro", "getTiempoDeUsoSeconds $pkgName: $tiempoDeUso")
+            appDataRepository.getUsageStats30dias2()
 
         }
 

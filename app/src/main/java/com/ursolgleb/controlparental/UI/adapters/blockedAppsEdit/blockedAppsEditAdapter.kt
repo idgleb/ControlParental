@@ -1,21 +1,13 @@
 package com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear
 
-import android.content.Context
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
-import com.ursolgleb.controlparental.UI.fragments.BottomSheetActualizadaFragment
-import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
 import com.ursolgleb.controlparental.utils.Fun
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 class blockedAppsEditAdapter(
     val apps: MutableList<AppEntity>,
@@ -38,7 +30,7 @@ class blockedAppsEditAdapter(
 
         val icon = appDataRepository.getAppIcon(app.packageName)
 
-        val formattedTimeDeUso = Fun.formatearTiempoDeUso(app.tiempoUsoSegundosHoy)
+        val formattedTimeDeUso = Fun.formatearTiempoDeUso(app.tiempoUsoHoy)
 
         holder.bind(
             app,

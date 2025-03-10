@@ -22,13 +22,13 @@ interface AppDao {
     @Query("SELECT * FROM apps WHERE packageName = :packageName LIMIT 1")
     suspend fun getApp(packageName: String): AppEntity?
 
-    @Query("SELECT * FROM apps ORDER BY tiempoUsoSegundosHoy DESC")
+    @Query("SELECT * FROM apps ORDER BY tiempoUsoHoy DESC")
     fun getAllApps(): Flow<List<AppEntity>>
 
-    @Query("SELECT * FROM apps WHERE blocked = 1 ORDER BY tiempoUsoSegundosHoy DESC")
+    @Query("SELECT * FROM apps WHERE blocked = 1 ORDER BY tiempoUsoHoy DESC")
     fun getAllAppsBlocked(): Flow<List<AppEntity>>
 
-    @Query("SELECT * FROM apps WHERE blocked = 0 ORDER BY tiempoUsoSegundosHoy DESC")
+    @Query("SELECT * FROM apps WHERE blocked = 0 ORDER BY tiempoUsoHoy DESC")
     fun getAllAppsMenosBlocked(): Flow<List<AppEntity>>
 
     // 🔄 Cambiar todas las apps bloqueadas a desbloqueadas
@@ -41,8 +41,17 @@ interface AppDao {
     @Query("DELETE FROM apps")
     suspend fun deleteAllApps()
 
-    @Query("UPDATE apps SET tiempoUsoSegundosHoy = :hoy, tiempoUsoSegundosSemana = :semana, tiempoUsoSegundosMes = :mes WHERE packageName = :packageName")
+    @Query(
+        """
+    UPDATE apps 
+    SET tiempoUsoHoy = :hoy, timeStempToday = strftime('%s','now'),
+        tiempoUsoSemana = :semana, timeStempWeek = strftime('%s','now'),
+        tiempoUsoMes = :mes, timeStempMonth = strftime('%s','now')
+    WHERE packageName = :packageName
+"""
+    )
     suspend fun updateUsageTimesForApp(packageName: String, hoy: Long, semana: Long, mes: Long)
+
 
     suspend fun updateUsageTimes(usageMap: MutableMap<String, MutableList<Long>>) {
         usageMap.forEach { (packageName, usageTimes) ->
@@ -50,7 +59,6 @@ interface AppDao {
                 updateUsageTimesForApp(packageName, usageTimes[0], usageTimes[1], usageTimes[2])
             } else {
                 // Manejar el caso en que la lista no tiene el tamaño esperado (3)
-                // Podrías lanzar una excepción, registrar un error, o simplemente ignorar la entrada
                 Log.e(
                     "AppDao",
                     "Lista de tiempos de uso incorrecta para $packageName: ${usageTimes.size} elementos"

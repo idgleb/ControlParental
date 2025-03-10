@@ -2,8 +2,6 @@ package com.ursolgleb.controlparental.di
 
 import android.content.Context
 import androidx.work.WorkManager
-import com.ursolgleb.controlparental.AppDataRepository
-import com.ursolgleb.controlparental.workers.AppUsageWorker
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

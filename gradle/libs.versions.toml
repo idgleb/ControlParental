@@ -4,6 +4,7 @@ appcompatV7 = "28.0.0"
 fragmentKtx = "1.8.5"
 glide = "4.16.0"
 gradle = "8.0.2"
+gson = "2.10.1"
 hiltAndroidGradlePlugin = "2.44"
 hiltWorkVersion = "1.0.0"
 json = "20210307"
@@ -44,6 +45,7 @@ appcompat-v7 = { module = "com.android.support:appcompat-v7", version.ref = "app
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroidGradlePlugin" }
 hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hiltAndroidGradlePlugin" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltAndroidGradlePlugin" }

@@ -7,13 +7,11 @@ import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
-import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.ursolgleb.controlparental.workers.AppUsageWorker
-import java.util.concurrent.TimeUnit
+
 
 @HiltAndroidApp
 class ControlParentalApp : Application(), Configuration.Provider {

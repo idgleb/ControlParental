@@ -36,7 +36,7 @@ class AppUsageWorker(
 
 
         // ✅ Llamar a updateTiempoUsoApps()
-        appDataRepository.updateTiempoUsoApps()
+        //appDataRepository.updateTiempoUsoApps()
 
         // 🔹 Reprogramar el worker después de 10 segundos
         scheduleNextWork(applicationContext)
