@@ -92,7 +92,11 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
             val tiempoDeUso = appDataRepository.getTiempoDeUsoSeconds(listPkgName) { app -> app }
             Log.e("MioParametro", "getTiempoDeUsoSeconds $pkgName: $tiempoDeUso")*/
 
-            appDataRepository.getUsageStats30dias2()
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                appDataRepository.queryUsageEvents()
+            }
+
 
         }
 

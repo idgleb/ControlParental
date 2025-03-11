@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import okhttp3.internal.format
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.text.SimpleDateFormat
@@ -56,6 +57,9 @@ class AppDataRepository @Inject constructor(
 
     val mutexUpdateBDAppsStateFlow = MutableStateFlow(false)
     val mostrarBottomSheetActualizadaFlow = MutableStateFlow(false)
+
+    val dateFormat =
+        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) // Formato con fecha y hora
 
     // mutexGlobal
     fun inicieDelecturaDeBD() {
@@ -166,6 +170,14 @@ class AppDataRepository @Inject constructor(
         Log.e("AppDataRepository1", "Finish crear getTiempoDeUsoSeconds.")
 
         Log.d("AppDataRepository1", "Start crear nuevasEntidades...")
+
+        val usageData: Map<Int, Long> = mapOf(
+            1 to 7200000,   // Día 1: 2 horas
+            2 to 5400000,   // Día 2: 1.5 horas
+            3 to 0,         // Día 3: 0 horas
+            // Puedes añadir más días según sea necesario
+        )
+
         val nuevasEntidades = appsNuevas.map { app ->
 
             // condicion a donde poner las nuevas apps(block, entretenimiento o siempre disponibles)
@@ -188,14 +200,12 @@ class AppDataRepository @Inject constructor(
                 contentRating = "?",
                 appIsSystemApp = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
                 tiempoUsoHoy = tiempoDeUso[app.packageName]?.get(0) ?: 0,
-                tiempoUsoSemana = tiempoDeUso[app.packageName]?.get(1) ?: 0,
-                tiempoUsoMes = tiempoDeUso[app.packageName]?.get(2) ?: 0,
+                timeStempToday = timestampActual,
+                timeUsoMes = usageData, // cambiar
+                timeStempMes = timestampActual,
                 blocked = blocked,
                 usoLimitPorDiaMinutos = 0,
-                entretenimiento = entretenimiento,
-                timeStempToday = timestampActual,
-                timeStempWeek = timestampActual,
-                timeStempMonth = timestampActual
+                entretenimiento = entretenimiento
             )
         }
         Log.d("AppDataRepository1", "Finish crear nuevasEntidades.")
@@ -381,9 +391,10 @@ class AppDataRepository @Inject constructor(
                 val tiempoSemana = tiempoDeUso[app.packageName]?.get(1) ?: 0
                 val tiempoMes = tiempoDeUso[app.packageName]?.get(2) ?: 0
 
-                if (app.tiempoUsoHoy != tiempoHoy ||
-                    app.tiempoUsoSemana != tiempoSemana ||
-                    app.tiempoUsoMes != tiempoMes
+                if (app.tiempoUsoHoy != tiempoHoy
+                //||
+                // app.tiempoUsoSemana != tiempoSemana ||
+                //app.tiempoUsoMes != tiempoMes
                 ) {
                     tiempoDeUsoMap[app.packageName] =
                         mutableListOf(tiempoHoy, tiempoSemana, tiempoMes)
@@ -801,11 +812,13 @@ class AppDataRepository @Inject constructor(
 
     private fun getTimeMesAtras(): Long {
         val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, -29)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
+            add(Calendar.DAY_OF_MONTH, -30) // Retrocede 30 días
+            set(Calendar.HOUR_OF_DAY, 0) // Establece la hora a 00
+            set(Calendar.MINUTE, 0) // Establece los minutos a 0
+            set(Calendar.SECOND, 0) // Establece los segundos a 0
+            set(Calendar.MILLISECOND, 0) // Establece los milisegundos a 0
         }
+        Log.d("getTimeMesAtras", "getTimeMesAtras ${dateFormat.format(calendar.timeInMillis)}")
         return calendar.timeInMillis
     }
 
@@ -1000,7 +1013,7 @@ class AppDataRepository @Inject constructor(
         return usagePerDay
     }
 
-    suspend fun getUsageStats3dias(): Map<String, Map<Int, Long>> {
+    suspend fun getMiUsageStatsMesPorDias(): Map<String, Map<Int, Long>> {
         val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
@@ -1008,50 +1021,71 @@ class AppDataRepository @Inject constructor(
             set(Calendar.MILLISECOND, 0)
         }
         val endTimeHoy = calendar.timeInMillis // "Hoy a las 00:00:00"
-        val startTime3diasAtras =
-            endTimeHoy - (3 * 24 * 60 * 60 * 1000) // "3 días atrás a las 00:00:00"
-
-        val calendarIter = Calendar.getInstance()
-        calendarIter.timeInMillis = startTime3diasAtras
-
-        val dateFormat =
-            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) // Formato con fecha y hora
-
-        var dia = 0
+        val startTime30diasAtras = getTimeMesAtras() // "30 días atrás a las 00:00:00"
+        Log.d(
+            "startTime3diasAtras",
+            "startTime3diasAtras ${dateFormat.format(startTime30diasAtras)}"
+        )
 
         val statsMapBD = mutableMapOf<String, MutableMap<Int, Long>>()
 
-// 🔹 Esperar hasta que la base de datos esté actualizada
+        // 🔹 Esperar hasta que la base de datos esté actualizada
         saveUsEventsUltimoMesToDatabase()
 
-// 🔹 Obtener eventos de la base de datos
-        val usageEventsBD = getEventsFromDatabase(startTime3diasAtras, endTimeHoy)
+        // 🔹 Obtener eventos de la base de datos
+        val usageEventsBD = getEventsFromDatabase(startTime30diasAtras, endTimeHoy)
 
-// 🔹 Variables para manejar múltiples apps en primer plano
+        // 🔹 Variables para manejar múltiples apps en primer plano
         val activeApps = mutableMapOf<String, Long>() // packageName -> timestamp de inicio
 
-// 🔹 Procesar eventos en orden cronológico
+        // Mapa para almacenar los últimos dos eventos de cada app
+        val lastTwoEventsByApp = mutableMapOf<String, MutableList<Int>>()
+
+        // 🔹 Procesar eventos en orden cronológico
         val sortedEvents = usageEventsBD.sortedBy { it.timestamp }
         sortedEvents.forEach { event ->
+
+            //Log.d("MioParametro", "event.packageName ${dateFormat.format(event.timestamp)}")
+
+            if (event.packageName != "org.telegram.messenger") return@forEach
+
+            // formamos 2 ultimos eventos por app
+            val eventsForApp = lastTwoEventsByApp.getOrPut(event.packageName) { mutableListOf() }
+            // Agrega el evento actual
+            eventsForApp.add(event.eventType)
+            // Limita a tres eventos
+            if (eventsForApp.size > 3) eventsForApp.removeAt(0) // Remueve el evento más antiguo si hay más de tres
+
             val eventTime = event.timestamp
-            val day = ((eventTime - startTime3diasAtras) / (24 * 60 * 60 * 1000)).toInt()
+            val day = ((eventTime - startTime30diasAtras) / (24 * 60 * 60 * 1000)).toInt()
 
             when (event.eventType) {
+                //1
                 UsageEvents.Event.ACTIVITY_RESUMED -> {
                     // Registrar el inicio de la sesión de esta app
-                    activeApps[event.packageName] = eventTime
-                }
-                UsageEvents.Event.ACTIVITY_STOPPED, UsageEvents.Event.ACTIVITY_PAUSED -> {
-                    // Cerrar la sesión de esta app si estaba activa
-                    activeApps[event.packageName]?.let { startTime ->
-                        val usageDuration = eventTime - startTime
-                        val appUsageMap = statsMapBD.getOrPut(event.packageName) { mutableMapOf() }
-                        appUsageMap[day] = (appUsageMap[day] ?: 0L) + usageDuration
-                        activeApps.remove(event.packageName) // Eliminar de la lista de activas
+                    if (activeApps[event.packageName] == null) {
+                        activeApps[event.packageName] = eventTime
                     }
                 }
-                UsageEvents.Event.DEVICE_SHUTDOWN -> {
-                    // Cerrar la sesión de TODAS las apps activas
+                //23
+                UsageEvents.Event.ACTIVITY_STOPPED -> {
+                    // si ultimos dos eventos es ACTIVITY_PAUSED,ACTIVITY_RESUMED es incorrecto por eso no cerrar la sesion
+                    if (!(lastTwoEventsByApp[event.packageName]?.get(0) == UsageEvents.Event.ACTIVITY_PAUSED &&
+                                lastTwoEventsByApp[event.packageName]?.get(1) == UsageEvents.Event.ACTIVITY_RESUMED)
+                    ) {
+                        // Cerrar la sesión de esta app si estaba activa
+                        activeApps[event.packageName]?.let { startTime ->
+                            val usageDuration = eventTime - startTime
+                            val appUsageMap =
+                                statsMapBD.getOrPut(event.packageName) { mutableMapOf() }
+                            appUsageMap[day] = (appUsageMap[day] ?: 0L) + usageDuration
+                            activeApps.remove(event.packageName) // Eliminar de la lista de activas
+                        }
+                    }
+                }
+                // 26, 27
+                UsageEvents.Event.DEVICE_SHUTDOWN, UsageEvents.Event.DEVICE_STARTUP -> {
+                    // Cerrar las sesiónes de TODAS las apps activas
                     activeApps.forEach { (app, startTime) ->
                         val usageDuration = eventTime - startTime
                         val appUsageMap = statsMapBD.getOrPut(app) { mutableMapOf() }
@@ -1062,33 +1096,8 @@ class AppDataRepository @Inject constructor(
             }
         }
 
-// 🔹 Imprimir resultado
-        println(statsMapBD)
-
-
-
-
-
-
-
-        while (calendarIter.timeInMillis < endTimeHoy) {
-            dia++
-            Log.e("MioParametro", "Fecha: ${dateFormat.format(calendarIter.time)} - DayNumber $dia")
-
-            val startTime = calendarIter.timeInMillis
-            val endTime = startTime + (24 * 60 * 60 * 1000) // "más 1 día"
-            Log.d(
-                "MioParametro",
-                "startTime : ${dateFormat.format(startTime)}  - endTime : ${
-                    dateFormat.format(
-                        endTime
-                    )
-                }"
-            )
-
-            calendarIter.add(Calendar.DAY_OF_MONTH, 1) // Avanza al siguiente día
-            // mostrar aqui que dia es calendarIter.add(Calendar.DAY_OF_MONTH, 1)
-        }
+        // 🔹 Imprimir resultado
+        Log.d("MioParametro", "statsMapBD $statsMapBD")
 
         return statsMapBD
 
@@ -1117,7 +1126,7 @@ class AppDataRepository @Inject constructor(
             val eventTime = event.timestamp
             val dayNumber = calculateDayNumber(eventTime, endTime)
 
-            statsMapBD.getOrPut(packageName) { mutableListOf() }.add(event)
+            // statsMapBD.getOrPut(packageName) { mutableListOf() }.add(event)
         }
 
         return statsMapBD
@@ -1125,33 +1134,47 @@ class AppDataRepository @Inject constructor(
 
 
     suspend fun saveUsEventsUltimoMesToDatabase() {
-        Log.d("AppDataRepository1", "🎈saveUsEventsUltimoMesToDatabase Start...")
+        Log.d("MioParametro", "🎈saveUsEventsUltimoMesToDatabase Start...")
         // 🔹 Obtener el último timestamp guardado
         val lastSavedTimestamp = appDatabase.usageEventDao().getLastTimestamp() ?: 0L
         val startTimeMesAtras = getTimeMesAtras()
         var startTime = startTimeMesAtras
-        if (lastSavedTimestamp < startTimeMesAtras) {
+     /*   if (lastSavedTimestamp < startTimeMesAtras) {
             appDatabase.usageEventDao().deleteOldEvents(startTimeMesAtras)
         } else {
             startTime = lastSavedTimestamp + 1 // 🔹 Evita traer los eventos repetidos de pasado
-        }
+        }*/
+        Log.d("MioParametro", "startTime ${dateFormat.format(startTime)}")
 
         val endTime = System.currentTimeMillis() // 🔹 Hasta el momento actual
+
+        val eventList = mutableListOf<UsageEventEntity>()
 
         val usageStatsManager =
             context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
         val usageEvents = usageStatsManager?.queryEvents(startTime, endTime) ?: return
-        val eventList = mutableListOf<UsageEventEntity>()
         val event = UsageEvents.Event()
 
 
         while (usageEvents.hasNextEvent()) {
             usageEvents.getNextEvent(event)
+
+            if (event.packageName == "com.google.android.youtube") {
+                Log.w(
+                    "MioParametro",
+                    "Even teventType: ${event.eventType}, pkg: ${event.packageName}, timestamp: ${
+                        dateFormat.format(event.timeStamp)
+                    } ms:${event.timeStamp}"
+                )
+            }
+
             when (event.eventType) {
-                UsageEvents.Event.DEVICE_SHUTDOWN,
-                UsageEvents.Event.DEVICE_STARTUP,
-                UsageEvents.Event.ACTIVITY_RESUMED,
-                UsageEvents.Event.ACTIVITY_STOPPED -> {
+                UsageEvents.Event.DEVICE_SHUTDOWN, //26
+                UsageEvents.Event.DEVICE_STARTUP, //27
+                UsageEvents.Event.ACTIVITY_RESUMED, //1
+                UsageEvents.Event.ACTIVITY_PAUSED, //2
+                UsageEvents.Event.ACTIVITY_STOPPED, //23
+                    -> {
                     // Guardar en lista para insertar en Room
                     eventList.add(
                         UsageEventEntity(
@@ -1165,11 +1188,36 @@ class AppDataRepository @Inject constructor(
         }
 
         appDatabase.usageEventDao().insertAll(eventList) // Guardar solo eventos nuevos
-        Log.d("AppDataRepository1", "🎈🎈saveUsEventsUltimoMesToDatabase End")
+        Log.d("MioParametro", "🎈🎈saveUsEventsUltimoMesToDatabase End")
     }
 
     suspend fun getEventsFromDatabase(startTime: Long, endTime: Long): List<UsageEventEntity> {
         return appDatabase.usageEventDao().getEvents(startTime, endTime)
+    }
+
+    fun queryUsageEvents() {
+        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+
+        // Obtiene la hora actual
+        val endTime = System.currentTimeMillis()
+
+        // Configura el inicio de la consulta a 7 días atrás
+        val calendar = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_MONTH, -30) // Cambia el número para ajustar el rango
+        }
+        val startTime = calendar.timeInMillis
+
+        // Consulta los eventos de uso
+        val usageEvents = usageStatsManager.queryEvents(startTime, endTime)
+
+        // Procesa los eventos
+        while (usageEvents.hasNextEvent()) {
+            val event = UsageEvents.Event()
+            usageEvents.getNextEvent(event)
+            // Aquí puedes manejar el evento según sea necesario
+            Log.d("MioParametro", "Evento: ${event.packageName}, Tipo: ${event.eventType}, Tiempo: ${dateFormat.format(event.timeStamp)}")
+
+        }
     }
 
 

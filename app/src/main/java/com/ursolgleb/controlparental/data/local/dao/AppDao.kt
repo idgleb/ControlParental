@@ -45,18 +45,23 @@ interface AppDao {
         """
     UPDATE apps 
     SET tiempoUsoHoy = :hoy, timeStempToday = strftime('%s','now'),
-        tiempoUsoSemana = :semana, timeStempWeek = strftime('%s','now'),
-        tiempoUsoMes = :mes, timeStempMonth = strftime('%s','now')
+        timeUsoMes = :mes, timeStempMes = strftime('%s','now')
     WHERE packageName = :packageName
 """
     )
-    suspend fun updateUsageTimesForApp(packageName: String, hoy: Long, semana: Long, mes: Long)
+    suspend fun updateUsageTimesForApp(packageName: String, hoy: Long, mes: Map<Int, Long>)
 
 
     suspend fun updateUsageTimes(usageMap: MutableMap<String, MutableList<Long>>) {
+        val usageData: Map<Int, Long> = mapOf(
+            1 to 7200000,   // Día 1: 2 horas
+            2 to 5400000,   // Día 2: 1.5 horas
+            3 to 0,         // Día 3: 0 horas
+            // Puedes añadir más días según sea necesario
+        )
         usageMap.forEach { (packageName, usageTimes) ->
             if (usageTimes.size == 3) {
-                updateUsageTimesForApp(packageName, usageTimes[0], usageTimes[1], usageTimes[2])
+                updateUsageTimesForApp(packageName, usageTimes[0], usageData)
             } else {
                 // Manejar el caso en que la lista no tiene el tamaño esperado (3)
                 Log.e(
