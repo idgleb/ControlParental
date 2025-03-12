@@ -5,15 +5,17 @@ import java.net.URL
 
 class Fun {
     companion object {
-        fun formatearTiempoDeUso(secondsDeUso: Long): String {
-            val seconds = secondsDeUso % 60
-            val minutes = (secondsDeUso / 60) % 60
-            val hours = secondsDeUso / 3600
-            val strSec = if (hours.toInt() != 0) "" else seconds.toString() + "seg"
-            val strMin = if (minutes.toInt() == 0) "" else minutes.toString() + "min"
-            val strHour = if (hours.toInt() == 0) "" else hours.toString() + "h"
-            val formattedTimeDeUso = "$strHour $strMin $strSec"
-            return formattedTimeDeUso
+        fun formatearTiempoDeUso(miliSecondsDeUso: Long): String {
+            val totalSeconds = miliSecondsDeUso / 1000 // Convertir ms a segundos
+            val hours = totalSeconds / 3600
+            val minutes = (totalSeconds % 3600) / 60
+            val seconds = totalSeconds % 60
+
+            return when {
+                hours > 0 -> "${hours}h ${if (minutes > 0) "$minutes min" else ""}".trim()
+                minutes > 0 -> "$minutes min ${if (seconds > 0) "$seconds seg" else ""}".trim()
+                else -> "$seconds seg"
+            }
         }
 
         fun isUrlExists(url: String): Boolean {

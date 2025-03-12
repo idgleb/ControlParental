@@ -66,7 +66,7 @@ class AppBlockerService : AccessibilityService() {
 
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED){
             //renovar tiempo de uso de app
-            appDataRepository.renovarTiempoUsoApp(currentPkgEnPrimerPlano!!)
+            appDataRepository.renovarTiempoUsoAppHoy(currentPkgEnPrimerPlano!!)
         }
 
 

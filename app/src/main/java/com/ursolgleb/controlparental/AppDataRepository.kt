@@ -14,6 +14,7 @@ import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.dao.AppDao
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.data.local.entities.UsageEventEntity
+import com.ursolgleb.controlparental.data.local.entities.UsageStatsEntity
 import com.ursolgleb.controlparental.utils.Fun
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,13 +25,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import okhttp3.internal.format
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -166,17 +165,10 @@ class AppDataRepository @Inject constructor(
         val pm = context.packageManager
 
         Log.e("AppDataRepository1", "Start crear getTiempoDeUsoSeconds...")
-        val tiempoDeUso = getTiempoDeUsoSeconds(appsNuevas) { app -> app.packageName }
+        val tiempoDeUso = getTiempoDeUsoHoy(appsNuevas) { app -> app.packageName }
         Log.e("AppDataRepository1", "Finish crear getTiempoDeUsoSeconds.")
 
         Log.d("AppDataRepository1", "Start crear nuevasEntidades...")
-
-        val usageData: Map<Int, Long> = mapOf(
-            1 to 7200000,   // Día 1: 2 horas
-            2 to 5400000,   // Día 2: 1.5 horas
-            3 to 0,         // Día 3: 0 horas
-            // Puedes añadir más días según sea necesario
-        )
 
         val nuevasEntidades = appsNuevas.map { app ->
 
@@ -199,10 +191,8 @@ class AppDataRepository @Inject constructor(
                 appCategory = app.category.toString(),
                 contentRating = "?",
                 appIsSystemApp = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
-                tiempoUsoHoy = tiempoDeUso[app.packageName]?.get(0) ?: 0,
+                tiempoUsoHoy = tiempoDeUso[app.packageName] ?: 0L,
                 timeStempToday = timestampActual,
-                timeUsoMes = usageData, // cambiar
-                timeStempMes = timestampActual,
                 blocked = blocked,
                 usoLimitPorDiaMinutos = 0,
                 entretenimiento = entretenimiento
@@ -344,22 +334,24 @@ class AppDataRepository @Inject constructor(
 
     }
 
+    ///////////////////////////////////////////////////////////
+    ///////////////////////HOY
+    /////////////////
+
     // mutexGlobal
-    fun renovarTiempoUsoApp(pkgName: String) {
+    fun renovarTiempoUsoAppHoy(pkgName: String) {
         coroutineScope.launch {
             try {
                 mutexUpdateBDAppsStateFlow.value = true
-                val tiempoDeUsoMap = mutableMapOf<String, MutableList<Long>>()
+                val tiempoDeUsoMap = mutableMapOf<String, Long>()
                 val listPkgName = listOf(pkgName)
-                val tiempoDeUso = getTiempoDeUsoSeconds(listPkgName) { app -> app }
+                val tiempoDeUso = getTiempoDeUsoHoy(listPkgName) { app -> app }
                 listPkgName.forEach { app ->
-                    val tiempoHoy = tiempoDeUso[app]?.get(0) ?: 0
-                    val tiempoSemana = tiempoDeUso[app]?.get(1) ?: 0
-                    val tiempoMes = tiempoDeUso[app]?.get(2) ?: 0
-                    tiempoDeUsoMap[app] = mutableListOf(tiempoHoy, tiempoSemana, tiempoMes)
-                    Log.w("AppDataRepository1", "Renovar tiempo de uso de app: ${app}")
+                    val tiempoHoy = tiempoDeUso[app]
+                    tiempoDeUsoMap[app] = tiempoHoy ?: 0L
+                    Log.w("AppDataRepository1", "Renovar tiempo de uso de app hoy: ${app}")
                 }
-                if (tiempoDeUsoMap.isNotEmpty()) appDao.updateUsageTimes(tiempoDeUsoMap)
+                if (tiempoDeUsoMap.isNotEmpty()) appDao.updateUsageTimeHoy(tiempoDeUsoMap)
             } catch (e: Exception) {
                 Log.e("AppDataRepository1", "Error en renovarTiempoUsoApp: ${e.message}")
             } finally {
@@ -370,47 +362,237 @@ class AppDataRepository @Inject constructor(
     }
 
     // mutexGlobal
-    fun updateTiempoUsoApps() = coroutineScope.launch {
+    fun updateTiempoUsoAppsHoy() = coroutineScope.launch {
         val locked = mutexUpdateTiempoDeUso.tryLock()
         if (!locked) {
             mutexUpdateBDAppsStateFlow.value = mutexUpdateTiempoDeUso.isLocked
-            Log.w("AppDataRepository1", "UpdateTiempoDeUso ya está en ejecución")
+            Log.w("AppDataRepository1", "updateTiempoUsoAppsHoy ya está en ejecución")
             return@launch
         }
 
         mutexUpdateBDAppsStateFlow.value = true
         try {
-            Log.w("AppDataRepository1", "Empezamos actualizar tiempo de uso de apps")
+            Log.w("AppDataRepository1", "Empezamos actualizar tiempo de uso de apps hoy")
 
-            val tiempoDeUsoMap = mutableMapOf<String, MutableList<Long>>()
+            val tiempoDeUsoMapHoy = mutableMapOf<String, Long>()
 
             val apps = appDao.getAllApps().first()
-            val tiempoDeUso = getTiempoDeUsoSeconds(apps) { app -> app.packageName }
+            val tiempoDeUsoHoy = getTiempoDeUsoHoy(apps) { app -> app.packageName }
             apps.forEach { app ->
-                val tiempoHoy = tiempoDeUso[app.packageName]?.get(0) ?: 0
-                val tiempoSemana = tiempoDeUso[app.packageName]?.get(1) ?: 0
-                val tiempoMes = tiempoDeUso[app.packageName]?.get(2) ?: 0
-
-                if (app.tiempoUsoHoy != tiempoHoy
-                //||
-                // app.tiempoUsoSemana != tiempoSemana ||
-                //app.tiempoUsoMes != tiempoMes
-                ) {
-                    tiempoDeUsoMap[app.packageName] =
-                        mutableListOf(tiempoHoy, tiempoSemana, tiempoMes)
-                    Log.w("AppDataRepository1", "Actualizado tiempo de uso de app: ${app.appName}")
+                val tiempoDeUsoHoyApp = tiempoDeUsoHoy[app.packageName] ?: 0L
+                if (app.tiempoUsoHoy != tiempoDeUsoHoyApp) {
+                    Log.w(
+                        "AppDataRepository1",
+                        "app.tiempoUsoHoy: ${app.tiempoUsoHoy} == tiempoDeUsoHoyApp: $tiempoDeUsoHoyApp")
+                    tiempoDeUsoMapHoy[app.packageName] = tiempoDeUsoHoyApp ?: 0L
+                    Log.w(
+                        "AppDataRepository1",
+                        "♻️ Actualizado tiempo de uso de app hoy: ${app.appName}"
+                    )
                 }
             }
-            if (tiempoDeUsoMap.isNotEmpty()) appDao.updateUsageTimes(tiempoDeUsoMap)
+            if (tiempoDeUsoMapHoy.isNotEmpty()) appDao.updateUsageTimeHoy(tiempoDeUsoMapHoy)
 
         } catch (e: Exception) {
-            Log.e("AppDataRepository1", "Error en UpdateTiempoDeUso: ${e.message}")
+            Log.e("AppDataRepository1", "Error en updateTiempoUsoAppsHoy: ${e.message}")
         } finally {
             mutexUpdateTiempoDeUso.unlock()
             mutexUpdateBDAppsStateFlow.value = false
-            Log.e("AppDataRepository1", "UpdateTiempoDeUso finalizada")
+            Log.e("AppDataRepository1", "updateTiempoUsoAppsHoy finalizada")
         }
     }
+
+    // 🔹 Obtener el tiempo de uso de hoy incluso el tiempo de apps abiertas ♻️♻️♻️🎈solo para lista Apps
+    suspend fun <T> getTiempoDeUsoHoy(
+        apps: List<T>,
+        getPackageName: (T) -> String
+    ): Map<String, Long> {
+
+        val startTimeHoy = getTimeAtras(0) // "Hoy a las 00:00:00"
+        val endTimeAhora = System.currentTimeMillis() // tiempo actual
+
+        Log.d("getStatsHoy", "getStatsHoy ${dateFormat.format(startTimeHoy)}")
+
+        val listaApps = apps.map { getPackageName(it) }
+        val statsMapBD = mutableMapOf<String, Long>()
+
+        // 🔹 Obtener eventos de la base de datos solo para lista de apps
+        val usageEventsBD = getEventsFromDatabase(startTimeHoy, endTimeAhora, listaApps)
+
+        // 🔹 Variables para manejar múltiples apps en primer plano
+        val activeApps = mutableMapOf<String, Long>() // packageName -> timestamp de inicio
+
+        // Mapa para almacenar los últimos dos eventos de cada app(para calcular el uso de la app que tienen conciquencia rara de los eventos)
+        val lastTwoEventsByApp = mutableMapOf<String, MutableList<Int>>()
+
+        // 🔹 Procesar eventos en orden cronológico
+        val sortedEvents = usageEventsBD.sortedBy { it.timestamp }
+        sortedEvents.forEach { event ->
+
+            //if (event.packageName != "org.telegram.messenger") return@forEach
+
+            // formamos 2 ultimos eventos por app
+            val eventsForApp = lastTwoEventsByApp.getOrPut(event.packageName) { mutableListOf() }
+            // Agrega el evento actual
+            eventsForApp.add(event.eventType)
+            // Limita a tres eventos
+            if (eventsForApp.size > 3) eventsForApp.removeAt(0) // Remueve el evento más antiguo si hay más de tres
+
+            val eventTime = event.timestamp
+
+            when (event.eventType) {
+                //1
+                UsageEvents.Event.ACTIVITY_RESUMED -> {
+                    // Registrar el inicio de la sesión de esta app
+                    if (activeApps[event.packageName] == null) {
+                        activeApps[event.packageName] = eventTime
+                    }
+                }
+                //23
+                UsageEvents.Event.ACTIVITY_STOPPED -> {
+                    // si primero evento ACTIVITY_STOPPED es significa que la app estaba abierta, por eso sumamos desde el inicio hasta eventTime
+                    if (eventsForApp.size == 1) {
+                        val usageDuration = eventTime - startTimeHoy
+                        statsMapBD.getOrPut(event.packageName) { 0L }
+                        statsMapBD[event.packageName] =
+                            (statsMapBD[event.packageName] ?: 0L) + usageDuration
+                    }
+                    // si ultimos dos eventos es ACTIVITY_PAUSED,ACTIVITY_RESUMED es incorrecto por eso no cerrar la sesion
+                    if (!(lastTwoEventsByApp[event.packageName]?.get(0) == UsageEvents.Event.ACTIVITY_PAUSED &&
+                                lastTwoEventsByApp[event.packageName]?.get(1) == UsageEvents.Event.ACTIVITY_RESUMED)
+                    ) {
+                        // Cerrar la sesión de esta app si estaba activa
+                        activeApps[event.packageName]?.let { startTime ->
+                            val usageDuration = eventTime - startTime
+                            statsMapBD.getOrPut(event.packageName) { 0L }
+                            statsMapBD[event.packageName] =
+                                (statsMapBD[event.packageName] ?: 0L) + usageDuration
+                            activeApps.remove(event.packageName) // Eliminar de la lista de activas
+                        }
+                    }
+                }
+                // 26, 27
+                UsageEvents.Event.DEVICE_SHUTDOWN, UsageEvents.Event.DEVICE_STARTUP -> {
+                    // Cerrar las sesiónes de TODAS las apps activas
+                    activeApps.forEach { (app, startTime) ->
+                        val usageDuration = eventTime - startTime
+                        statsMapBD.getOrPut(app) { 0L }
+                        statsMapBD[app] = (statsMapBD[app] ?: 0L) + usageDuration
+                    }
+                    activeApps.clear() // Limpiar todas las sesiones activas
+                }
+            }
+        }
+
+        //agregamos tiempo para apps que todavia estan abiertas hasta el tiempo actual
+        activeApps.forEach { (app, startTime) ->
+            val usageDuration = endTimeAhora - startTime
+            statsMapBD.getOrPut(app) { 0L }
+            statsMapBD[app] = (statsMapBD[app] ?: 0L) + usageDuration
+        }
+
+        // 🔹 Imprimir resultado
+        Log.d("MioParametro", "statsMapBD $statsMapBD")
+
+        return statsMapBD
+
+    }
+
+    // 🔹 Obtener el tiempo de uso de hoy incluso el tiempo de apps abiertas ♻️♻️♻️
+    suspend fun getTiempoDeUsoHoy(): Map<String, Long> {
+
+        val startTimeHoy = getTimeAtras(0) // "Hoy a las 00:00:00"
+        val endTimeAhora = System.currentTimeMillis() // tiempo actual
+
+        Log.d("getStatsHoy", "getStatsHoy ${dateFormat.format(startTimeHoy)}")
+
+        val statsMapBD = mutableMapOf<String, Long>()
+
+        // 🔹 Obtener eventos de la base de datos
+        val usageEventsBD = getEventsFromDatabase(startTimeHoy, endTimeAhora)
+
+        // 🔹 Variables para manejar múltiples apps en primer plano
+        val activeApps = mutableMapOf<String, Long>() // packageName -> timestamp de inicio
+
+        // Mapa para almacenar los últimos dos eventos de cada app(para calcular el uso de la app que tienen conciquencia rara de los eventos)
+        val lastTwoEventsByApp = mutableMapOf<String, MutableList<Int>>()
+
+        // 🔹 Procesar eventos en orden cronológico
+        val sortedEvents = usageEventsBD.sortedBy { it.timestamp }
+        sortedEvents.forEach { event ->
+
+            //if (event.packageName != "org.telegram.messenger") return@forEach
+
+            // formamos 2 ultimos eventos por app
+            val eventsForApp = lastTwoEventsByApp.getOrPut(event.packageName) { mutableListOf() }
+            // Agrega el evento actual
+            eventsForApp.add(event.eventType)
+            // Limita a tres eventos
+            if (eventsForApp.size > 3) eventsForApp.removeAt(0) // Remueve el evento más antiguo si hay más de tres
+
+            val eventTime = event.timestamp
+
+            when (event.eventType) {
+                //1
+                UsageEvents.Event.ACTIVITY_RESUMED -> {
+                    // Registrar el inicio de la sesión de esta app
+                    if (activeApps[event.packageName] == null) {
+                        activeApps[event.packageName] = eventTime
+                    }
+                }
+                //23
+                UsageEvents.Event.ACTIVITY_STOPPED -> {
+                    // si primero evento ACTIVITY_STOPPED es significa que la app estaba abierta, por eso sumamos desde el inicio hasta eventTime
+                    if (eventsForApp.size == 1) {
+                        val usageDuration = eventTime - startTimeHoy
+                        statsMapBD.getOrPut(event.packageName) { 0L }
+                        statsMapBD[event.packageName] =
+                            (statsMapBD[event.packageName] ?: 0L) + usageDuration
+                    }
+                    // si ultimos dos eventos es ACTIVITY_PAUSED,ACTIVITY_RESUMED es incorrecto por eso no cerrar la sesion
+                    if (!(lastTwoEventsByApp[event.packageName]?.get(0) == UsageEvents.Event.ACTIVITY_PAUSED &&
+                                lastTwoEventsByApp[event.packageName]?.get(1) == UsageEvents.Event.ACTIVITY_RESUMED)
+                    ) {
+                        // Cerrar la sesión de esta app si estaba activa
+                        activeApps[event.packageName]?.let { startTime ->
+                            val usageDuration = eventTime - startTime
+                            statsMapBD.getOrPut(event.packageName) { 0L }
+                            statsMapBD[event.packageName] =
+                                (statsMapBD[event.packageName] ?: 0L) + usageDuration
+                            activeApps.remove(event.packageName) // Eliminar de la lista de activas
+                        }
+                    }
+                }
+                // 26, 27
+                UsageEvents.Event.DEVICE_SHUTDOWN, UsageEvents.Event.DEVICE_STARTUP -> {
+                    // Cerrar las sesiónes de TODAS las apps activas
+                    activeApps.forEach { (app, startTime) ->
+                        val usageDuration = eventTime - startTime
+                        statsMapBD.getOrPut(app) { 0L }
+                        statsMapBD[app] = (statsMapBD[app] ?: 0L) + usageDuration
+                    }
+                    activeApps.clear() // Limpiar todas las sesiones activas
+                }
+            }
+        }
+
+        //agregamos tiempo para apps que todavia estan abiertas hasta el tiempo actual
+        activeApps.forEach { (app, startTime) ->
+            val usageDuration = endTimeAhora - startTime
+            statsMapBD.getOrPut(app) { 0L }
+            statsMapBD[app] = (statsMapBD[app] ?: 0L) + usageDuration
+        }
+
+        // 🔹 Imprimir resultado
+        Log.d("MioParametro", "statsMapBD $statsMapBD")
+
+        return statsMapBD
+
+    }
+
+    //////////////
+    ///////////////HOY
+    ////////////////////////////////////////////////////////////////////////
 
     fun addNuevoPkgBD(pkgName: String) {
         val listaApplicationInfo = listOfNotNull(getApplicationInfo(pkgName))
@@ -421,8 +603,169 @@ class AppDataRepository @Inject constructor(
         todosAppsFlow.value.none { it.packageName == packageName }
 
 
-    /////////// otros funciones sin comunicar con BD
+    suspend fun saveUsEventsUltimoMesToDatabase() {
+        Log.d("MioParametro", "🎈saveUsEventsUltimoMesToDatabase Start...")
+        // 🔹 Obtener el último timestamp guardado
+        val lastSavedTimestamp = appDatabase.usageEventDao().getLastTimestamp() ?: 0L
+        val startTimeMesAtras = getTimeAtras(30)
+        var startTime = startTimeMesAtras
+        if (lastSavedTimestamp < startTimeMesAtras) {
+            appDatabase.usageEventDao().deleteOldEvents(startTimeMesAtras)
+        } else {
+            startTime = lastSavedTimestamp + 1 // 🔹 Evita traer los eventos repetidos de pasado
+        }
+        Log.d("MioParametro", "startTime ${dateFormat.format(startTime)}")
 
+        val endTime = System.currentTimeMillis() // 🔹 Hasta el momento actual
+
+        val eventList = mutableListOf<UsageEventEntity>()
+
+        val usageStatsManager =
+            context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
+        val usageEvents = usageStatsManager?.queryEvents(startTime, endTime) ?: return
+        val event = UsageEvents.Event()
+
+
+        while (usageEvents.hasNextEvent()) {
+            usageEvents.getNextEvent(event)
+
+            if (event.packageName == "com.google.android.youtube") {
+                Log.w(
+                    "MioParametro",
+                    "Even teventType: ${event.eventType}, pkg: ${event.packageName}, timestamp: ${
+                        dateFormat.format(event.timeStamp)
+                    } ms:${event.timeStamp}"
+                )
+            }
+
+            when (event.eventType) {
+                UsageEvents.Event.DEVICE_SHUTDOWN, //26
+                UsageEvents.Event.DEVICE_STARTUP, //27
+                UsageEvents.Event.ACTIVITY_RESUMED, //1
+                UsageEvents.Event.ACTIVITY_PAUSED, //2
+                UsageEvents.Event.ACTIVITY_STOPPED, //23
+                    -> {
+                    // Guardar en lista para insertar en Room
+                    eventList.add(
+                        UsageEventEntity(
+                            packageName = event.packageName,
+                            eventType = event.eventType,
+                            timestamp = event.timeStamp
+                        )
+                    )
+                }
+            }
+        }
+
+        appDatabase.usageEventDao().insertAll(eventList) // Guardar solo eventos nuevos
+        Log.d("MioParametro", "🎈🎈saveUsEventsUltimoMesToDatabase End")
+    }
+
+    suspend fun getEventsFromDatabase(startTime: Long, endTime: Long): List<UsageEventEntity> {
+        saveUsEventsUltimoMesToDatabase()
+        return appDatabase.usageEventDao().getEvents(startTime, endTime)
+    }
+
+    suspend fun getEventsFromDatabase(startTime: Long, endTime: Long, listaApps: List<String>): List<UsageEventEntity> {
+        saveUsEventsUltimoMesToDatabase()
+        return appDatabase.usageEventDao().getEvents(startTime, endTime, listaApps)
+    }
+
+    suspend fun getStatsFromDatabase(startTime: Long, endTime: Long): List<UsageStatsEntity> {
+        saveUsStatsUltimaSemanaToDatabase()
+        return appDatabase.usageStatsDao().getAllUsageStats()
+    }
+
+    suspend fun saveUsStatsUltimaSemanaToDatabase() {
+        Log.d("MioParametro", "🕧saveUsStatsUltimoSemanaToDatabase Start...")
+        // 🔹 Obtener el último timestamp guardado
+        val lastSavedDia = appDatabase.usageStatsDao().getLastDia() ?: 0L
+
+        val startTimeSemanaAtras = getTimeAtras(7)
+        var startTime = startTimeSemanaAtras
+        if (lastSavedDia < startTimeSemanaAtras) {
+            appDatabase.usageStatsDao().deleteOldUsageStats(startTimeSemanaAtras)
+        } else {
+            startTime = lastSavedDia + (24 * 60 * 60 * 1000) // +1 día en milisegundos
+        }
+        Log.d("MioParametro", "startDia ${dateFormat.format(startTime)}")
+
+        val endTime = getTimeAtras(0) // 🔹 Hasta el dia actual a la medianoche
+
+        val statsEntityList = mutableListOf<UsageStatsEntity>()
+
+        val usageStats = getUsageStatsEnSistema(startTime, endTime)
+
+        usageStats.forEach { pkgName ->
+            pkgName.value.forEach { dia ->
+                statsEntityList.add(
+                    UsageStatsEntity(
+                        packageName = pkgName.key,
+                        dia = dia.key,
+                        usageDuration = dia.value
+                    )
+                )
+            }
+        }
+
+        appDatabase.usageStatsDao()
+            .insertAllUsageStats(statsEntityList) // Guardar stats nuevos a BD
+
+        Log.d("MioParametro", "🕧🕧saveUsStatsUltimoSemanaToDatabase End")
+    }
+
+    fun getUsageStatsEnSistema(
+        startTime: Long,
+        endTime: Long
+    ): MutableMap<String, MutableMap<Long, Long>> {
+
+        Log.d("MioParametro", "startTime ${dateFormat.format(startTime)}")
+        Log.d("MioParametro", "endTime ${dateFormat.format(endTime)}")
+
+        val usageStatsManager =
+            context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+
+        val usageStatsList = usageStatsManager.queryUsageStats(
+            UsageStatsManager.INTERVAL_DAILY, startTime, endTime
+        ) ?: emptyList()
+
+        // Crear un mapa para almacenar el tiempo de uso por día para cada App
+        val statsMapBD = mutableMapOf<String, MutableMap<Long, Long>>()
+
+        usageStatsList.forEach { stats ->
+            //if (stats.packageName != "com.whatsapp.w4b") return@forEach
+            if (stats.lastTimeUsed !in startTime..endTime) return@forEach
+
+            val calendarDay = Calendar.getInstance().apply {
+                timeInMillis = stats.lastTimeUsed // Convertir timestamp a Calendar
+                set(Calendar.HOUR_OF_DAY, 0) // Fijar la hora a medianoche
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            val day = calendarDay.timeInMillis
+
+            Log.d(
+                "MioParametro",
+                "stats ${stats.packageName} totalTimeInForeground:${stats.totalTimeInForeground} lastTimeUsed:${
+                    dateFormat.format(stats.lastTimeUsed)
+                } dia:${dateFormat.format(day)}"
+            )
+
+            val usageDuration = stats.totalTimeInForeground
+            val appUsageMap = statsMapBD.getOrPut(stats.packageName) { mutableMapOf() }
+            appUsageMap[day] = (appUsageMap[day] ?: 0L) + usageDuration
+        }
+
+        // 🔹 Imprimir resultado
+        Log.d("MioParametro", "statsMapBD $statsMapBD")
+
+        return statsMapBD
+
+    }
+
+
+    //======================================================================
     // Obtener todas las apps con UI
     fun getAllAppsWithUIdeSistema(context: Context): List<ApplicationInfo> {
         val pm = context.packageManager
@@ -438,381 +781,9 @@ class AppDataRepository @Inject constructor(
         return pm.queryIntentActivities(intent, 0).isNotEmpty()
     }
 
-    // Obtener el tiempo de uso
-    /*    fun <T> getTiempoDeUsoSeconds(
-            apps: List<T>,
-            getPackageName: (T) -> String
-        ): Map<String, List<Long>> {
-
-            var duracion = 0L
-
-            val startTimes = getStartTimes()
-
-            val endTime = System.currentTimeMillis()
-
-            val usageStatsManager =
-                context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
-                    ?: return emptyMap()
-
-            val tiempoDeUso = mutableMapOf<String, MutableList<Long>>()
-
-            duracion = System.currentTimeMillis() - endTime
-            Log.d("AppDataRepository1", "Duración getStartTimes es  $duracion")
-
-            apps.forEach { app ->
-                val packageName = getPackageName(app)
-                tiempoDeUso[packageName] = mutableListOf() // Inicializa la lista para cada app
-                startTimes.take(3).forEach { startTime -> // Iteramos sobre los startTimes
-                    val totalTimeInForegroundSinUltimaSesionAbierta =
-                        usageStatsManager.queryAndAggregateUsageStats(
-                            startTime,
-                            endTime
-                        )[packageName]?.totalTimeInForeground?.div(1000) ?: 0
-                    tiempoDeUso[packageName]?.add(totalTimeInForegroundSinUltimaSesionAbierta) // Añade el tiempo
-                }
-            }
-
-            duracion = System.currentTimeMillis() - endTime
-            Log.d("AppDataRepository1", "Duración apps.forEach es  $duracion")
-
-            // Obtén los eventos en ese rango de tiempo
-            val startTimeDia = startTimes[3]
-            val usageEvents = usageStatsManager.queryEvents(startTimeDia, endTime)
-            val event = UsageEvents.Event()
-
-            duracion = System.currentTimeMillis() - endTime
-            Log.d("AppDataRepository1", "Duración queryEvents es  $duracion")
-
-            //val lastForegroundTimestamp = 0L // Almacena el timestamp del último FOREGROUND
-            val lastForegroundTimestampPorPkg = mutableMapOf<String, Long>()
-
-            // Recorrer eventos
-            while (usageEvents.hasNextEvent()) {
-                usageEvents.getNextEvent(event)
-                if (tiempoDeUso[event.packageName] == null) continue
-                when (event.eventType) {
-                    UsageEvents.Event.ACTIVITY_RESUMED -> lastForegroundTimestampPorPkg[event.packageName] =
-                        event.timeStamp
-
-                    UsageEvents.Event.ACTIVITY_PAUSED, UsageEvents.Event.ACTIVITY_STOPPED, UsageEvents.Event.DEVICE_SHUTDOWN ->
-                        lastForegroundTimestampPorPkg.remove(event.packageName)
-                }
-            }
-
-            duracion = System.currentTimeMillis() - endTime
-            Log.d("AppDataRepository1", "Duración Recorrer eventos es  $duracion")
-
-            // Si la app sigue en foreground, calcular tiempo adicional
-            for ((packageName, lastForegroundTimestamp) in lastForegroundTimestampPorPkg) {
-                val timeSessionAbierta = (endTime - lastForegroundTimestamp) / 1000
-                tiempoDeUso[packageName]?.set(
-                    0,
-                    tiempoDeUso[packageName]?.get(0)?.plus(timeSessionAbierta) ?: 0
-                )
-            }
-
-            duracion = System.currentTimeMillis() - endTime
-            Log.d("AppDataRepository1", "Duración calcular tiempo adicional es  $duracion")
-
-            // Calcular la duración total del metodo
-            duracion = System.currentTimeMillis() - endTime
-            Log.d("AppDataRepository1", "Duración total de getTiempoDeUsoSeconds es  $duracion")
-
-            return tiempoDeUso
-        }*/
-
-    /*fun <T> getTiempoDeUsoSeconds2(
-        apps: List<T>,
-        getPackageName: (T) -> String
-    ): Map<String, List<Long>> {
-
-        val duracion: Long
-
-        val startTimes = getStartTimes()
-
-        val endTime = System.currentTimeMillis()
-
-        val usageStatsManager =
-            context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
-                ?: return emptyMap()
-
-        val tiempoDeUso = mutableMapOf<String, MutableList<Long>>()
-
-        startTimes.take(3).forEach { startTime -> // Iteramos sobre los startTimes
-            val usageStatsMap: Map<String, UsageStats> =
-                usageStatsManager.queryAndAggregateUsageStats(startTime, endTime)
-            apps.forEach { app ->
-                val packageName = getPackageName(app)
-                tiempoDeUso.getOrPut(packageName) { mutableListOf() }// Inicializa la lista si no existe
-                val totalTimeInForegroundSinUltimaSesionAbierta =
-                    usageStatsMap[packageName]?.totalTimeInForeground?.div(1000) ?: 0
-                tiempoDeUso[packageName]?.add(totalTimeInForegroundSinUltimaSesionAbierta) // Añade el tiempo
-            }
-        }
-
-        Log.d("AppDataRepository1", "tiempoDeUso $tiempoDeUso")
-
-        // Obtén los eventos en ese rango de tiempo
-        val startTimeDia = startTimes[3]
-        val usageEvents = usageStatsManager.queryEvents(startTimeDia, endTime)
-        val event = UsageEvents.Event()
-
-        // Almacena el timestamp del último FOREGROUND
-        val lastForegroundTimestampPorPkg = mutableMapOf<String, Long>()
-
-        // Recorrer eventos
-        while (usageEvents.hasNextEvent()) {
-            usageEvents.getNextEvent(event)
-
-            when (event.eventType) {
-                UsageEvents.Event.DEVICE_SHUTDOWN, UsageEvents.Event.DEVICE_STARTUP ->
-                    lastForegroundTimestampPorPkg.clear()
-            }
-
-            if (tiempoDeUso[event.packageName] == null) continue
-            when (event.eventType) {
-                UsageEvents.Event.ACTIVITY_RESUMED ->
-                    lastForegroundTimestampPorPkg[event.packageName] = event.timeStamp
-
-                UsageEvents.Event.ACTIVITY_STOPPED ->
-                    lastForegroundTimestampPorPkg.remove(event.packageName)
-            }
-        }
-
-        // Si la app sigue en foreground, calcular tiempo adicional
-        for ((packageName, lastForegroundTimestamp) in lastForegroundTimestampPorPkg) {
-            val timeSessionAbierta = (endTime - lastForegroundTimestamp) / 1000
-            tiempoDeUso[packageName]?.set(
-                0,
-                tiempoDeUso[packageName]?.get(0)?.plus(timeSessionAbierta) ?: 0
-            )
-        }
-
-        // Calcular la duración total del metodo
-        duracion = System.currentTimeMillis() - endTime
-        Log.d("AppDataRepository1", "Duración total de getTiempoDeUsoSeconds es  $duracion")
-
-        return tiempoDeUso
-    }*/
-
-
-    fun <T> getTiempoDeUsoSeconds(
-        apps: List<T>,
-        getPackageName: (T) -> String
-    ): Map<String, List<Long>> {
-
-        val duracion: Long
-
-        val startTimes = getStartTimes()
-        val endTime = System.currentTimeMillis()
-
-        val usageStatsManager =
-            context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
-                ?: return emptyMap()
-
-
-        // 🔹 1. Obtener tiempo total de uso registrado
-        val tiempoDeUso = mutableMapOf<String, MutableList<Long>>()
-
-        startTimes.take(3).forEach { startTime -> // Iteramos sobre los startTimes
-            val usageStatsMap: Map<String, UsageStats> =
-                usageStatsManager.queryAndAggregateUsageStats(startTime, endTime)
-            apps.forEach { app ->
-                val packageName = getPackageName(app)
-                tiempoDeUso.getOrPut(packageName) { mutableListOf() }// Inicializa la lista si no existe
-                val totalTimeInForegroundSinUltimaSesionAbierta =
-                    usageStatsMap[packageName]?.totalTimeInForeground?.div(1000) ?: 0
-                tiempoDeUso[packageName]?.add(totalTimeInForegroundSinUltimaSesionAbierta) // Añade el tiempo
-            }
-        }
-
-        Log.d("AppDataRepository1", "tiempoDeUso $tiempoDeUso")
-
-        // 🔹 2. Revisar si hay apps en uso actualmente
-        val startTimeDia = startTimes[3]
-        val usageEvents = usageStatsManager.queryEvents(startTimeDia, endTime)
-        val event = UsageEvents.Event()
-        val lastForegroundTimestampsPorPkg = mutableMapOf<String, Long>()
-        while (usageEvents?.hasNextEvent() == true) {
-            usageEvents.getNextEvent(event)
-            when (event.eventType) {
-                UsageEvents.Event.DEVICE_SHUTDOWN, UsageEvents.Event.DEVICE_STARTUP ->
-                    lastForegroundTimestampsPorPkg.clear() // todos apps cerrados
-            }
-            if (tiempoDeUso[event.packageName] == null) continue
-            when (event.eventType) {
-                UsageEvents.Event.ACTIVITY_RESUMED ->
-                    lastForegroundTimestampsPorPkg[event.packageName] =
-                        event.timeStamp //en uso la app
-                UsageEvents.Event.ACTIVITY_STOPPED ->
-                    lastForegroundTimestampsPorPkg.remove(event.packageName) // app cerrada
-            }
-        } //y si en events falta ACTIVITY_STOPPED en algun app por tema de crash por ejemplo,
-        // entonces este codico va a pensar que esta app aun sigue en uso actualmente?
-
-        // 🔹 3. Sumar el tiempo de las apps que aún están abiertas
-        lastForegroundTimestampsPorPkg.forEach { (packageName, lastTimestamp) ->
-            Log.d(
-                "AppDataRepository1",
-                "App en primer plano: $packageName con timestamp $lastTimestamp"
-            )
-            val tiempoSesionAbierta = (endTime - lastTimestamp) / 1000
-            tiempoDeUso[packageName]?.set(
-                0,
-                tiempoDeUso[packageName]?.get(0)?.plus(tiempoSesionAbierta) ?: 0
-            )
-        }
-
-        Log.d("AppDataRepository1", "tiempoDeUso2 $tiempoDeUso")
-
-        // Calcular la duración total del metodo
-        duracion = System.currentTimeMillis() - endTime
-        Log.d("AppDataRepository1", "Duración total de getTiempoDeUsoSeconds es  $duracion")
-
-        return tiempoDeUso
-    }
-
-    ///
-
-    /*
-        fun <T> getTiempoDeUsoSeconds2(
-            apps: List<T>,
-            getPackageName: (T) -> String
-        ): Map<String, List<Long>> {
-
-            val duracion: Long
-
-            val startTimes = getStartTimes()
-            val endTime = System.currentTimeMillis()
-
-            val usageStatsManager =
-                context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
-                    ?: return emptyMap()
-
-            // 🔹 1. Obtener tiempo total de uso registrado
-            val tiempoDeUso = mutableMapOf<String, MutableList<Long>>()
-
-            val usageStatsMap1: Map<String, UsageStats> =
-                usageStatsManager.queryAndAggregateUsageStats(startTime1, endTime1)
-            val usageStatsMap2: Map<String, UsageStats> =
-                usageStatsManager.queryAndAggregateUsageStats(endTime1, endTime2)
-
-
-            val usageStatsMapHoy: Map<String, UsageStats> =
-                usageStatsManager.queryAndAggregateUsageStats(startTimes[0], endTime)
-            val usageStatsMapSemana: Map<String, UsageStats> =
-                usageStatsManager.queryAndAggregateUsageStats(startTimes[1], startTimes[0])
-            val usageStatsMapMes: Map<String, UsageStats> =
-                usageStatsManager.queryAndAggregateUsageStats(startTimes[2], startTimes[0])
-
-
-            apps.forEach app@{ app ->
-                val packageName = getPackageName(app)
-
-                val appBD = todosAppsFlow.value.firstOrNull { it.packageName == packageName }
-                val usoStatsMapHoy = usageStatsMapHoy[packageName]?.totalTimeInForeground?.div(1000) ?: 0
-                val usoStatsMapSemana = usageStatsMapSemana[packageName]?.totalTimeInForeground?.div(1000) ?: 0
-                val usoStatsMapMes = usageStatsMapMes[packageName]?.totalTimeInForeground?.div(1000) ?: 0
-
-                if (appBD == null) {// Si la app no esta en la BD
-                    tiempoDeUso.getOrPut(packageName) { mutableListOf() }// Inicializa la lista
-                    tiempoDeUso[packageName]?.add(usoStatsMapHoy)
-                    tiempoDeUso[packageName]?.add(usoStatsMapSemana)
-                    tiempoDeUso[packageName]?.add(usoStatsMapMes)
-                    return@app
-                }
-
-                val hoy = startTimes[0]
-                if (appBD.timeStempWeek < hoy) {
-                    tiempoDeUso.getOrPut(packageName) { mutableListOf() }// Inicializa la lista
-                    if (appBD.timeStempToday < usoStatsMapHoy) {
-                        tiempoDeUso[packageName]?.add(usoStatsMapHoy)
-                    }
-                    tiempoDeUso[packageName]?.add(usageStatsMapSemana[packageName]?.totalTimeInForeground?.div(1000) ?: 0)
-                    tiempoDeUso[packageName]?.add(usageStatsMapMes[packageName]?.totalTimeInForeground?.div(1000) ?: 0)
-                }
-
-            }
-
-
-
-            Log.d("AppDataRepository1", "tiempoDeUso $tiempoDeUso")
-
-            // 🔹 2. Revisar si hay apps en uso actualmente
-            val startTimeDia = startTimes[3]
-            val usageEvents = usageStatsManager.queryEvents(startTimeDia, endTime)
-            val event = UsageEvents.Event()
-            val lastForegroundTimestampsPorPkg = mutableMapOf<String, Long>()
-            while (usageEvents?.hasNextEvent() == true) {
-                usageEvents.getNextEvent(event)
-                when (event.eventType) {
-                    UsageEvents.Event.DEVICE_SHUTDOWN, UsageEvents.Event.DEVICE_STARTUP ->
-                        lastForegroundTimestampsPorPkg.clear() // todos apps cerrados
-                }
-                if (tiempoDeUso[event.packageName] == null) continue
-                when (event.eventType) {
-                    UsageEvents.Event.ACTIVITY_RESUMED ->
-                        lastForegroundTimestampsPorPkg[event.packageName] =
-                            event.timeStamp //en uso la app
-                    UsageEvents.Event.ACTIVITY_STOPPED ->
-                        lastForegroundTimestampsPorPkg.remove(event.packageName) // app cerrada
-                }
-            } //y si en events falta ACTIVITY_STOPPED en algun app por tema de crash por ejemplo,
-            // entonces este codico va a pensar que esta app aun sigue en uso actualmente?
-
-            // 🔹 3. Sumar el tiempo de las apps que aún están abiertas
-            lastForegroundTimestampsPorPkg.forEach { (packageName, lastTimestamp) ->
-                Log.d(
-                    "AppDataRepository1",
-                    "App en primer plano: $packageName con timestamp $lastTimestamp"
-                )
-                val tiempoSesionAbierta = (endTime - lastTimestamp) / 1000
-                tiempoDeUso[packageName]?.set(
-                    0,
-                    tiempoDeUso[packageName]?.get(0)?.plus(tiempoSesionAbierta) ?: 0
-                )
-            }
-
-            Log.d("AppDataRepository1", "tiempoDeUso2 $tiempoDeUso")
-
-            // Calcular la duración total del metodo
-            duracion = System.currentTimeMillis() - endTime
-            Log.d("AppDataRepository1", "Duración total de getTiempoDeUsoSeconds es  $duracion")
-
-            return tiempoDeUso
-        }
-    */
-
-
-    private fun getStartTimes(): MutableList<Long> {
+    private fun getTimeAtras(dias: Int): Long {
         val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        val startTimes: MutableList<Long> = mutableListOf()
-
-        startTimes.add(calendar.timeInMillis) //Insertamos "Hoy a las 00:00:00"
-
-        calendar.add(Calendar.DAY_OF_YEAR, -6) // Calculamos "Semana atras a las 00:00:00"
-
-        startTimes.add(calendar.timeInMillis) //Insertamos "Semana"
-
-        calendar.add(Calendar.DAY_OF_YEAR, -23) // Calculamos "Mes atras a las 00:00:00"
-
-        startTimes.add(calendar.timeInMillis) //Insertamos "Mes"
-
-        // Volvemos a sumar los dias restados  para calcular el dia anterior
-        calendar.add(Calendar.DAY_OF_YEAR, 29)
-        startTimes.add(calendar.timeInMillis)  // Insertamos "1 Día" al final
-
-        return startTimes
-    }
-
-    private fun getTimeMesAtras(): Long {
-        val calendar = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_MONTH, -30) // Retrocede 30 días
+            add(Calendar.DAY_OF_MONTH, -dias) // Retrocede X días
             set(Calendar.HOUR_OF_DAY, 0) // Establece la hora a 00
             set(Calendar.MINUTE, 0) // Establece los minutos a 0
             set(Calendar.SECOND, 0) // Establece los segundos a 0
@@ -870,322 +841,9 @@ class AppDataRepository @Inject constructor(
     fun clear() {
         coroutineScope.cancel() // ✅ Cancelar todas las corrutinas cuando ya no sea necesario
     }
-
-    fun getUsageStats30dias(): Map<String, Map<Int, Long>> {
-        val usageStatsManager =
-            context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
-
-        val times = getStartTimes()
-        val endTimeHoy = times[0]
-        val startTimeMesAtras = times[2]
-
-        val usageStatsList = usageStatsManager?.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY, startTimeMesAtras, endTimeHoy
-        ) ?: emptyList()
-
-        // Crear un mapa para almacenar el tiempo de uso por día para cada App
-        val usagePerDay = mutableMapOf<String, MutableMap<Int, Long>>()
-
-
-        usageStatsList.forEach { stats ->
-
-            //???
-        }
-
-        // Asegurar que todos los 30 días aparezcan
-        val calendar = Calendar.getInstance()
-        calendar.timeInMillis = startTimeMesAtras
-
-        while (calendar.timeInMillis <= endTimeHoy) {
-            //???
-
-            calendar.add(Calendar.DAY_OF_MONTH, 1) // Avanza al siguiente día
-        }
-        return usagePerDay
-    }
-
-    fun getUsageStats30dias2() {
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        val endTimeHoy = calendar.timeInMillis // "Hoy a las 00:00:00"
-        val startTime3diasAtras =
-            endTimeHoy - (3 * 24 * 60 * 60 * 1000) // "2 días atrás a las 00:00:00"
-
-        val usageStatsManager =
-            context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
-
-        val calendarIter = Calendar.getInstance()
-        calendarIter.timeInMillis = startTime3diasAtras
-
-        val dateFormat =
-            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) // Formato con fecha y hora
-
-        var dia = 0
-        while (calendarIter.timeInMillis < endTimeHoy) {
-            dia++
-            Log.e("MioParametro", "Fecha: ${dateFormat.format(calendarIter.time)} - DayNumber $dia")
-
-            val startTime = calendarIter.timeInMillis
-            val endTime = startTime + (24 * 60 * 60 * 1000) // "más 1 día"
-            Log.d(
-                "MioParametro",
-                "startTime : ${dateFormat.format(startTime)}  - endTime : ${
-                    dateFormat.format(
-                        endTime
-                    )
-                }"
-            )
-
-            val usageStatsList =
-                usageStatsManager?.queryAndAggregateUsageStats(startTime, endTime) ?: emptyMap()
-
-            usageStatsList.filter { it.key == it.key }.forEach { (packageName, stats) ->
-                val time = stats.totalTimeInForeground / 60_000
-                Log.w(
-                    "MioParametro",
-                    "App: $packageName - uso(${dateFormat.format(calendarIter.time)}): $time"
-                )
-            }
-
-            Log.w("MioParametro", "------------------------------------------")
-
-
-            calendarIter.add(Calendar.DAY_OF_MONTH, 1) // Avanza al siguiente día
-            // mostrar aqui que dia es calendarIter.add(Calendar.DAY_OF_MONTH, 1)
-        }
-
-
-    }
-
-    fun getUsageStats30dias3(): Map<String, Map<Int, Long>> {
-        val usageStatsManager =
-            context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
-
-        val times = getStartTimes()
-        val endTimeHoy = times[0]
-        val startTimeMesAtras = times[1]
-
-        val usageStatsList = usageStatsManager?.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY, startTimeMesAtras, endTimeHoy
-        ) ?: emptyList()
-
-        // Crear un mapa para almacenar el tiempo de uso por día para cada App
-        val usagePerDay = mutableMapOf<String, MutableMap<Int, Long>>()
-
-        usageStatsList.forEach { stats ->
-            val packageName = stats.packageName
-            val totalTimeInForeground = stats.totalTimeInForeground / 1000
-            val dayNumber = calculateDayNumber(stats.lastTimeUsed, endTimeHoy)
-
-            if (dayNumber in 1..30) {
-                if (!usagePerDay.containsKey(packageName)) {
-                    usagePerDay[packageName] = mutableMapOf()
-                }
-
-                usagePerDay[packageName]?.set(dayNumber, totalTimeInForeground)
-            }
-        }
-
-        Log.d("AppDataRepository1", "usagePerDay $usagePerDay")
-
-        return usagePerDay
-    }
-
-    suspend fun getMiUsageStatsMesPorDias(): Map<String, Map<Int, Long>> {
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        val endTimeHoy = calendar.timeInMillis // "Hoy a las 00:00:00"
-        val startTime30diasAtras = getTimeMesAtras() // "30 días atrás a las 00:00:00"
-        Log.d(
-            "startTime3diasAtras",
-            "startTime3diasAtras ${dateFormat.format(startTime30diasAtras)}"
-        )
-
-        val statsMapBD = mutableMapOf<String, MutableMap<Int, Long>>()
-
-        // 🔹 Esperar hasta que la base de datos esté actualizada
-        saveUsEventsUltimoMesToDatabase()
-
-        // 🔹 Obtener eventos de la base de datos
-        val usageEventsBD = getEventsFromDatabase(startTime30diasAtras, endTimeHoy)
-
-        // 🔹 Variables para manejar múltiples apps en primer plano
-        val activeApps = mutableMapOf<String, Long>() // packageName -> timestamp de inicio
-
-        // Mapa para almacenar los últimos dos eventos de cada app
-        val lastTwoEventsByApp = mutableMapOf<String, MutableList<Int>>()
-
-        // 🔹 Procesar eventos en orden cronológico
-        val sortedEvents = usageEventsBD.sortedBy { it.timestamp }
-        sortedEvents.forEach { event ->
-
-            //Log.d("MioParametro", "event.packageName ${dateFormat.format(event.timestamp)}")
-
-            if (event.packageName != "org.telegram.messenger") return@forEach
-
-            // formamos 2 ultimos eventos por app
-            val eventsForApp = lastTwoEventsByApp.getOrPut(event.packageName) { mutableListOf() }
-            // Agrega el evento actual
-            eventsForApp.add(event.eventType)
-            // Limita a tres eventos
-            if (eventsForApp.size > 3) eventsForApp.removeAt(0) // Remueve el evento más antiguo si hay más de tres
-
-            val eventTime = event.timestamp
-            val day = ((eventTime - startTime30diasAtras) / (24 * 60 * 60 * 1000)).toInt()
-
-            when (event.eventType) {
-                //1
-                UsageEvents.Event.ACTIVITY_RESUMED -> {
-                    // Registrar el inicio de la sesión de esta app
-                    if (activeApps[event.packageName] == null) {
-                        activeApps[event.packageName] = eventTime
-                    }
-                }
-                //23
-                UsageEvents.Event.ACTIVITY_STOPPED -> {
-                    // si ultimos dos eventos es ACTIVITY_PAUSED,ACTIVITY_RESUMED es incorrecto por eso no cerrar la sesion
-                    if (!(lastTwoEventsByApp[event.packageName]?.get(0) == UsageEvents.Event.ACTIVITY_PAUSED &&
-                                lastTwoEventsByApp[event.packageName]?.get(1) == UsageEvents.Event.ACTIVITY_RESUMED)
-                    ) {
-                        // Cerrar la sesión de esta app si estaba activa
-                        activeApps[event.packageName]?.let { startTime ->
-                            val usageDuration = eventTime - startTime
-                            val appUsageMap =
-                                statsMapBD.getOrPut(event.packageName) { mutableMapOf() }
-                            appUsageMap[day] = (appUsageMap[day] ?: 0L) + usageDuration
-                            activeApps.remove(event.packageName) // Eliminar de la lista de activas
-                        }
-                    }
-                }
-                // 26, 27
-                UsageEvents.Event.DEVICE_SHUTDOWN, UsageEvents.Event.DEVICE_STARTUP -> {
-                    // Cerrar las sesiónes de TODAS las apps activas
-                    activeApps.forEach { (app, startTime) ->
-                        val usageDuration = eventTime - startTime
-                        val appUsageMap = statsMapBD.getOrPut(app) { mutableMapOf() }
-                        appUsageMap[day] = (appUsageMap[day] ?: 0L) + usageDuration
-                    }
-                    activeApps.clear() // Limpiar todas las sesiones activas
-                }
-            }
-        }
-
-        // 🔹 Imprimir resultado
-        Log.d("MioParametro", "statsMapBD $statsMapBD")
-
-        return statsMapBD
-
-    }
-
-    // Helper function to calculate the day number (30 is yesterday, 29 is before yesterday, etc.)
-    private fun calculateDayNumber(timeInMillis: Long, endTimeHoy: Long): Int {
-        val diff = endTimeHoy - timeInMillis
-        return TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS).toInt() + 1
-    }
-
-    suspend fun getUsageStatsMes(): Map<String, Map<Int, Long>> {
-
-        // 🔹 Esperar hasta que la base de datos esté actualizada
-        saveUsEventsUltimoMesToDatabase()
-
-        // 🔹 Ahora continúa con la ejecución después de que la base de datos se ha actualizado
-        val startTimes = getStartTimes()
-        val endTime = startTimes[0]
-        val startTime = startTimes[2]
-
-        val usageEventsBD = getEventsFromDatabase(startTime, endTime)
-        val statsMapBD = mutableMapOf<String, Map<Int, Long>>()
-        usageEventsBD.forEach { event ->
-            val packageName = event.packageName
-            val eventTime = event.timestamp
-            val dayNumber = calculateDayNumber(eventTime, endTime)
-
-            // statsMapBD.getOrPut(packageName) { mutableListOf() }.add(event)
-        }
-
-        return statsMapBD
-    }
-
-    suspend fun saveUsEventsUltimoMesToDatabase() {
-        Log.d("MioParametro", "🎈saveUsEventsUltimoMesToDatabase Start...")
-        // 🔹 Obtener el último timestamp guardado
-        val lastSavedTimestamp = appDatabase.usageEventDao().getLastTimestamp() ?: 0L
-        val startTimeMesAtras = getTimeMesAtras()
-        var startTime = startTimeMesAtras
-        /*   if (lastSavedTimestamp < startTimeMesAtras) {
-               appDatabase.usageEventDao().deleteOldEvents(startTimeMesAtras)
-           } else {
-               startTime = lastSavedTimestamp + 1 // 🔹 Evita traer los eventos repetidos de pasado
-           }*/
-        Log.d("MioParametro", "startTime ${dateFormat.format(startTime)}")
-
-        val endTime = System.currentTimeMillis() // 🔹 Hasta el momento actual
-
-        val eventList = mutableListOf<UsageEventEntity>()
-
-        val usageStatsManager =
-            context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
-        val usageEvents = usageStatsManager?.queryEvents(startTime, endTime) ?: return
-        val event = UsageEvents.Event()
-
-
-        while (usageEvents.hasNextEvent()) {
-            usageEvents.getNextEvent(event)
-
-            if (event.packageName == "com.google.android.youtube") {
-                Log.w(
-                    "MioParametro",
-                    "Even teventType: ${event.eventType}, pkg: ${event.packageName}, timestamp: ${
-                        dateFormat.format(event.timeStamp)
-                    } ms:${event.timeStamp}"
-                )
-            }
-
-            when (event.eventType) {
-                UsageEvents.Event.DEVICE_SHUTDOWN, //26
-                UsageEvents.Event.DEVICE_STARTUP, //27
-                UsageEvents.Event.ACTIVITY_RESUMED, //1
-                UsageEvents.Event.ACTIVITY_PAUSED, //2
-                UsageEvents.Event.ACTIVITY_STOPPED, //23
-                    -> {
-                    // Guardar en lista para insertar en Room
-                    eventList.add(
-                        UsageEventEntity(
-                            packageName = event.packageName,
-                            eventType = event.eventType,
-                            timestamp = event.timeStamp
-                        )
-                    )
-                }
-            }
-        }
-
-        appDatabase.usageEventDao().insertAll(eventList) // Guardar solo eventos nuevos
-        Log.d("MioParametro", "🎈🎈saveUsEventsUltimoMesToDatabase End")
-    }
-
-    suspend fun getEventsFromDatabase(startTime: Long, endTime: Long): List<UsageEventEntity> {
-        return appDatabase.usageEventDao().getEvents(startTime, endTime)
-    }
-
-
-    //======================================================================
-    //======================================================================
-
     fun queryUsageEvents() {
         val usageStatsManager =
             context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-
-        // Obtiene la hora actual
-
 
         // Configura el inicio de la consulta a 7 días atrás
         val calendar = Calendar.getInstance().apply {
@@ -1219,62 +877,10 @@ class AppDataRepository @Inject constructor(
 
         }
     }
+    //======================================================================
 
-    fun queryUsageStats() {
-        // Configura el inicio de la consulta a X días atrás
-        val calendar = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_MONTH, -30) // Cambia el número para ajustar el rango
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        val startTime = calendar.timeInMillis
-        // hoy a las 00:00:00
-        val calendar2 = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_MONTH, 0) // Cambia el número para ajustar el rango
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        val endTime = calendar2.timeInMillis
 
-        Log.d("MioParametro", "startTime ${dateFormat.format(startTime)}")
-        Log.d("MioParametro", "endTime ${dateFormat.format(endTime)}")
 
-        val usageStatsManager =
-            context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-
-        val usageStatsList = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY, startTime, endTime
-        ) ?: emptyList()
-
-        // Crear un mapa para almacenar el tiempo de uso por día para cada App
-        val statsMapBD = mutableMapOf<String, MutableMap<Int, Long>>()
-
-        usageStatsList.forEach { stats ->
-            if (stats.packageName != "com.whatsapp.w4b") return@forEach
-            if (stats.lastTimeUsed !in startTime..endTime) return@forEach
-            val day = ((stats.lastTimeUsed - startTime) / (24 * 60 * 60 * 1000)).toInt()
-
-            Log.d(
-                "MioParametro",
-                "stats ${stats.packageName} totalTimeInForeground:${stats.totalTimeInForeground} lastTimeUsed:${
-                    dateFormat.format(stats.lastTimeUsed)
-                } dia:$day"
-            )
-
-            val usageDuration = stats.totalTimeInForeground
-            val appUsageMap =
-                statsMapBD.getOrPut(stats.packageName) { mutableMapOf() }
-            appUsageMap[day] = (appUsageMap[day] ?: 0L) + usageDuration
-        }
-
-        // 🔹 Imprimir resultado
-        Log.d("MioParametro", "statsMapBD $statsMapBD")
-
-    }
 
 
 }

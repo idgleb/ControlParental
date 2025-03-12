@@ -1,14 +1,11 @@
 package com.ursolgleb.controlparental.data.local.dao
 
-import android.util.Log
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
-import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -44,32 +41,19 @@ interface AppDao {
     @Query(
         """
     UPDATE apps 
-    SET tiempoUsoHoy = :hoy, timeStempToday = strftime('%s','now'),
-        timeUsoMes = :mes, timeStempMes = strftime('%s','now')
+    SET tiempoUsoHoy = :hoy, timeStempToday = strftime('%s','now')
     WHERE packageName = :packageName
 """
     )
-    suspend fun updateUsageTimesForApp(packageName: String, hoy: Long, mes: Map<Int, Long>)
+    suspend fun updateUsageTimesForAppHoy(packageName: String, hoy: Long)
 
 
-    suspend fun updateUsageTimes(usageMap: MutableMap<String, MutableList<Long>>) {
-        val usageData: Map<Int, Long> = mapOf(
-            1 to 7200000,   // Día 1: 2 horas
-            2 to 5400000,   // Día 2: 1.5 horas
-            3 to 0,         // Día 3: 0 horas
-            // Puedes añadir más días según sea necesario
-        )
-        usageMap.forEach { (packageName, usageTimes) ->
-            if (usageTimes.size == 3) {
-                updateUsageTimesForApp(packageName, usageTimes[0], usageData)
-            } else {
-                // Manejar el caso en que la lista no tiene el tamaño esperado (3)
-                Log.e(
-                    "AppDao",
-                    "Lista de tiempos de uso incorrecta para $packageName: ${usageTimes.size} elementos"
-                )
-            }
+    suspend fun updateUsageTimeHoy(usageMap: MutableMap<String, Long>) {
+
+        usageMap.forEach { (packageName, usageTimesHoy) ->
+            updateUsageTimesForAppHoy(packageName, usageTimesHoy)
         }
+
     }
 
 }

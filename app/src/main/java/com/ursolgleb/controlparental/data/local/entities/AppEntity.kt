@@ -16,8 +16,6 @@ data class AppEntity(
     var appIsSystemApp: Boolean,
     var tiempoUsoHoy: Long,
     var timeStempToday: Long,
-    var timeUsoMes: Map<Int, Long>,  // ✅ Ahora almacena Int como clave en JSON
-    var timeStempMes: Long,
     var blocked: Boolean,
     var usoLimitPorDiaMinutos: Int,
     var entretenimiento: Boolean
