@@ -94,7 +94,7 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
 
 
             viewLifecycleOwner.lifecycleScope.launch {
-                appDataRepository.queryUsageEvents()
+                appDataRepository.queryUsageStats()
             }
 
 

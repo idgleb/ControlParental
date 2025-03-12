@@ -990,24 +990,6 @@ class AppDataRepository @Inject constructor(
             }
         }
 
-        // Asegurar que todos los 30 días aparezcan
-        val calendar = Calendar.getInstance()
-        calendar.timeInMillis = startTimeMesAtras
-
-        while (calendar.timeInMillis <= endTimeHoy) {
-            val dayNumber = calculateDayNumber(calendar.timeInMillis, endTimeHoy)
-
-            if (dayNumber in 1..30) {
-                usagePerDay.forEach { (packageName, usageMap) ->
-                    if (!usageMap.containsKey(dayNumber)) {
-                        usageMap[dayNumber] = 0L // Si no hay datos para ese día, inicializar con 0
-                    }
-                }
-            }
-
-            calendar.add(Calendar.DAY_OF_MONTH, 1) // Avanza al siguiente día
-        }
-
         Log.d("AppDataRepository1", "usagePerDay $usagePerDay")
 
         return usagePerDay
@@ -1132,18 +1114,17 @@ class AppDataRepository @Inject constructor(
         return statsMapBD
     }
 
-
     suspend fun saveUsEventsUltimoMesToDatabase() {
         Log.d("MioParametro", "🎈saveUsEventsUltimoMesToDatabase Start...")
         // 🔹 Obtener el último timestamp guardado
         val lastSavedTimestamp = appDatabase.usageEventDao().getLastTimestamp() ?: 0L
         val startTimeMesAtras = getTimeMesAtras()
         var startTime = startTimeMesAtras
-     /*   if (lastSavedTimestamp < startTimeMesAtras) {
-            appDatabase.usageEventDao().deleteOldEvents(startTimeMesAtras)
-        } else {
-            startTime = lastSavedTimestamp + 1 // 🔹 Evita traer los eventos repetidos de pasado
-        }*/
+        /*   if (lastSavedTimestamp < startTimeMesAtras) {
+               appDatabase.usageEventDao().deleteOldEvents(startTimeMesAtras)
+           } else {
+               startTime = lastSavedTimestamp + 1 // 🔹 Evita traer los eventos repetidos de pasado
+           }*/
         Log.d("MioParametro", "startTime ${dateFormat.format(startTime)}")
 
         val endTime = System.currentTimeMillis() // 🔹 Hasta el momento actual
@@ -1195,17 +1176,31 @@ class AppDataRepository @Inject constructor(
         return appDatabase.usageEventDao().getEvents(startTime, endTime)
     }
 
+
+    //======================================================================
+    //======================================================================
+
     fun queryUsageEvents() {
-        val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val usageStatsManager =
+            context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
         // Obtiene la hora actual
-        val endTime = System.currentTimeMillis()
+
 
         // Configura el inicio de la consulta a 7 días atrás
         val calendar = Calendar.getInstance().apply {
             add(Calendar.DAY_OF_MONTH, -30) // Cambia el número para ajustar el rango
         }
         val startTime = calendar.timeInMillis
+
+        // Configura el inicio de la consulta a 7 días atrás
+        val calendar2 = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_MONTH, -10) // Cambia el número para ajustar el rango
+        }
+        val endTime = calendar2.timeInMillis
+
+        Log.d("MioParametro", "startTime ${dateFormat.format(startTime)}")
+        Log.d("MioParametro", "endTime ${dateFormat.format(endTime)}")
 
         // Consulta los eventos de uso
         val usageEvents = usageStatsManager.queryEvents(startTime, endTime)
@@ -1215,9 +1210,70 @@ class AppDataRepository @Inject constructor(
             val event = UsageEvents.Event()
             usageEvents.getNextEvent(event)
             // Aquí puedes manejar el evento según sea necesario
-            Log.d("MioParametro", "Evento: ${event.packageName}, Tipo: ${event.eventType}, Tiempo: ${dateFormat.format(event.timeStamp)}")
+            Log.d(
+                "MioParametro",
+                "Evento: ${event.packageName}, Tipo: ${event.eventType}, Tiempo: ${
+                    dateFormat.format(event.timeStamp)
+                }"
+            )
 
         }
+    }
+
+    fun queryUsageStats() {
+        // Configura el inicio de la consulta a X días atrás
+        val calendar = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_MONTH, -30) // Cambia el número para ajustar el rango
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startTime = calendar.timeInMillis
+        // hoy a las 00:00:00
+        val calendar2 = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_MONTH, 0) // Cambia el número para ajustar el rango
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val endTime = calendar2.timeInMillis
+
+        Log.d("MioParametro", "startTime ${dateFormat.format(startTime)}")
+        Log.d("MioParametro", "endTime ${dateFormat.format(endTime)}")
+
+        val usageStatsManager =
+            context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+
+        val usageStatsList = usageStatsManager.queryUsageStats(
+            UsageStatsManager.INTERVAL_DAILY, startTime, endTime
+        ) ?: emptyList()
+
+        // Crear un mapa para almacenar el tiempo de uso por día para cada App
+        val statsMapBD = mutableMapOf<String, MutableMap<Int, Long>>()
+
+        usageStatsList.forEach { stats ->
+            if (stats.packageName != "com.whatsapp.w4b") return@forEach
+            if (stats.lastTimeUsed !in startTime..endTime) return@forEach
+            val day = ((stats.lastTimeUsed - startTime) / (24 * 60 * 60 * 1000)).toInt()
+
+            Log.d(
+                "MioParametro",
+                "stats ${stats.packageName} totalTimeInForeground:${stats.totalTimeInForeground} lastTimeUsed:${
+                    dateFormat.format(stats.lastTimeUsed)
+                } dia:$day"
+            )
+
+            val usageDuration = stats.totalTimeInForeground
+            val appUsageMap =
+                statsMapBD.getOrPut(stats.packageName) { mutableMapOf() }
+            appUsageMap[day] = (appUsageMap[day] ?: 0L) + usageDuration
+        }
+
+        // 🔹 Imprimir resultado
+        Log.d("MioParametro", "statsMapBD $statsMapBD")
+
     }
 
 
