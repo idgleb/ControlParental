@@ -14,6 +14,7 @@ import com.ursolgleb.controlparental.utils.Launcher
 import java.util.Locale
 import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.data.log.LogBlockedAppEntity
+import com.ursolgleb.controlparental.utils.AppsFun
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -167,7 +168,7 @@ class AppBlockerService : AccessibilityService() {
 
     private fun blockearSiEsNuevoAppYtieneUI(pkgName: String): Boolean {
         if (appDataRepository.siEsNuevoPkg(pkgName) &&
-            appDataRepository.siTieneUI(this@AppBlockerService, pkgName)
+            AppsFun.siTieneUI(this@AppBlockerService, pkgName)
         ) {
             Log.w("AppBlockerService111", "El paquete $pkgName es nuevo. Bloqueando...")
             blockear()

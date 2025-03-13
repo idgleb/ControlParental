@@ -8,11 +8,9 @@ import android.view.ViewTreeObserver
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
-import com.ursolgleb.controlparental.UI.viewmodel.SharedViewModel
 import com.ursolgleb.controlparental.databinding.FragmentMainAdminBinding
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject

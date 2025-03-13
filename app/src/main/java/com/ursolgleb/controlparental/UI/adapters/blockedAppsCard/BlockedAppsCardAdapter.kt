@@ -10,6 +10,7 @@ import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
 import com.ursolgleb.controlparental.databinding.ItemBlockedAppBinding
+import com.ursolgleb.controlparental.utils.AppsFun
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,7 +32,7 @@ class BlockedAppsCardAdapter @Inject constructor(
 
     override fun onBindViewHolder(holder: BlockedAppsCardViewHolder, position: Int) {
         val blockedApp = blockedApps[position]
-        val icon = appDataRepository.getAppIcon(blockedApp.packageName)
+        val icon = AppsFun.getAppIcon(appDataRepository.context,blockedApp.packageName)
         holder.bind(blockedApp.appName, icon)
     }
 

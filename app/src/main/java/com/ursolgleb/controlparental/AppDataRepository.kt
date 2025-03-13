@@ -12,9 +12,12 @@ import android.os.DeadObjectException
 import android.util.Log
 import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.dao.AppDao
+import com.ursolgleb.controlparental.data.local.dao.UsageEventDao
+import com.ursolgleb.controlparental.data.local.dao.UsageStatsDao
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.data.local.entities.UsageEventEntity
 import com.ursolgleb.controlparental.data.local.entities.UsageStatsEntity
+import com.ursolgleb.controlparental.utils.AppsFun
 import com.ursolgleb.controlparental.utils.Fun
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +45,8 @@ class AppDataRepository @Inject constructor(
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     private val appDao: AppDao = appDatabase.appDao()
+    private val usageEventDao: UsageEventDao = appDatabase.usageEventDao()
+    private val usageStatsDao: UsageStatsDao = appDatabase.usageStatsDao()
 
     private var isInicieDeLecturaTermina = false
 
@@ -56,9 +61,6 @@ class AppDataRepository @Inject constructor(
 
     val mutexUpdateBDAppsStateFlow = MutableStateFlow(false)
     val mostrarBottomSheetActualizadaFlow = MutableStateFlow(false)
-
-    val dateFormat =
-        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) // Formato con fecha y hora
 
     // mutexGlobal
     fun inicieDelecturaDeBD() {
@@ -99,7 +101,7 @@ class AppDataRepository @Inject constructor(
 
     private fun cargarAppsEnBackgroundDesdeBD() {
         coroutineScope.launch {
-            appDatabase.appDao().getAllApps().collect { apps ->
+            appDao.getAllApps().collect { apps ->
                 todosAppsFlow.value = apps
                 val blockedApps = apps.filter { it.blocked }
 
@@ -219,7 +221,7 @@ class AppDataRepository @Inject constructor(
 
     // (no puede ser mutexGlobal) Obtener nuevas apps instaladas en el sistema
     suspend fun getNuevasAppsEnSistema(context: Context): List<ApplicationInfo> {
-        val installedApps = getAllAppsWithUIdeSistema(context)
+        val installedApps = AppsFun.getAllAppsWithUIdeSistema(context)
         if (installedApps.isEmpty()) return emptyList()
 
         val appsDeBD = appDao.getAllApps().first()
@@ -334,10 +336,18 @@ class AppDataRepository @Inject constructor(
 
     }
 
-    ///////////////////////////////////////////////////////////
-    ///////////////////////HOY
-    /////////////////
+    //========= Apps ===================================
+    fun addNuevoPkgBD(pkgName: String) {
+        val listaApplicationInfo = listOfNotNull(AppsFun.getApplicationInfo(context, pkgName))
+        coroutineScope.launch { addListaAppsBD(listaApplicationInfo) }
+    }
 
+    fun siEsNuevoPkg(packageName: String) =
+        todosAppsFlow.value.none { it.packageName == packageName }
+    //===================================================
+
+
+    //==============TiempoUso===========HOY
     // mutexGlobal
     fun renovarTiempoUsoAppHoy(pkgName: String) {
         coroutineScope.launch {
@@ -383,7 +393,8 @@ class AppDataRepository @Inject constructor(
                 if (app.tiempoUsoHoy != tiempoDeUsoHoyApp) {
                     Log.w(
                         "AppDataRepository1",
-                        "app.tiempoUsoHoy: ${app.tiempoUsoHoy} == tiempoDeUsoHoyApp: $tiempoDeUsoHoyApp")
+                        "app.tiempoUsoHoy: ${app.tiempoUsoHoy} == tiempoDeUsoHoyApp: $tiempoDeUsoHoyApp"
+                    )
                     tiempoDeUsoMapHoy[app.packageName] = tiempoDeUsoHoyApp ?: 0L
                     Log.w(
                         "AppDataRepository1",
@@ -408,10 +419,10 @@ class AppDataRepository @Inject constructor(
         getPackageName: (T) -> String
     ): Map<String, Long> {
 
-        val startTimeHoy = getTimeAtras(0) // "Hoy a las 00:00:00"
+        val startTimeHoy = Fun.getTimeAtras(0) // "Hoy a las 00:00:00"
         val endTimeAhora = System.currentTimeMillis() // tiempo actual
 
-        Log.d("getStatsHoy", "getStatsHoy ${dateFormat.format(startTimeHoy)}")
+        Log.d("getStatsHoy", "getStatsHoy ${Fun.dateFormat.format(startTimeHoy)}")
 
         val listaApps = apps.map { getPackageName(it) }
         val statsMapBD = mutableMapOf<String, Long>()
@@ -501,10 +512,10 @@ class AppDataRepository @Inject constructor(
     // 🔹 Obtener el tiempo de uso de hoy incluso el tiempo de apps abiertas ♻️♻️♻️
     suspend fun getTiempoDeUsoHoy(): Map<String, Long> {
 
-        val startTimeHoy = getTimeAtras(0) // "Hoy a las 00:00:00"
+        val startTimeHoy = Fun.getTimeAtras(0) // "Hoy a las 00:00:00"
         val endTimeAhora = System.currentTimeMillis() // tiempo actual
 
-        Log.d("getStatsHoy", "getStatsHoy ${dateFormat.format(startTimeHoy)}")
+        Log.d("getStatsHoy", "getStatsHoy ${Fun.dateFormat.format(startTimeHoy)}")
 
         val statsMapBD = mutableMapOf<String, Long>()
 
@@ -590,31 +601,23 @@ class AppDataRepository @Inject constructor(
 
     }
 
-    //////////////
-    ///////////////HOY
-    ////////////////////////////////////////////////////////////////////////
+    //=========================
 
-    fun addNuevoPkgBD(pkgName: String) {
-        val listaApplicationInfo = listOfNotNull(getApplicationInfo(pkgName))
-        coroutineScope.launch { addListaAppsBD(listaApplicationInfo) }
-    }
 
-    fun siEsNuevoPkg(packageName: String) =
-        todosAppsFlow.value.none { it.packageName == packageName }
-
+    //========= Eventos ===================================
 
     suspend fun saveUsEventsUltimoMesToDatabase() {
         Log.d("MioParametro", "🎈saveUsEventsUltimoMesToDatabase Start...")
         // 🔹 Obtener el último timestamp guardado
-        val lastSavedTimestamp = appDatabase.usageEventDao().getLastTimestamp() ?: 0L
-        val startTimeMesAtras = getTimeAtras(30)
+        val lastSavedTimestamp = usageEventDao.getLastTimestamp() ?: 0L
+        val startTimeMesAtras = Fun.getTimeAtras(30)
         var startTime = startTimeMesAtras
         if (lastSavedTimestamp < startTimeMesAtras) {
-            appDatabase.usageEventDao().deleteOldEvents(startTimeMesAtras)
+            usageEventDao.deleteOldEvents(startTimeMesAtras)
         } else {
             startTime = lastSavedTimestamp + 1 // 🔹 Evita traer los eventos repetidos de pasado
         }
-        Log.d("MioParametro", "startTime ${dateFormat.format(startTime)}")
+        Log.d("MioParametro", "startTime ${Fun.dateFormat.format(startTime)}")
 
         val endTime = System.currentTimeMillis() // 🔹 Hasta el momento actual
 
@@ -633,7 +636,7 @@ class AppDataRepository @Inject constructor(
                 Log.w(
                     "MioParametro",
                     "Even teventType: ${event.eventType}, pkg: ${event.packageName}, timestamp: ${
-                        dateFormat.format(event.timeStamp)
+                        Fun.dateFormat.format(event.timeStamp)
                     } ms:${event.timeStamp}"
                 )
             }
@@ -657,40 +660,47 @@ class AppDataRepository @Inject constructor(
             }
         }
 
-        appDatabase.usageEventDao().insertAll(eventList) // Guardar solo eventos nuevos
+        usageEventDao.insertAll(eventList) // Guardar solo eventos nuevos
         Log.d("MioParametro", "🎈🎈saveUsEventsUltimoMesToDatabase End")
     }
 
     suspend fun getEventsFromDatabase(startTime: Long, endTime: Long): List<UsageEventEntity> {
         saveUsEventsUltimoMesToDatabase()
-        return appDatabase.usageEventDao().getEvents(startTime, endTime)
+        return usageEventDao.getEvents(startTime, endTime)
     }
 
-    suspend fun getEventsFromDatabase(startTime: Long, endTime: Long, listaApps: List<String>): List<UsageEventEntity> {
+    suspend fun getEventsFromDatabase(
+        startTime: Long,
+        endTime: Long,
+        listaApps: List<String>
+    ): List<UsageEventEntity> {
         saveUsEventsUltimoMesToDatabase()
-        return appDatabase.usageEventDao().getEvents(startTime, endTime, listaApps)
+        return usageEventDao.getEvents(startTime, endTime, listaApps)
     }
+
+
+    //========= Stats ===================================
 
     suspend fun getStatsFromDatabase(startTime: Long, endTime: Long): List<UsageStatsEntity> {
         saveUsStatsUltimaSemanaToDatabase()
-        return appDatabase.usageStatsDao().getAllUsageStats()
+        return usageStatsDao.getAllUsageStats()
     }
 
     suspend fun saveUsStatsUltimaSemanaToDatabase() {
         Log.d("MioParametro", "🕧saveUsStatsUltimoSemanaToDatabase Start...")
         // 🔹 Obtener el último timestamp guardado
-        val lastSavedDia = appDatabase.usageStatsDao().getLastDia() ?: 0L
+        val lastSavedDia = usageStatsDao.getLastDia() ?: 0L
 
-        val startTimeSemanaAtras = getTimeAtras(7)
+        val startTimeSemanaAtras = Fun.getTimeAtras(7)
         var startTime = startTimeSemanaAtras
         if (lastSavedDia < startTimeSemanaAtras) {
-            appDatabase.usageStatsDao().deleteOldUsageStats(startTimeSemanaAtras)
+            usageStatsDao.deleteOldUsageStats(startTimeSemanaAtras)
         } else {
             startTime = lastSavedDia + (24 * 60 * 60 * 1000) // +1 día en milisegundos
         }
-        Log.d("MioParametro", "startDia ${dateFormat.format(startTime)}")
+        Log.d("MioParametro", "startDia ${Fun.dateFormat.format(startTime)}")
 
-        val endTime = getTimeAtras(0) // 🔹 Hasta el dia actual a la medianoche
+        val endTime = Fun.getTimeAtras(0) // 🔹 Hasta el dia actual a la medianoche
 
         val statsEntityList = mutableListOf<UsageStatsEntity>()
 
@@ -708,8 +718,7 @@ class AppDataRepository @Inject constructor(
             }
         }
 
-        appDatabase.usageStatsDao()
-            .insertAllUsageStats(statsEntityList) // Guardar stats nuevos a BD
+        usageStatsDao.insertAllUsageStats(statsEntityList) // Guardar stats nuevos a BD
 
         Log.d("MioParametro", "🕧🕧saveUsStatsUltimoSemanaToDatabase End")
     }
@@ -719,8 +728,8 @@ class AppDataRepository @Inject constructor(
         endTime: Long
     ): MutableMap<String, MutableMap<Long, Long>> {
 
-        Log.d("MioParametro", "startTime ${dateFormat.format(startTime)}")
-        Log.d("MioParametro", "endTime ${dateFormat.format(endTime)}")
+        Log.d("MioParametro", "startTime ${Fun.dateFormat.format(startTime)}")
+        Log.d("MioParametro", "endTime ${Fun.dateFormat.format(endTime)}")
 
         val usageStatsManager =
             context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
@@ -748,8 +757,8 @@ class AppDataRepository @Inject constructor(
             Log.d(
                 "MioParametro",
                 "stats ${stats.packageName} totalTimeInForeground:${stats.totalTimeInForeground} lastTimeUsed:${
-                    dateFormat.format(stats.lastTimeUsed)
-                } dia:${dateFormat.format(day)}"
+                    Fun.dateFormat.format(stats.lastTimeUsed)
+                } dia:${Fun.dateFormat.format(day)}"
             )
 
             val usageDuration = stats.totalTimeInForeground
@@ -765,122 +774,14 @@ class AppDataRepository @Inject constructor(
     }
 
 
+
     //======================================================================
-    // Obtener todas las apps con UI
-    fun getAllAppsWithUIdeSistema(context: Context): List<ApplicationInfo> {
-        val pm = context.packageManager
-        val installedApps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-
-        return installedApps.filter { app -> siTieneUI(context, app.packageName) }
-    }
-
-    fun siTieneUI(context: Context, packageName: String): Boolean {
-        val pm = context.packageManager
-        val intent = Intent(Intent.ACTION_MAIN, null)
-        intent.setPackage(packageName)
-        return pm.queryIntentActivities(intent, 0).isNotEmpty()
-    }
-
-    private fun getTimeAtras(dias: Int): Long {
-        val calendar = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_MONTH, -dias) // Retrocede X días
-            set(Calendar.HOUR_OF_DAY, 0) // Establece la hora a 00
-            set(Calendar.MINUTE, 0) // Establece los minutos a 0
-            set(Calendar.SECOND, 0) // Establece los segundos a 0
-            set(Calendar.MILLISECOND, 0) // Establece los milisegundos a 0
-        }
-        Log.d("getTimeMesAtras", "getTimeMesAtras ${dateFormat.format(calendar.timeInMillis)}")
-        return calendar.timeInMillis
-    }
-
-    // Obtener clasificación de edad de una app
-    suspend fun getAppAgeRatingScraper(packageName: String): String {
-        val url = "https://play.google.com/store/apps/details?id=$packageName"
-        return withContext(Dispatchers.IO) {
-            if (!Fun.isUrlExists(url)) {
-                Log.w("AppDataRepository", "La app no existe en Google Play")
-                return@withContext ""
-            }
-            try {
-                val doc: Document = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
-                    .timeout(5000)
-                    .get()
-                doc.select("span[itemprop=contentRating]").first()?.text() ?: ""
-            } catch (e: Exception) {
-                Log.e("AppDataRepository", "Error al obtener la clasificación", e)
-                ""
-            }
-        }
-    }
-
-    // Obtener el ícono de una aplicación
-    fun getAppIcon(packageName: String): Drawable? {
-        return try {
-            val packageManager = context.packageManager
-            packageManager.getApplicationIcon(packageName)
-        } catch (e: PackageManager.NameNotFoundException) {
-            Log.e("AppDataRepository", "Ícono no encontrado para $packageName")
-            null
-        } catch (e: Exception) {
-            Log.e("AppDataRepository", "Error al obtener ícono de $packageName: ${e.message}")
-            null
-        }
-    }
-
-    fun getApplicationInfo(packageName: String): ApplicationInfo? {
-        return try {
-            val pm = context.packageManager
-            pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
-        } catch (e: PackageManager.NameNotFoundException) {
-            e.printStackTrace()
-            null // Si no se encuentra la app, retorna null
-        }
-    }
 
     fun clear() {
         coroutineScope.cancel() // ✅ Cancelar todas las corrutinas cuando ya no sea necesario
     }
-    fun queryUsageEvents() {
-        val usageStatsManager =
-            context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
-        // Configura el inicio de la consulta a 7 días atrás
-        val calendar = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_MONTH, -30) // Cambia el número para ajustar el rango
-        }
-        val startTime = calendar.timeInMillis
-
-        // Configura el inicio de la consulta a 7 días atrás
-        val calendar2 = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_MONTH, -10) // Cambia el número para ajustar el rango
-        }
-        val endTime = calendar2.timeInMillis
-
-        Log.d("MioParametro", "startTime ${dateFormat.format(startTime)}")
-        Log.d("MioParametro", "endTime ${dateFormat.format(endTime)}")
-
-        // Consulta los eventos de uso
-        val usageEvents = usageStatsManager.queryEvents(startTime, endTime)
-
-        // Procesa los eventos
-        while (usageEvents.hasNextEvent()) {
-            val event = UsageEvents.Event()
-            usageEvents.getNextEvent(event)
-            // Aquí puedes manejar el evento según sea necesario
-            Log.d(
-                "MioParametro",
-                "Evento: ${event.packageName}, Tipo: ${event.eventType}, Tiempo: ${
-                    dateFormat.format(event.timeStamp)
-                }"
-            )
-
-        }
-    }
     //======================================================================
-
-
-
 
 
 }

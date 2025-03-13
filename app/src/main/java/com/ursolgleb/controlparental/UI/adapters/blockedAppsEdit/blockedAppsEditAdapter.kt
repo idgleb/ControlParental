@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
+import com.ursolgleb.controlparental.utils.AppsFun
 import com.ursolgleb.controlparental.utils.Fun
 
 class blockedAppsEditAdapter(
@@ -28,9 +29,9 @@ class blockedAppsEditAdapter(
     override fun onBindViewHolder(holder: blockedAppsEditViewHolder, position: Int) {
         val app = apps[position]
 
-        val icon = appDataRepository.getAppIcon(app.packageName)
+        val icon = AppsFun.getAppIcon(appDataRepository.context, app.packageName)
 
-        val formattedTimeDeUso = Fun.formatearTiempoDeUso(app.tiempoUsoHoy)
+        val formattedTimeDeUso = Fun.formatearMiliSec(app.tiempoUsoHoy)
 
         holder.bind(
             app,

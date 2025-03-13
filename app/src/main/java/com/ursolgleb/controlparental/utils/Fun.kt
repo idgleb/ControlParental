@@ -1,11 +1,31 @@
 package com.ursolgleb.controlparental.utils
 
+import android.util.Log
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 class Fun {
     companion object {
-        fun formatearTiempoDeUso(miliSecondsDeUso: Long): String {
+
+        val dateFormat =
+            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) // Formato con fecha y hora
+
+        fun getTimeAtras(dias: Int): Long {
+            val calendar = Calendar.getInstance().apply {
+                add(Calendar.DAY_OF_MONTH, -dias) // Retrocede X días
+                set(Calendar.HOUR_OF_DAY, 0) // Establece la hora a 00
+                set(Calendar.MINUTE, 0) // Establece los minutos a 0
+                set(Calendar.SECOND, 0) // Establece los segundos a 0
+                set(Calendar.MILLISECOND, 0) // Establece los milisegundos a 0
+            }
+            Log.d("getTimeMesAtras", "getTimeMesAtras ${dateFormat.format(calendar.timeInMillis)}")
+            return calendar.timeInMillis
+        }
+
+        fun formatearMiliSec(miliSecondsDeUso: Long): String {
             val totalSeconds = miliSecondsDeUso / 1000 // Convertir ms a segundos
             val hours = totalSeconds / 3600
             val minutes = (totalSeconds % 3600) / 60
