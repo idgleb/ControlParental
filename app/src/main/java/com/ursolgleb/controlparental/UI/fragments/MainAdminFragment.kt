@@ -52,6 +52,10 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
         childFragmentManager.beginTransaction()
             .replace(R.id.fragment_apps_bloqueadas, BlockedAppsCardFragment())
             .commit()
+
+        childFragmentManager.beginTransaction()
+            .replace(R.id.fragment_apps_disponibles, DisponAppsCardFragment())
+            .commit()
     }
 
     private fun initListeners() {

@@ -10,30 +10,16 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AppDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertApp(app: AppEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertListaApps(apps: List<AppEntity>)
 
-    @Query("SELECT * FROM apps WHERE packageName = :packageName LIMIT 1")
-    suspend fun getApp(packageName: String): AppEntity?
-
     @Query("SELECT * FROM apps ORDER BY tiempoUsoHoy DESC")
     fun getAllApps(): Flow<List<AppEntity>>
 
-    @Query("SELECT * FROM apps WHERE blocked = 1 ORDER BY tiempoUsoHoy DESC")
-    fun getAllAppsBlocked(): Flow<List<AppEntity>>
-
-    @Query("SELECT * FROM apps WHERE blocked = 0 ORDER BY tiempoUsoHoy DESC")
-    fun getAllAppsMenosBlocked(): Flow<List<AppEntity>>
-
-    // 🔄 Cambiar todas las apps bloqueadas a desbloqueadas
-    @Query("UPDATE apps SET blocked = 0 WHERE blocked = 1")
+    //  Cambiar todas las apps bloqueadas a DISPONIBLE
+    @Query("UPDATE apps SET appStatus = 'DISPONIBLE' WHERE appStatus = 'BLOQUEADA'")
     suspend fun unblockAllApps()
-
-    @Update
-    suspend fun updateApp(app: AppEntity)
 
     @Query("DELETE FROM apps")
     suspend fun deleteAllApps()

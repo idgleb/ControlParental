@@ -7,7 +7,7 @@
     android:layout_height="wrap_content">
 
     <androidx.cardview.widget.CardView
-        android:id="@+id/cvAppsBlocked"
+        android:id="@+id/cvAppsDispon"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
@@ -27,21 +27,21 @@
                 android:orientation="horizontal">
 
                 <View
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:background="@drawable/lock"
+                    android:layout_width="25dp"
+                    android:layout_height="13dp"
+                    android:background="@drawable/vecteezy_infinity"
                     android:layout_marginStart="16dp"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="16dp"
-                    android:text="Apps Bloqueadas"
+                    android:text="Apps Disponibles"
                     android:textSize="18sp"
                     android:textStyle="normal" />
 
                 <TextView
-                    android:id="@+id/tvCantidadAppsBloqueadas"
+                    android:id="@+id/tvCantidadAppsDispon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/radius_background"
@@ -90,7 +90,7 @@
                 android:layout_height="match_parent">
 
                 <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvAppsBloqueadas"
+                    android:id="@+id/rvAppsDispon"
                     android:layout_width="match_parent"
                     android:layout_height="114dp"
                     android:background="@android:color/transparent"
@@ -123,7 +123,7 @@
 
 
             <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/aggregarAppsABlockedBoton"
+                android:id="@+id/aggregarAppsADisponBoton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="16dp"
@@ -140,38 +140,6 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
-
-            <Button
-                android:id="@+id/delitBlackedAppBoton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginBottom="16dp"
-                android:text="delit" />
-
-            <Button
-                android:id="@+id/delitAllAppBoton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginBottom="16dp"
-                android:text="delit ALL" />
-
-            <Button
-                android:id="@+id/llenarAllAppBoton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginBottom="16dp"
-                android:text="Lenar ALL" />
-
-            <Button
-                android:id="@+id/testBoton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginBottom="16dp"
-                android:text="test" />
 
 
         </LinearLayout>

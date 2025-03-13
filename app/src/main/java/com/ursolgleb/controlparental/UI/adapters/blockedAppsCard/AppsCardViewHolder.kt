@@ -5,7 +5,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.ursolgleb.controlparental.databinding.ItemBlockedAppBinding
 
-class BlockedAppsCardViewHolder(private val binding: ItemBlockedAppBinding) :
+class AppsCardViewHolder(private val binding: ItemBlockedAppBinding) :
     RecyclerView.ViewHolder(binding.root) {
 
     fun bind(appName: String?, icon: Drawable?) {

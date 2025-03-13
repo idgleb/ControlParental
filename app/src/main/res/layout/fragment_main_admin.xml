@@ -74,7 +74,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingHorizontal="11dp"
+                android:paddingHorizontal="4dp"
                 app:layout_constraintTop_toTopOf="parent">
 
                 <FrameLayout
@@ -82,7 +82,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     tools:background="@color/boton_secundario"
-                    tools:layout_height="270dp" />
+                    tools:layout_height="200dp" />
+
+                <FrameLayout
+                    android:id="@+id/fragment_apps_disponibles"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    tools:background="@color/mercadopago"
+                    tools:layout_height="200dp" />
 
             </LinearLayout>
 

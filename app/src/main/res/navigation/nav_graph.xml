@@ -23,6 +23,10 @@
         android:id="@+id/blockedAppsEditFragment"
         android:name="com.ursolgleb.controlparental.UI.fragments.BlockedAppsEditFragment"
         android:label="Blocked Apps" />
+    <fragment
+        android:id="@+id/disponAppsEditFragment"
+        android:name="com.ursolgleb.controlparental.UI.fragments.DisponAppsEditFragment"
+        android:label="Dispon Apps" />
 
     <!-- Acción global para navegar a addAppsFragment -->
     <action
@@ -31,5 +35,9 @@
     <action
         android:id="@+id/action_global_blockedAppsEditFragment"
         app:destination="@id/blockedAppsEditFragment" />
+
+    <action
+        android:id="@+id/action_global_disponAppsEditFragment"
+        app:destination="@id/disponAppsEditFragment" />
 
 </navigation>

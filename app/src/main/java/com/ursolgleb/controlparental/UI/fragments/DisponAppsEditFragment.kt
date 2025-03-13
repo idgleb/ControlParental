@@ -14,18 +14,18 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear.appsEditAdapter
-import com.ursolgleb.controlparental.databinding.FragmentBlockedAppsEditBinding
+import com.ursolgleb.controlparental.databinding.FragmentDisponAppsEditBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
+class DisponAppsEditFragment : Fragment(R.layout.fragment_dispon_apps_edit) {
 
     @Inject
     lateinit var appDataRepository: AppDataRepository
 
-    private var _binding: FragmentBlockedAppsEditBinding? = null
+    private var _binding: FragmentDisponAppsEditBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var appsEditAdapter: appsEditAdapter
@@ -40,14 +40,13 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
     }
 
     private fun initUI(view: View) {
-        _binding = FragmentBlockedAppsEditBinding.bind(view)
+        _binding = FragmentDisponAppsEditBinding.bind(view)
 
         appsEditAdapter =
             appsEditAdapter(mutableListOf(), appDataRepository, childFragmentManager)
         binding.rvBlockedAppsEdit.adapter = appsEditAdapter
         binding.rvBlockedAppsEdit.layoutManager = LinearLayoutManager(requireContext())
         binding.rvBlockedAppsEdit.setRecycledViewPool(RecyclerView.RecycledViewPool())
-
 
     }
 
@@ -57,7 +56,7 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
             findNavController().popBackStack()
         }
 
-        binding.aggregarAppsABlockedBoton.setOnClickListener {
+        binding.aggregarAppsADisponBoton.setOnClickListener {
             val navController = Navigation.findNavController(
                 requireActivity(),
                 R.id.nav_host_fragment
@@ -71,12 +70,12 @@ class BlockedAppsEditFragment : Fragment(R.layout.fragment_blocked_apps_edit) {
         // 🔥 Observar cambios en la lista de apps bloqueadas
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                appDataRepository.blockedAppsFlow.collect { newList ->
+                appDataRepository.disponAppsFlow.collect { newList ->
                     Log.w(
-                        "BlockedAppsFragment",
-                        "Lista EDIT de apps bloqueadas actualizada: $newList"
+                        "DisponAppsEditFragment",
+                        "Lista EDIT de apps dispon actualizada: $newList"
                     )
-                    binding.tvCantidadAppsBloqueadas.text = newList.size.toString()
+                    binding.tvCantidadAppsDispon.text = newList.size.toString()
                     appsEditAdapter.updateListEnAdaptador(newList)
                     // 🔥 Si la lista está vacía, mostrar "Empty"
                     if (newList.isEmpty()) {

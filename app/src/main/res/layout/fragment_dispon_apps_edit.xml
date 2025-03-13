@@ -56,20 +56,20 @@
         app:layout_constraintTop_toBottomOf="@id/barra_arriba">
 
         <View
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:background="@drawable/lock"/>
+            android:layout_width="25dp"
+            android:layout_height="13dp"
+            android:background="@drawable/vecteezy_infinity"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
-            android:text="Apps Bloqueadas"
+            android:text="Siempre disponibles"
             android:textSize="18sp"
             android:textStyle="normal" />
 
         <TextView
-            android:id="@+id/tvCantidadAppsBloqueadas"
+            android:id="@+id/tvCantidadAppsDispon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/radius_background"
@@ -149,7 +149,7 @@
         app:layout_constraintBottom_toBottomOf="parent">
 
         <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/aggregarAppsABlockedBoton"
+            android:id="@+id/aggregarAppsADisponBoton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"

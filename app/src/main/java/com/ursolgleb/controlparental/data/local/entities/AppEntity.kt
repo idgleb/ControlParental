@@ -16,7 +16,11 @@ data class AppEntity(
     var appIsSystemApp: Boolean,
     var tiempoUsoHoy: Long,
     var timeStempToday: Long,
-    var blocked: Boolean,
+
+    var appStatus: String,
+
+    //var blocked: Boolean,
     var usoLimitPorDiaMinutos: Int,
-    var entretenimiento: Boolean
+    //var entretenimiento: Boolean
+
 )

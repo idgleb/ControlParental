@@ -6,20 +6,16 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
-import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.ursolgleb.controlparental.AppDataRepository
-import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.databinding.BottomSheetMoverLayoutBinding
 import com.ursolgleb.controlparental.utils.NavBarUtils
+import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -65,16 +61,16 @@ class BottomSheetMoverFragment(
 
 
         binding.moverSiempreBloqueadasLinearMarcado.visibility =
-            if (app.blocked) View.VISIBLE else View.INVISIBLE
+            if (app.appStatus == StatusApp.BLOQUEADA.desc) View.VISIBLE else View.INVISIBLE
         binding.moverSiempreBloqueadasLinear.visibility =
-            if (app.blocked) View.INVISIBLE else View.VISIBLE
+            if (app.appStatus == StatusApp.BLOQUEADA.desc) View.INVISIBLE else View.VISIBLE
 
         binding.moverEntretenimientoLinearMarcado.visibility =
-            if (app.entretenimiento) View.VISIBLE else View.INVISIBLE
+            if (app.appStatus == StatusApp.HORARIO.desc) View.VISIBLE else View.INVISIBLE
         binding.moverEntretenimientoLinear.visibility =
-            if (app.entretenimiento) View.INVISIBLE else View.VISIBLE
+            if (app.appStatus == StatusApp.HORARIO.desc) View.INVISIBLE else View.VISIBLE
 
-        val esSiempreDisponible = !app.blocked && !app.entretenimiento
+        val esSiempreDisponible = app.appStatus != StatusApp.BLOQUEADA.desc && app.appStatus != StatusApp.HORARIO.desc
         binding.moverSiempreDisponiblesLinearMarcado.visibility =
             if (esSiempreDisponible) View.VISIBLE else View.INVISIBLE
         binding.moverSiempreDisponiblesLinear.visibility =
@@ -93,7 +89,7 @@ class BottomSheetMoverFragment(
 
         binding.moverEntretenimientoBoton.setOnClickListener {
             lifecycleScope.launch {
-                appDataRepository.addAppsAEntretenimientoBD(listOf(app))
+                appDataRepository.addAppsAHorarioBD(listOf(app))
             }
             dismiss()
         }

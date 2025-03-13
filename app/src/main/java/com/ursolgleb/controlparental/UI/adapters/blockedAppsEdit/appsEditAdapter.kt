@@ -10,23 +10,23 @@ import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
 import com.ursolgleb.controlparental.utils.AppsFun
 import com.ursolgleb.controlparental.utils.Fun
 
-class blockedAppsEditAdapter(
+class appsEditAdapter(
     val apps: MutableList<AppEntity>,
     val appDataRepository: AppDataRepository,
     private val fragmentManager: androidx.fragment.app.FragmentManager
-) : RecyclerView.Adapter<blockedAppsEditViewHolder>() {
+) : RecyclerView.Adapter<appsEditViewHolder>() {
 
     private val selectedApps =
         mutableSetOf<String>() // 🔥 Almacena los paquetes de apps seleccionadas
 
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): blockedAppsEditViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): appsEditViewHolder {
         val binding =
             ItemAppEditBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return blockedAppsEditViewHolder(binding, fragmentManager)
+        return appsEditViewHolder(binding, fragmentManager)
     }
 
-    override fun onBindViewHolder(holder: blockedAppsEditViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: appsEditViewHolder, position: Int) {
         val app = apps[position]
 
         val icon = AppsFun.getAppIcon(appDataRepository.context, app.packageName)

@@ -1,13 +1,9 @@
 package com.ursolgleb.controlparental
 
 import android.app.usage.UsageEvents
-import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
-import android.content.Intent
 import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
 import android.os.DeadObjectException
 import android.util.Log
 import com.ursolgleb.controlparental.data.local.AppDatabase
@@ -19,6 +15,7 @@ import com.ursolgleb.controlparental.data.local.entities.UsageEventEntity
 import com.ursolgleb.controlparental.data.local.entities.UsageStatsEntity
 import com.ursolgleb.controlparental.utils.AppsFun
 import com.ursolgleb.controlparental.utils.Fun
+import com.ursolgleb.controlparental.utils.StatusApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -27,12 +24,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -56,8 +48,14 @@ class AppDataRepository @Inject constructor(
     private val mutexGlobal = Mutex()
 
     val todosAppsFlow = MutableStateFlow<List<AppEntity>>(emptyList())
+
     val blockedAppsFlow = MutableStateFlow<List<AppEntity>>(emptyList())
+    val horarioAppsFlow = MutableStateFlow<List<AppEntity>>(emptyList())
+    val disponAppsFlow = MutableStateFlow<List<AppEntity>>(emptyList())
+
     val todosAppsMenosBloqueadosFlow = MutableStateFlow<List<AppEntity>>(emptyList())
+    var todosAppsMenosHorarioFlow = MutableStateFlow<List<AppEntity>>(emptyList())
+    val todosAppsMenosDisponFlow = MutableStateFlow<List<AppEntity>>(emptyList())
 
     val mutexUpdateBDAppsStateFlow = MutableStateFlow(false)
     val mostrarBottomSheetActualizadaFlow = MutableStateFlow(false)
@@ -77,9 +75,18 @@ class AppDataRepository @Inject constructor(
                     val apps = appDao.getAllApps().first()
                     // 🔥 Guardamos los datos en el repositorio compartido
                     todosAppsFlow.value = apps
-                    blockedAppsFlow.value = apps.filter { it.blocked }
+
+                    blockedAppsFlow.value = apps.filter { it.appStatus == StatusApp.BLOQUEADA.desc }
+                    horarioAppsFlow.value = apps.filter { it.appStatus == StatusApp.HORARIO.desc }
+                    disponAppsFlow.value = apps.filter { it.appStatus == StatusApp.DISPONIBLE.desc }
+
                     todosAppsMenosBloqueadosFlow.value =
-                        apps.filter { !it.blocked }
+                        apps.filter { it.appStatus != StatusApp.BLOQUEADA.desc }
+                    todosAppsMenosHorarioFlow.value =
+                        apps.filter { it.appStatus != StatusApp.HORARIO.desc }
+                    todosAppsMenosDisponFlow.value =
+                        apps.filter { it.appStatus != StatusApp.DISPONIBLE.desc }
+
                     Log.e(
                         "AppDataRepository",
                         "Apps cargadas de BD en inicieDelecturaDeBD: ${apps.size}"
@@ -102,16 +109,33 @@ class AppDataRepository @Inject constructor(
     private fun cargarAppsEnBackgroundDesdeBD() {
         coroutineScope.launch {
             appDao.getAllApps().collect { apps ->
+
                 todosAppsFlow.value = apps
-                val blockedApps = apps.filter { it.blocked }
+                blockedAppsFlow.value = apps.filter { it.appStatus == StatusApp.BLOQUEADA.desc }
+                horarioAppsFlow.value = apps.filter { it.appStatus == StatusApp.HORARIO.desc }
+                disponAppsFlow.value = apps.filter { it.appStatus == StatusApp.DISPONIBLE.desc }
 
-                if (blockedApps.toList() != blockedAppsFlow.value.toList()) { // ✅ Compara contenido, no referencias
-                    blockedAppsFlow.value =
-                        blockedApps.toList() // ✅ Nueva instancia, garantiza emisión
-                    mostrarBottomSheetActualizadaFlow.value = true
-                }
 
-                todosAppsMenosBloqueadosFlow.value = apps.filter { !it.blocked }
+                /*      todosAppsFlow.value = apps
+                      val blockedApps = apps.filter { it.appStatus == StatusApp.BLOQUEADA.desc }
+                      if (blockedApps.toList() != blockedAppsFlow.value.toList()) { // ✅ Compara contenido, no referencias
+                          blockedAppsFlow.value = blockedApps.toList() // Nueva instancia, garantiza emisión
+                      }
+                      val horarioApps = apps.filter { it.appStatus == StatusApp.HORARIO.desc }
+                      if (horarioApps.toList() != horarioAppsFlow.value.toList()) { // ✅ Compara contenido, no referencias
+                          horarioAppsFlow.value = horarioApps.toList() // Nueva instancia, garantiza emisión
+                      }
+                      val disponApps = apps.filter { it.appStatus == StatusApp.DISPONIBLE.desc }
+                      if (disponApps.toList() != disponAppsFlow.value.toList()) { // ✅ Compara contenido, no referencias
+                          disponAppsFlow.value = disponApps.toList() // Nueva instancia, garantiza emisión
+                      }*/
+
+                todosAppsMenosBloqueadosFlow.value =
+                    apps.filter { it.appStatus != StatusApp.BLOQUEADA.desc }
+                todosAppsMenosHorarioFlow.value =
+                    apps.filter { it.appStatus != StatusApp.HORARIO.desc }
+                todosAppsMenosDisponFlow.value =
+                    apps.filter { it.appStatus != StatusApp.DISPONIBLE.desc }
 
                 Log.d(
                     "AppDataRepository",
@@ -175,13 +199,13 @@ class AppDataRepository @Inject constructor(
         val nuevasEntidades = appsNuevas.map { app ->
 
             // condicion a donde poner las nuevas apps(block, entretenimiento o siempre disponibles)
-            val blocked = true
-            var entretenimiento = app.category in listOf(
+            val entretenimiento = app.category in listOf(
                 ApplicationInfo.CATEGORY_GAME,
                 ApplicationInfo.CATEGORY_AUDIO,
                 ApplicationInfo.CATEGORY_VIDEO
             )
-            if (blocked) entretenimiento = false
+            var status = if (entretenimiento) StatusApp.HORARIO.desc else StatusApp.BLOQUEADA.desc
+            status = StatusApp.BLOQUEADA.desc
             //////
 
             val timestampActual = System.currentTimeMillis()
@@ -195,9 +219,8 @@ class AppDataRepository @Inject constructor(
                 appIsSystemApp = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
                 tiempoUsoHoy = tiempoDeUso[app.packageName] ?: 0L,
                 timeStempToday = timestampActual,
-                blocked = blocked,
-                usoLimitPorDiaMinutos = 0,
-                entretenimiento = entretenimiento
+                appStatus = status,
+                usoLimitPorDiaMinutos = 0
             )
         }
         Log.d("AppDataRepository1", "Finish crear nuevasEntidades.")
@@ -205,6 +228,7 @@ class AppDataRepository @Inject constructor(
         try {
             Log.w("AppDataRepository1", "Start agregamos insertListaApps nuevasEntidades a BD...")
             appDao.insertListaApps(nuevasEntidades)
+            mostrarBottomSheetActualizadaFlow.value = true
             Log.w("AppDataRepository1", "Finish agregamos insertListaApps nuevasEntidades a BD.")
         } catch (e: Exception) {
             Log.e(
@@ -235,23 +259,27 @@ class AppDataRepository @Inject constructor(
     // mutexGlobal
     fun addAppsASiempreBloqueadasBD(appsNuevas: List<AppEntity>) {
         if (appsNuevas.isEmpty()) return
-        val appsBloqueadas = appsNuevas.map {
-            it.copy(
-                blocked = true,
-                usoLimitPorDiaMinutos = 0,
-                entretenimiento = false
-            )
+
+        val appsBloqueadas = appsNuevas.mapNotNull { app ->
+            if (app.appStatus != StatusApp.BLOQUEADA.desc) {
+                app.copy(
+                    appStatus = StatusApp.BLOQUEADA.desc,
+                    usoLimitPorDiaMinutos = 0
+                )
+            } else null  // Si el estado ya es BLOQUEADA, omitimos este elemento
         }
 
+        if (appsBloqueadas.isEmpty()) return
 
         coroutineScope.launch {
             try {
                 mutexGlobal.withLock {
                     Log.d(
                         "AppDataRepository",
-                        "addAppsASiempreBloqueadasBD agregamos nuevasEntidades a BD..."
+                        "addAppsASiempreBloqueadasBD agregamos apps a blocked a BD..."
                     )
                     appDao.insertListaApps(appsBloqueadas)
+                    mostrarBottomSheetActualizadaFlow.value = true
                 }
             } catch (e: Exception) {
                 Log.e(
@@ -272,23 +300,27 @@ class AppDataRepository @Inject constructor(
     // mutexGlobal
     fun addAppsASiempreDisponiblesBD(appsNuevas: List<AppEntity>) {
         if (appsNuevas.isEmpty()) return
-        val appsBloqueadas = appsNuevas.map {
-            it.copy(
-                blocked = false,
-                usoLimitPorDiaMinutos = 0,
-                entretenimiento = false
-            )
+
+        val appsDispon = appsNuevas.mapNotNull { app ->
+            if (app.appStatus != StatusApp.DISPONIBLE.desc) {
+                app.copy(
+                    appStatus = StatusApp.DISPONIBLE.desc,
+                    usoLimitPorDiaMinutos = 0,
+                )
+            } else null
         }
 
+        if (appsDispon.isEmpty()) return
 
         coroutineScope.launch {
             try {
                 mutexGlobal.withLock {
                     Log.d(
                         "AppDataRepository",
-                        "addAppsASiempreDisponiblesBD agregamos nuevasEntidades a BD..."
+                        "addAppsASiempreDisponiblesBD agregamos apps a disponibles a BD..."
                     )
-                    appDao.insertListaApps(appsBloqueadas)
+                    appDao.insertListaApps(appsDispon)
+                    mostrarBottomSheetActualizadaFlow.value = true
                 }
             } catch (e: Exception) {
                 Log.e(
@@ -306,19 +338,26 @@ class AppDataRepository @Inject constructor(
     }
 
     // mutexGlobal
-    fun addAppsAEntretenimientoBD(appsNuevas: List<AppEntity>) {
+    fun addAppsAHorarioBD(appsNuevas: List<AppEntity>) {
         if (appsNuevas.isEmpty()) return
-        val appsBloqueadas = appsNuevas.map { it.copy(blocked = false, entretenimiento = true) }
 
+        val appsHorario = appsNuevas.mapNotNull { app ->
+            if (app.appStatus != StatusApp.HORARIO.desc) {
+                app.copy(appStatus = StatusApp.HORARIO.desc)
+            } else null
+        }
+
+        if (appsHorario.isEmpty()) return
 
         coroutineScope.launch {
             try {
                 mutexGlobal.withLock {
                     Log.d(
                         "AppDataRepository",
-                        "addAppsAEntretenimientoBD agregamos nuevasEntidades a BD..."
+                        "addAppsAEntretenimientoBD agregamos apps a Entretenimiento a BD..."
                     )
-                    appDao.insertListaApps(appsBloqueadas)
+                    appDao.insertListaApps(appsHorario)
+                    mostrarBottomSheetActualizadaFlow.value = true
                 }
             } catch (e: Exception) {
                 Log.e(
@@ -386,19 +425,15 @@ class AppDataRepository @Inject constructor(
 
             val tiempoDeUsoMapHoy = mutableMapOf<String, Long>()
 
-            val apps = appDao.getAllApps().first()
-            val tiempoDeUsoHoy = getTiempoDeUsoHoy(apps) { app -> app.packageName }
-            apps.forEach { app ->
-                val tiempoDeUsoHoyApp = tiempoDeUsoHoy[app.packageName] ?: 0L
-                if (app.tiempoUsoHoy != tiempoDeUsoHoyApp) {
+            val appsBD = appDao.getAllApps().first()
+            val tiempoDeUsoHoy = getTiempoDeUsoHoy(appsBD) { app -> app.packageName }
+            appsBD.forEach { appBD ->
+                val tiempoDeUsoHoyApp = tiempoDeUsoHoy[appBD.packageName] ?: 0L
+                if (appBD.tiempoUsoHoy != tiempoDeUsoHoyApp) {
+                    tiempoDeUsoMapHoy[appBD.packageName] = tiempoDeUsoHoyApp ?: 0L
                     Log.w(
                         "AppDataRepository1",
-                        "app.tiempoUsoHoy: ${app.tiempoUsoHoy} == tiempoDeUsoHoyApp: $tiempoDeUsoHoyApp"
-                    )
-                    tiempoDeUsoMapHoy[app.packageName] = tiempoDeUsoHoyApp ?: 0L
-                    Log.w(
-                        "AppDataRepository1",
-                        "♻️ Actualizado tiempo de uso de app hoy: ${app.appName}"
+                        "♻️ Actualizado tiempo de uso de app hoy: ${appBD.appName}"
                     )
                 }
             }
@@ -772,7 +807,6 @@ class AppDataRepository @Inject constructor(
         return statsMapBD
 
     }
-
 
 
     //======================================================================

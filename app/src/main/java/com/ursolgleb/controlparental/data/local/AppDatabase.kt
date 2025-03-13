@@ -17,7 +17,7 @@ import com.ursolgleb.controlparental.data.local.entities.UsageStatsEntity
 
 @Database(
     entities = [AppEntity::class, BlockedEntity::class, UsageLimitEntity::class, UsageEventEntity::class, UsageStatsEntity::class],
-    version = 10,  // Aumenta la versión (antes era 8)
+    version = 11,  // Aumenta la versión (antes era 8)
     exportSchema = true
 )
 @TypeConverters(Converters::class)  // ✅ Registrar el TypeConverter

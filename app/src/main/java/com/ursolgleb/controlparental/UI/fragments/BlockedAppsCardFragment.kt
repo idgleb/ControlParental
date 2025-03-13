@@ -6,7 +6,7 @@ import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.UI.adapters.blockedAppsCard.BlockedAppsCardAdapter
+import com.ursolgleb.controlparental.UI.adapters.blockedAppsCard.AppsCardAdapter
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -32,7 +32,7 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
     private var _binding: FragmentBlockedAppsCardBinding? = null
     private val binding get() = _binding!!
 
-    private var blockedAppCardAdapter: BlockedAppsCardAdapter? = null
+    private var blockedAppCardAdapter: AppsCardAdapter? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -170,7 +170,7 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
     private fun initUI(view: View) {
         _binding = FragmentBlockedAppsCardBinding.bind(view)
 
-        blockedAppCardAdapter = BlockedAppsCardAdapter(mutableListOf(), appDataRepository)
+        blockedAppCardAdapter = AppsCardAdapter(mutableListOf(), appDataRepository)
         binding.rvAppsBloqueadas.layoutManager = LinearLayoutManager(requireContext())
         binding.rvAppsBloqueadas.adapter = blockedAppCardAdapter
         binding.rvAppsBloqueadas.setRecycledViewPool(RecyclerView.RecycledViewPool()) // ✅ Optimización
