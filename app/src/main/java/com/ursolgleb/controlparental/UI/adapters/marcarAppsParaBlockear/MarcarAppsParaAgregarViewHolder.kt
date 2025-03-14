@@ -5,7 +5,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.ursolgleb.controlparental.databinding.ItemAppGrandeBinding
 
-class MarcarAppsParaBloquearViewHolder(private val binding: ItemAppGrandeBinding) :
+class MarcarAppsParaAgregarViewHolder(private val binding: ItemAppGrandeBinding) :
     RecyclerView.ViewHolder(binding.root) {
 
     fun bind(appName: String?, icon: Drawable?, formattedTimeDeUso: String, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {

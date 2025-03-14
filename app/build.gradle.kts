@@ -6,6 +6,8 @@ plugins {
     id("dagger.hilt.android.plugin")
     id("com.google.dagger.hilt.android") // 👈 Plugin de Hilt
 
+    id ("androidx.navigation.safeargs.kotlin")
+
 
 }
 

@@ -10,10 +10,10 @@ import com.ursolgleb.controlparental.databinding.ItemAppGrandeBinding
 import com.ursolgleb.controlparental.utils.AppsFun
 import com.ursolgleb.controlparental.utils.Fun
 
-class MarcarAppsParaBloquearAdapter(
+class MarcarAppsParaAgregarAdapter(
     val apps: MutableList<AppEntity>,
     val appDataRepository: AppDataRepository
-) : RecyclerView.Adapter<MarcarAppsParaBloquearViewHolder>() {
+) : RecyclerView.Adapter<MarcarAppsParaAgregarViewHolder>() {
 
 
     private val selectedApps =
@@ -22,13 +22,13 @@ class MarcarAppsParaBloquearAdapter(
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
-    ): MarcarAppsParaBloquearViewHolder {
+    ): MarcarAppsParaAgregarViewHolder {
         val binding =
             ItemAppGrandeBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return MarcarAppsParaBloquearViewHolder(binding)
+        return MarcarAppsParaAgregarViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: MarcarAppsParaBloquearViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: MarcarAppsParaAgregarViewHolder, position: Int) {
         val app = apps[position]
 
         val icon = AppsFun.getAppIcon(appDataRepository.context, app.packageName)

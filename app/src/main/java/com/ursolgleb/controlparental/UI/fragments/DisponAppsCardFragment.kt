@@ -11,10 +11,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.Navigation
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.data.local.dao.AppDao
 import com.ursolgleb.controlparental.databinding.FragmentDisponAppsCardBinding
+import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -47,11 +49,10 @@ class DisponAppsCardFragment : Fragment(R.layout.fragment_dispon_apps_card) {
     private fun initListeners() {
 
         binding.aggregarAppsADisponBoton.setOnClickListener {
-            val navController = Navigation.findNavController(
-                requireActivity(),
-                R.id.nav_host_fragment
-            )
-            navController.navigate(R.id.action_global_addAppsAblockedFragment)
+
+            val action = MainAdminFragmentDirections.actionGlobalAddAppsAblockedFragment(category = StatusApp.DISPONIBLE.desc)
+            findNavController().navigate(action)
+
         }
 
         binding.cvAppsDispon.setOnClickListener {

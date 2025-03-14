@@ -11,10 +11,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.Navigation
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.data.local.dao.AppDao
 import com.ursolgleb.controlparental.databinding.FragmentBlockedAppsCardBinding
+import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -49,11 +51,10 @@ class BlockedAppsCardFragment : Fragment(R.layout.fragment_blocked_apps_card) {
     private fun initListeners() {
 
         binding.aggregarAppsABlockedBoton.setOnClickListener {
-            val navController = Navigation.findNavController(
-                requireActivity(),
-                R.id.nav_host_fragment
-            )
-            navController.navigate(R.id.action_global_addAppsAblockedFragment)
+
+            val action = MainAdminFragmentDirections.actionGlobalAddAppsAblockedFragment(category = StatusApp.BLOQUEADA.desc)
+            findNavController().navigate(action)
+
         }
 
         binding.delitBlackedAppBoton.setOnClickListener {

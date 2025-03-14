@@ -19,6 +19,8 @@ buildscript {
         classpath (libs.gradle) // Ejemplo
         classpath (libs.kotlin.gradle.plugin)
         classpath (libs.hilt.android.gradle.plugin) // O la versión que uses
+        classpath (libs.androidx.navigation.safe.args.gradle.plugin)
+
     }
 }
 

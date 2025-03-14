@@ -9,12 +9,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear.MarcarAppsParaBloquearAdapter
-import com.ursolgleb.controlparental.databinding.FragmentAddAppsABlockedBinding
+import com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear.MarcarAppsParaAgregarAdapter
+import com.ursolgleb.controlparental.databinding.FragmentAddAppsBinding
+import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -22,19 +24,22 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class AddAppsAblockedFragment : Fragment(R.layout.fragment_add_apps_a_blocked) {
+class AddAppsFragment : Fragment(R.layout.fragment_add_apps) {
 
     @Inject
     lateinit var appDataRepository: AppDataRepository
 
-    private var _binding: FragmentAddAppsABlockedBinding? = null
+    private var _binding: FragmentAddAppsBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var marcarAppsParaBloquearAdapter: MarcarAppsParaBloquearAdapter
-    //private val sharedViewModel: SharedViewModel by activityViewModels()
+    private lateinit var marcarAppsParaAgregarAdapter: MarcarAppsParaAgregarAdapter
+
+    private val args: AddAppsFragmentArgs by navArgs() // Recibir argumentos
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        args.category
 
         initUI(view)
         initListeners()
@@ -42,10 +47,11 @@ class AddAppsAblockedFragment : Fragment(R.layout.fragment_add_apps_a_blocked) {
     }
 
     private fun initUI(view: View) {
-        _binding = FragmentAddAppsABlockedBinding.bind(view)
+        _binding = FragmentAddAppsBinding.bind(view)
 
-        marcarAppsParaBloquearAdapter = MarcarAppsParaBloquearAdapter(mutableListOf(), appDataRepository)
-        binding.rvMarcarAppsParaBloquear.adapter = marcarAppsParaBloquearAdapter
+        marcarAppsParaAgregarAdapter =
+            MarcarAppsParaAgregarAdapter(mutableListOf(), appDataRepository)
+        binding.rvMarcarAppsParaBloquear.adapter = marcarAppsParaAgregarAdapter
         binding.rvMarcarAppsParaBloquear.layoutManager = LinearLayoutManager(requireContext())
         binding.rvMarcarAppsParaBloquear.setRecycledViewPool(RecyclerView.RecycledViewPool())
     }
@@ -58,26 +64,44 @@ class AddAppsAblockedFragment : Fragment(R.layout.fragment_add_apps_a_blocked) {
         }
 
         binding.aggregarAppsABlockedBoton.setOnClickListener {
-            val selectedApps = marcarAppsParaBloquearAdapter.getSelectedApps() // Obtener apps seleccionadas
+            val selectedApps =
+                marcarAppsParaAgregarAdapter.getSelectedApps() // Obtener apps seleccionadas
             if (selectedApps.isNotEmpty()) {
                 GlobalScope.launch {
-                    appDataRepository.addAppsASiempreBloqueadasBD(selectedApps.toList())
+                    if (args.category == StatusApp.DISPONIBLE.desc) {
+                        appDataRepository.addAppsASiempreDisponiblesBD(selectedApps.toList())
+                    }
+                    if (args.category == StatusApp.BLOQUEADA.desc) {
+                        appDataRepository.addAppsASiempreBloqueadasBD(selectedApps.toList())
+                    }
+
                 }
                 findNavController().popBackStack()
             } else {
-                Toast.makeText(requireContext(), "No has seleccionado ninguna app", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "No has seleccionado ninguna app",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
 
     private fun initObservers() {
 
+        val listaDeObservarFlow = when (args.category) {
+            StatusApp.BLOQUEADA.desc -> appDataRepository.todosAppsMenosBloqueadosFlow
+            StatusApp.DISPONIBLE.desc -> appDataRepository.todosAppsMenosDisponFlow
+            StatusApp.HORARIO.desc -> appDataRepository.todosAppsMenosHorarioFlow
+            else -> appDataRepository.todosAppsFlow
+        }
+
         // 🔥 Observar cambios en la lista de todosAppsMenosBlaqueados
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                appDataRepository.todosAppsMenosBloqueadosFlow.collect { newList ->
+                listaDeObservarFlow.collect { newList ->
                     Log.w("BlockedAppsFragment", "Lista de apps actualizada: $newList")
-                    marcarAppsParaBloquearAdapter.updateListEnAdaptador(newList)
+                    marcarAppsParaAgregarAdapter.updateListEnAdaptador(newList)
                 }
             }
         }
