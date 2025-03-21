@@ -1,6 +1,8 @@
 package com.ursolgleb.controlparental.utils
 
 import android.util.Log
+import android.util.TypedValue
+import android.view.View
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
@@ -54,6 +56,14 @@ class Fun {
             } catch (e: Exception) {
                 false // Si hay error, asumimos que la URL no existe
             }
+        }
+
+        fun dpToPx(dp: Int, view: View): Int {
+            return TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,  // Unidad DIP (dp)
+                dp.toFloat(),                 // Valor a convertir
+                view.resources.displayMetrics  // Densidad de la pantalla
+            ).toInt()
         }
 
     }

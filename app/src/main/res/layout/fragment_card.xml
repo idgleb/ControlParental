@@ -27,21 +27,23 @@
                 android:orientation="horizontal">
 
                 <View
-                    android:layout_width="25dp"
-                    android:layout_height="13dp"
+                    android:id="@+id/iconDeLista"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
                     android:background="@drawable/vecteezy_infinity"
                     android:layout_marginStart="16dp"/>
 
                 <TextView
+                    android:id="@+id/tvNombreLista"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="16dp"
-                    android:text="Apps Disponibles"
+                    android:text="Apps ..."
                     android:textSize="18sp"
                     android:textStyle="normal" />
 
                 <TextView
-                    android:id="@+id/tvCantidadAppsDispon"
+                    android:id="@+id/tvCantidadApps"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/radius_background"
@@ -90,7 +92,7 @@
                 android:layout_height="match_parent">
 
                 <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvAppsDispon"
+                    android:id="@+id/rvApps"
                     android:layout_width="match_parent"
                     android:layout_height="114dp"
                     android:background="@android:color/transparent"
@@ -98,7 +100,7 @@
                     android:focusable="false"
                     android:focusableInTouchMode="false"
                     android:touchscreenBlocksFocus="false"
-                    android:visibility="gone" />
+                    android:visibility="visible" />
 
 
                 <TextView
@@ -123,7 +125,7 @@
 
 
             <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/aggregarAppsADisponBoton"
+                android:id="@+id/aggregarAppsABoton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="16dp"
@@ -133,7 +135,7 @@
                 android:drawableTint="@color/white"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
-                android:text="Agregar Apps"
+                android:text="Agregar Apps..."
                 android:textAllCaps="false"
                 android:textColor="@color/text_boton"
                 android:textSize="15sp"

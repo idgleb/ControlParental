@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class AddAppsFragment : Fragment(R.layout.fragment_add_apps) {
+class AppsAddFragment : Fragment(R.layout.fragment_add_apps) {
 
     @Inject
     lateinit var appDataRepository: AppDataRepository
@@ -34,12 +34,10 @@ class AddAppsFragment : Fragment(R.layout.fragment_add_apps) {
 
     private lateinit var marcarAppsParaAgregarAdapter: MarcarAppsParaAgregarAdapter
 
-    private val args: AddAppsFragmentArgs by navArgs() // Recibir argumentos
+    private val args: AppsAddFragmentArgs by navArgs() // Recibir argumentos
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        args.category
 
         initUI(view)
         initListeners()
@@ -54,6 +52,25 @@ class AddAppsFragment : Fragment(R.layout.fragment_add_apps) {
         binding.rvMarcarAppsParaBloquear.adapter = marcarAppsParaAgregarAdapter
         binding.rvMarcarAppsParaBloquear.layoutManager = LinearLayoutManager(requireContext())
         binding.rvMarcarAppsParaBloquear.setRecycledViewPool(RecyclerView.RecycledViewPool())
+        if (args.category == StatusApp.BLOQUEADA.desc) {
+
+        }
+        binding.tvTitulo.text = when (args.category) {
+            StatusApp.BLOQUEADA.desc -> "Marca las apps que deseas bloquear"
+            StatusApp.DISPONIBLE.desc -> "Marca las apps para sean siempre disponibles"
+            StatusApp.HORARIO.desc -> "Marca las apps para sean bajo del horario."
+            else -> {
+                "No hay categorias"
+            }
+        }
+        binding.aggregarAppsABoton.text = when (args.category) {
+            StatusApp.BLOQUEADA.desc -> "Agregar a siempre blockeadas"
+            StatusApp.DISPONIBLE.desc -> "Agregar a siempre disponibles"
+            StatusApp.HORARIO.desc -> "Agregar a bajo horario"
+            else -> {
+                "No hay categorias"
+            }
+        }
     }
 
     @OptIn(DelicateCoroutinesApi::class)
@@ -63,16 +80,21 @@ class AddAppsFragment : Fragment(R.layout.fragment_add_apps) {
             findNavController().popBackStack()
         }
 
-        binding.aggregarAppsABlockedBoton.setOnClickListener {
+        binding.aggregarAppsABoton.setOnClickListener {
             val selectedApps =
                 marcarAppsParaAgregarAdapter.getSelectedApps() // Obtener apps seleccionadas
             if (selectedApps.isNotEmpty()) {
                 GlobalScope.launch {
-                    if (args.category == StatusApp.DISPONIBLE.desc) {
-                        appDataRepository.addAppsASiempreDisponiblesBD(selectedApps.toList())
-                    }
-                    if (args.category == StatusApp.BLOQUEADA.desc) {
-                        appDataRepository.addAppsASiempreBloqueadasBD(selectedApps.toList())
+                    when (args.category) {
+                        StatusApp.BLOQUEADA.desc ->
+                            appDataRepository.addAppsASiempreBloqueadasBD(selectedApps.toList())
+
+                        StatusApp.DISPONIBLE.desc ->
+                            appDataRepository.addAppsASiempreDisponiblesBD(selectedApps.toList())
+
+                        StatusApp.HORARIO.desc -> appDataRepository.addAppsAHorarioBD(
+                            selectedApps.toList()
+                        )
                     }
 
                 }

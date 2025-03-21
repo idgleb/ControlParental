@@ -91,6 +91,21 @@
                     tools:background="@color/mercadopago"
                     tools:layout_height="200dp" />
 
+                <FrameLayout
+                    android:id="@+id/fragment_apps_horario"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    tools:background="@color/blue_light"
+                    tools:layout_height="200dp" />
+
+                <FrameLayout
+                    android:id="@+id/fragment_desarollo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    tools:background="@color/mercadopago"
+                    tools:layout_height="200dp" />
+
+
             </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>

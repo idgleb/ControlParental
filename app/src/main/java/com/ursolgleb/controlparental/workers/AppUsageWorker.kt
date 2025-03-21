@@ -38,7 +38,7 @@ class AppUsageWorker(
         // ✅ Llamar a updateTiempoUsoApps()
         appDataRepository.updateTiempoUsoAppsHoy()
 
-        // 🔹 Reprogramar el worker después de 10 segundos
+        // 🔹 Reprogramar el worker
         scheduleNextWork(applicationContext)
 
         return Result.success()
@@ -46,7 +46,7 @@ class AppUsageWorker(
 
     private fun scheduleNextWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<AppUsageWorker>()
-            .setInitialDelay(30, TimeUnit.SECONDS)
+            .setInitialDelay(60, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(

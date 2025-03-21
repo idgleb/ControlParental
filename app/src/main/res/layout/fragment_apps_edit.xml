@@ -56,11 +56,13 @@
         app:layout_constraintTop_toBottomOf="@id/barra_arriba">
 
         <View
+            android:id="@+id/iconDeLista"
             android:layout_width="22dp"
             android:layout_height="22dp"
             android:background="@drawable/lock"/>
 
         <TextView
+            android:id="@+id/tvNombreLista"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
@@ -69,7 +71,7 @@
             android:textStyle="normal" />
 
         <TextView
-            android:id="@+id/tvCantidadAppsBloqueadas"
+            android:id="@+id/tvCantidadApps"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/radius_background"
@@ -106,7 +108,7 @@
                     android:layout_height="match_parent">
 
                     <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvBlockedAppsEdit"
+                        android:id="@+id/rvAppsEdit"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
 
@@ -149,7 +151,7 @@
         app:layout_constraintBottom_toBottomOf="parent">
 
         <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/aggregarAppsABlockedBoton"
+            android:id="@+id/aggregarAppsABoton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
@@ -159,7 +161,7 @@
             android:drawableTint="@color/white"
             android:minWidth="0dp"
             android:minHeight="0dp"
-            android:text="Agregar apps a lista de Apps Bloqueadas"
+            android:text="Agregar apps a ..."
             android:textAllCaps="false"
             android:textColor="@color/text_boton"
             android:textSize="15sp"

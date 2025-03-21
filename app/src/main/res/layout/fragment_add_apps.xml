@@ -31,6 +31,7 @@
 
 
         <TextView
+            android:id="@+id/tvTitulo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -86,7 +87,7 @@
         app:layout_constraintBottom_toBottomOf="parent">
 
         <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/aggregarAppsABlockedBoton"
+            android:id="@+id/aggregarAppsABoton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"

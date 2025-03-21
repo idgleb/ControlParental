@@ -100,7 +100,7 @@
                     android:focusable="false"
                     android:gravity="center"
                     android:paddingVertical="3dp"
-                    android:text="Siempre\ndisponible"
+                    android:text="Disponible\nsiempre"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -139,7 +139,7 @@
                     android:focusable="false"
                     android:gravity="center"
                     android:paddingVertical="3dp"
-                    android:text="Siempre\ndisponible"
+                    android:text="Disponible\nsiempre"
                     android:textColor="@color/fondo_principal"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -177,7 +177,7 @@
                     android:focusable="false"
                     android:gravity="center"
                     android:paddingVertical="3dp"
-                    android:text="Entretenimiento\n(bajo de horario)"
+                    android:text="Bajo\nde horario"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -216,7 +216,7 @@
                     android:focusable="false"
                     android:gravity="center"
                     android:paddingVertical="3dp"
-                    android:text="Entretenimiento\n(bajo de horario)"
+                    android:text="Bajo\nde horario"
                     android:textColor="@color/fondo_principal"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -253,7 +253,7 @@
                     android:focusable="false"
                     android:gravity="center"
                     android:paddingVertical="3dp"
-                    android:text="Siempre\nbloqueado"
+                    android:text="Bloqueado\nsiempre"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -292,7 +292,7 @@
                     android:focusable="false"
                     android:gravity="center"
                     android:paddingVertical="3dp"
-                    android:text="Siempre\nbloqueado"
+                    android:text="Bloqueado\nsiempre"
                     android:textColor="@color/fondo_principal"
                     android:textSize="12sp" />
             </LinearLayout>

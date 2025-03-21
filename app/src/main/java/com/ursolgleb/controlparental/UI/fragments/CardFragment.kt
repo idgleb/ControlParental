@@ -3,6 +3,7 @@ package com.ursolgleb.controlparental.UI.fragments
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.ursolgleb.controlparental.R
@@ -10,26 +11,26 @@ import com.ursolgleb.controlparental.UI.adapters.blockedAppsCard.AppsCardAdapter
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.Navigation
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.data.local.dao.AppDao
-import com.ursolgleb.controlparental.databinding.FragmentDisponAppsCardBinding
+import com.ursolgleb.controlparental.databinding.FragmentCardBinding
+import com.ursolgleb.controlparental.utils.Fun
 import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class DisponAppsCardFragment : Fragment(R.layout.fragment_dispon_apps_card) {
+class CardFragment(val categoria: StatusApp) : Fragment(R.layout.fragment_card) {
 
     @Inject
     lateinit var appDataRepository: AppDataRepository
 
     lateinit var appDao: AppDao
 
-    private var _binding: FragmentDisponAppsCardBinding? = null
+    private var _binding: FragmentCardBinding? = null
     private val binding get() = _binding!!
 
     private var appCardAdapter: AppsCardAdapter? = null
@@ -40,19 +41,69 @@ class DisponAppsCardFragment : Fragment(R.layout.fragment_dispon_apps_card) {
         appDao = appDataRepository.appDatabase.appDao()
 
         initUI(view)
-
         initListeners()
-
         initObservers()
+    }
+
+    private fun initUI(view: View) {
+        _binding = FragmentCardBinding.bind(view)
+
+        appCardAdapter = AppsCardAdapter(mutableListOf(), appDataRepository)
+        binding.rvApps.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvApps.adapter = appCardAdapter
+        binding.rvApps.setRecycledViewPool(RecyclerView.RecycledViewPool())
+
+        when (categoria.desc) {
+            StatusApp.BLOQUEADA.desc -> {
+                binding.iconDeLista.background =
+                    ResourcesCompat.getDrawable(resources, R.drawable.lock, null)
+            }
+
+            StatusApp.DISPONIBLE.desc -> {
+                binding.iconDeLista.background =
+                    ResourcesCompat.getDrawable(resources, R.drawable.vecteezy_infinity, null)
+                val params = binding.iconDeLista.layoutParams
+                params.width = Fun.dpToPx(26, binding.iconDeLista)
+                params.height = Fun.dpToPx(12, binding.iconDeLista)
+                binding.iconDeLista.layoutParams = params
+            }
+
+            StatusApp.HORARIO.desc -> {
+                binding.iconDeLista.background =
+                    ResourcesCompat.getDrawable(resources, R.drawable.vect_clock_timer, null)
+                val params = binding.iconDeLista.layoutParams
+                params.width = Fun.dpToPx(43, binding.iconDeLista)
+                params.height = Fun.dpToPx(95, binding.iconDeLista)
+                binding.iconDeLista.layoutParams = params
+            }
+
+            else -> {
+                binding.iconDeLista.background =
+                    ResourcesCompat.getDrawable(resources, R.drawable.ic_check_white, null)
+            }
+        }
+
+        binding.tvNombreLista.text = when (categoria.desc) {
+            StatusApp.BLOQUEADA.desc -> "Bloqueadas siempre"
+            StatusApp.DISPONIBLE.desc -> "Disponibles siempre"
+            StatusApp.HORARIO.desc -> "Bajo de Horario"
+            else -> "Apps ..."
+        }
+        binding.aggregarAppsABoton.text = when (categoria.desc) {
+            StatusApp.BLOQUEADA.desc -> "Agregar a siempre bloqueadas"
+            StatusApp.DISPONIBLE.desc -> "Agregar a siempre disponibles"
+            StatusApp.HORARIO.desc -> "Agregar a bajo horario"
+            else -> "Agregar a ..."
+        }
+
     }
 
     private fun initListeners() {
 
-        binding.aggregarAppsADisponBoton.setOnClickListener {
-
-            val action = MainAdminFragmentDirections.actionGlobalAddAppsAblockedFragment(category = StatusApp.DISPONIBLE.desc)
+        binding.aggregarAppsABoton.setOnClickListener {
+            val action =
+                MainAdminFragmentDirections.actionGlobalAddAppsA(category = categoria.desc)
             findNavController().navigate(action)
-
         }
 
         binding.cvAppsDispon.setOnClickListener {
@@ -66,29 +117,31 @@ class DisponAppsCardFragment : Fragment(R.layout.fragment_dispon_apps_card) {
     }
 
     private fun navegarADisponAppsEdit() {
-        val navController = Navigation.findNavController(
-            requireActivity(),
-            R.id.nav_host_fragment
-        )
-        navController.navigate(R.id.action_global_disponAppsEditFragment)
+        val action =
+            MainAdminFragmentDirections.actionGlobalAppsEditFragment(category = categoria.desc)
+        findNavController().navigate(action)
     }
 
     private fun initObservers() {
+
+        val listaDeObservarFlow = when (categoria.desc) {
+            StatusApp.BLOQUEADA.desc -> appDataRepository.blockedAppsFlow
+            StatusApp.DISPONIBLE.desc -> appDataRepository.disponAppsFlow
+            StatusApp.HORARIO.desc -> appDataRepository.horarioAppsFlow
+            else -> appDataRepository.todosAppsFlow
+        }
+
         // 🔥 Observar cambios en la lista de apps dispon
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                appDataRepository.disponAppsFlow.collect { newList ->
-                    Log.w("BlockedAppsFragment", "Lista de apps dispon actualizada: $newList")
-                    binding.tvCantidadAppsDispon.text = newList.size.toString()
+                listaDeObservarFlow.collect { newList ->
+                    Log.w("CardFragment", "Lista de apps ${categoria.desc} actualizada: $newList")
+                    binding.tvCantidadApps.text = newList.size.toString()
                     appCardAdapter?.updateListEnAdaptador(newList.take(3))
                     // 🔥 Si la lista está vacía, mostrar "Empty"
-                    if (newList.isEmpty()) {
-                        binding.tvEmptyMessage.text = "No hay aplicaciones bloqueadas"
-                        binding.rvAppsDispon.visibility = View.GONE
-                    } else {
-                        binding.tvEmptyMessage.text = ""
-                        binding.rvAppsDispon.visibility = View.VISIBLE
-                    }
+                    binding.tvEmptyMessage.text = if (newList.isEmpty()) {
+                        "No hay aplicaciones ${categoria.desc}"
+                    } else ""
                 }
             }
         }
@@ -130,18 +183,12 @@ class DisponAppsCardFragment : Fragment(R.layout.fragment_dispon_apps_card) {
 
     }
 
-    private fun initUI(view: View) {
-        _binding = FragmentDisponAppsCardBinding.bind(view)
 
-        appCardAdapter = AppsCardAdapter(mutableListOf(), appDataRepository)
-        binding.rvAppsDispon.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvAppsDispon.adapter = appCardAdapter
-        binding.rvAppsDispon.setRecycledViewPool(RecyclerView.RecycledViewPool()) // ✅ Optimización
-    }
 
     override fun onDestroyView() {
         super.onDestroyView()
         Log.e("BlockedAppsFragment", "onDestroyView")
         _binding = null // 🔥 Evitar memory leaks
     }
+
 }

@@ -12,6 +12,7 @@ import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.databinding.FragmentMainAdminBinding
+import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -50,12 +51,22 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
         initHeightDeSvInfo()
 
         childFragmentManager.beginTransaction()
-            .replace(R.id.fragment_apps_bloqueadas, BlockedAppsCardFragment())
+            .replace(R.id.fragment_apps_bloqueadas, CardFragment(StatusApp.BLOQUEADA))
             .commit()
 
         childFragmentManager.beginTransaction()
-            .replace(R.id.fragment_apps_disponibles, DisponAppsCardFragment())
+            .replace(R.id.fragment_apps_disponibles, CardFragment(StatusApp.DISPONIBLE))
             .commit()
+
+        childFragmentManager.beginTransaction()
+            .replace(R.id.fragment_apps_horario, CardFragment(StatusApp.HORARIO))
+            .commit()
+
+        childFragmentManager.beginTransaction()
+            .replace(R.id.fragment_desarollo, DesarolloCardFragment())
+            .commit()
+
+
     }
 
     private fun initListeners() {
@@ -70,7 +81,8 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
     }
 
     private fun initHeightDeSvInfo() {
-        binding.svInfo.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+        binding.svInfo.viewTreeObserver.addOnGlobalLayoutListener(object :
+            ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 binding.svInfo.viewTreeObserver.removeOnGlobalLayoutListener(this)
                 val scrollViewHeight = binding.svInfo.height
