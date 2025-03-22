@@ -163,24 +163,6 @@ class CardFragment(val categoria: StatusApp) : Fragment(R.layout.fragment_card) 
                 }
             }
         }
-
-        // 🔥 Observar si se necesita mostrar el mostrarBottomSheetActualizada
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                appDataRepository.mostrarBottomSheetActualizadaFlow.collect { isTrue ->
-                    Log.e(
-                        "MioParametro",
-                        "BlockedAppsCardFragment mostrarBottomSheetActualizadaFlow: $isTrue"
-                    )
-                    if (isTrue) {
-                        // Mostrar un indicador de carga o bloquear la UI.
-                        val bottomSheetActualizada = BottomSheetActualizadaFragment()
-                        bottomSheetActualizada.show(parentFragmentManager, "BottomSheetDialog")
-                    }
-                }
-            }
-        }
-
     }
 
 

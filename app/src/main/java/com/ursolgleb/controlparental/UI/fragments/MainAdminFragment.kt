@@ -8,12 +8,16 @@ import android.view.ViewTreeObserver
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.databinding.FragmentMainAdminBinding
 import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -77,7 +81,18 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
     }
 
     private fun initObservers() {
-        // Agrega tus observadores aquí si es necesario.
+        // 🔥 Observar si se necesita mostrar el mostrarBottomSheetActualizada
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                appDataRepository.mostrarBottomSheetActualizadaFlow.collect { isTrue ->
+                    if (isTrue) {
+                        // Mostrar un indicador de carga o bloquear la UI.
+                        val bottomSheetActualizada = BottomSheetActualizadaFragment()
+                        bottomSheetActualizada.show(parentFragmentManager, "BottomSheetDialog")
+                    }
+                }
+            }
+        }
     }
 
     private fun initHeightDeSvInfo() {
