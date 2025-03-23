@@ -9,7 +9,6 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import androidx.lifecycle.viewModelScope
 import com.ursolgleb.controlparental.ControlParentalApp
-import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
 import com.ursolgleb.controlparental.utils.Launcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

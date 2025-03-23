@@ -1,5 +1,6 @@
-package com.ursolgleb.controlparental.UI.adapters.blockedAppsCard
+package com.ursolgleb.controlparental.UI.adapters.appsCard
 
+import android.graphics.drawable.BitmapDrawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -10,7 +11,7 @@ import com.ursolgleb.controlparental.utils.AppsFun
 import javax.inject.Inject
 
 class AppsCardAdapter @Inject constructor(
-    val blockedApps: MutableList<AppEntity>,
+    val apps: MutableList<AppEntity>,
     val appDataRepository: AppDataRepository
 ) : RecyclerView.Adapter<AppsCardViewHolder>() {
 
@@ -21,18 +22,18 @@ class AppsCardAdapter @Inject constructor(
     }
 
     override fun onBindViewHolder(holder: AppsCardViewHolder, position: Int) {
-        val blockedApp = blockedApps[position]
-        val icon = AppsFun.getAppIcon(appDataRepository.context,blockedApp.packageName)
-        holder.bind(blockedApp.appName, icon)
+        val app = apps[position]
+        val icon = BitmapDrawable(appDataRepository.context.resources, app.appIcon)
+        holder.bind(app.appName, icon)
     }
 
-    override fun getItemCount(): Int = blockedApps.size
+    override fun getItemCount(): Int = apps.size
 
 
     // 🔥 ✅ Función para actualizar toda la lista
     fun updateListEnAdaptador(newList: List<AppEntity>) {
-        blockedApps.clear()
-        blockedApps.addAll(newList)
+        apps.clear()
+        apps.addAll(newList)
         notifyDataSetChanged()
     }
 

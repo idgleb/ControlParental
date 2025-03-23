@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear
+package com.ursolgleb.controlparental.UI.adapters.marcarAppsPara
 
 import android.graphics.drawable.Drawable
 import android.util.Log

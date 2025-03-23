@@ -4,6 +4,7 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import android.graphics.drawable.BitmapDrawable
 import android.os.DeadObjectException
 import android.util.Log
 import com.ursolgleb.controlparental.data.local.AppDatabase
@@ -198,6 +199,10 @@ class AppDataRepository @Inject constructor(
 
         val nuevasEntidades = appsNuevas.map { app ->
 
+            // Obtener el ícono de la aplicación como Drawable y convertirlo a Bitmap
+            val drawable = app.loadIcon(pm)
+            val bitmap = AppsFun.drawableToBitmap(drawable)// 🔹 Convertir Drawable a Bitmap
+
             // condicion a donde poner las nuevas apps(block, entretenimiento o siempre disponibles)
             val entretenimiento = app.category in listOf(
                 ApplicationInfo.CATEGORY_GAME,
@@ -213,14 +218,14 @@ class AppDataRepository @Inject constructor(
             AppEntity(
                 packageName = app.packageName,
                 appName = app.loadLabel(pm).toString(),
-                appIcon = app.loadIcon(pm).toString(),
+                appIcon = bitmap,
                 appCategory = app.category.toString(),
                 contentRating = "?",
-                appIsSystemApp = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
-                tiempoUsoHoy = tiempoDeUso[app.packageName] ?: 0L,
-                timeStempToday = timestampActual,
+                isSystemApp = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
+                usageTimeToday = tiempoDeUso[app.packageName] ?: 0L,
+                timeStempUsageTimeToday = timestampActual,
                 appStatus = status,
-                usoLimitPorDiaMinutos = 0
+                dailyUsageLimitMinutes = 0
             )
         }
         Log.d("AppDataRepository1", "Finish crear nuevasEntidades.")
@@ -264,7 +269,7 @@ class AppDataRepository @Inject constructor(
             if (app.appStatus != StatusApp.BLOQUEADA.desc) {
                 app.copy(
                     appStatus = StatusApp.BLOQUEADA.desc,
-                    usoLimitPorDiaMinutos = 0
+                    dailyUsageLimitMinutes = 0
                 )
             } else null  // Si el estado ya es BLOQUEADA, omitimos este elemento
         }
@@ -305,7 +310,7 @@ class AppDataRepository @Inject constructor(
             if (app.appStatus != StatusApp.DISPONIBLE.desc) {
                 app.copy(
                     appStatus = StatusApp.DISPONIBLE.desc,
-                    usoLimitPorDiaMinutos = 0,
+                    dailyUsageLimitMinutes = 0,
                 )
             } else null
         }
@@ -429,7 +434,7 @@ class AppDataRepository @Inject constructor(
             val tiempoDeUsoHoy = getTiempoDeUsoHoy(appsBD) { app -> app.packageName }
             appsBD.forEach { appBD ->
                 val tiempoDeUsoHoyApp = tiempoDeUsoHoy[appBD.packageName] ?: 0L
-                if (appBD.tiempoUsoHoy != tiempoDeUsoHoyApp) {
+                if (appBD.usageTimeToday != tiempoDeUsoHoyApp) {
                     tiempoDeUsoMapHoy[appBD.packageName] = tiempoDeUsoHoyApp ?: 0L
                     Log.w(
                         "AppDataRepository1",

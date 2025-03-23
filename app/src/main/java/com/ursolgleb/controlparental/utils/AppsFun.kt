@@ -4,6 +4,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +31,16 @@ class AppsFun {
             return pm.queryIntentActivities(intent, 0).isNotEmpty()
         }
 
+        fun getApplicationInfo(context: Context, packageName: String): ApplicationInfo? {
+            return try {
+                val pm = context.packageManager
+                pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+            } catch (e: PackageManager.NameNotFoundException) {
+                e.printStackTrace()
+                null // Si no se encuentra la app, retorna null
+            }
+        }
+
         // Obtener el ícono de una aplicación
         fun getAppIcon(context: Context, packageName: String): Drawable? {
             return try {
@@ -42,15 +55,19 @@ class AppsFun {
             }
         }
 
-        fun getApplicationInfo(context: Context, packageName: String): ApplicationInfo? {
-            return try {
-                val pm = context.packageManager
-                pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
-            } catch (e: PackageManager.NameNotFoundException) {
-                e.printStackTrace()
-                null // Si no se encuentra la app, retorna null
+        fun drawableToBitmap(drawable: Drawable): Bitmap {
+            if (drawable is BitmapDrawable) {
+                return drawable.bitmap
             }
+            val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: 1
+            val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: 1
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+            return bitmap
         }
+
 
         // Obtener clasificación de edad de una app
         suspend fun getAppAgeRatingScraper(packageName: String): String {

@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear.appsEditAdapter
+import com.ursolgleb.controlparental.UI.adapters.marcarAppsPara.AppsEditAdapter
 import com.ursolgleb.controlparental.databinding.FragmentAppsEditBinding
 import com.ursolgleb.controlparental.utils.Fun
 import com.ursolgleb.controlparental.utils.StatusApp
@@ -31,7 +31,7 @@ class AppsEditFragment : Fragment(R.layout.fragment_apps_edit) {
     private var _binding: FragmentAppsEditBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var appsEditAdapter: appsEditAdapter
+    private lateinit var appsEditAdapter: AppsEditAdapter
 
     private val args: AppsEditFragmentArgs by navArgs() // Recibir argumentos
 
@@ -47,7 +47,7 @@ class AppsEditFragment : Fragment(R.layout.fragment_apps_edit) {
         _binding = FragmentAppsEditBinding.bind(view)
 
         appsEditAdapter =
-            appsEditAdapter(mutableListOf(), appDataRepository, childFragmentManager)
+            AppsEditAdapter(mutableListOf(), appDataRepository, childFragmentManager)
         binding.rvAppsEdit.adapter = appsEditAdapter
         binding.rvAppsEdit.layoutManager = LinearLayoutManager(requireContext())
         binding.rvAppsEdit.setRecycledViewPool(RecyclerView.RecycledViewPool())

@@ -7,7 +7,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.UI.adapters.blockedAppsCard.AppsCardAdapter
+import com.ursolgleb.controlparental.UI.adapters.appsCard.AppsCardAdapter
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle

@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear.MarcarAppsParaAgregarAdapter
+import com.ursolgleb.controlparental.UI.adapters.marcarAppsPara.MarcarAppsParaAgregarAdapter
 import com.ursolgleb.controlparental.databinding.FragmentAddAppsBinding
 import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint

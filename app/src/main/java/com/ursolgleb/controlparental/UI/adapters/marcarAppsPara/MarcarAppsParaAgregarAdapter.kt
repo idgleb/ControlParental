@@ -1,5 +1,6 @@
-package com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear
+package com.ursolgleb.controlparental.UI.adapters.marcarAppsPara
 
+import android.graphics.drawable.BitmapDrawable
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -31,9 +32,9 @@ class MarcarAppsParaAgregarAdapter(
     override fun onBindViewHolder(holder: MarcarAppsParaAgregarViewHolder, position: Int) {
         val app = apps[position]
 
-        val icon = AppsFun.getAppIcon(appDataRepository.context, app.packageName)
+        val icon = BitmapDrawable(appDataRepository.context.resources, app.appIcon)
 
-        val formattedTimeDeUso = Fun.formatearMiliSec(app.tiempoUsoHoy)
+        val formattedTimeDeUso = Fun.formatearMiliSec(app.usageTimeToday)
 
         holder.bind(
             app.appName,

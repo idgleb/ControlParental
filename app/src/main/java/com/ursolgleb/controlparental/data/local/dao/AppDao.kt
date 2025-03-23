@@ -14,7 +14,7 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertListaApps(apps: List<AppEntity>)
 
-    @Query("SELECT * FROM apps ORDER BY tiempoUsoHoy DESC")
+    @Query("SELECT * FROM apps ORDER BY usageTimeToday DESC")
     fun getAllApps(): Flow<List<AppEntity>>
 
     //  Cambiar todas las apps bloqueadas a DISPONIBLE
@@ -27,7 +27,7 @@ interface AppDao {
     @Query(
         """
     UPDATE apps 
-    SET tiempoUsoHoy = :hoy, timeStempToday = strftime('%s','now')
+    SET usageTimeToday = :hoy, timeStempUsageTimeToday = strftime('%s','now')
     WHERE packageName = :packageName
 """
     )

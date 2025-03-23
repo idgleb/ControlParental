@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental.UI.adapters.blockedAppsCard
+package com.ursolgleb.controlparental.UI.adapters.appsCard
 
 import android.graphics.drawable.Drawable
 import androidx.recyclerview.widget.RecyclerView

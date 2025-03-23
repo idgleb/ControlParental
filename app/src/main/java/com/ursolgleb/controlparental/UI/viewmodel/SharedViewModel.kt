@@ -15,7 +15,6 @@ import androidx.lifecycle.viewModelScope
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
-import com.ursolgleb.controlparental.data.local.entities.BlockedEntity
 import com.ursolgleb.controlparental.utils.Fun
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers

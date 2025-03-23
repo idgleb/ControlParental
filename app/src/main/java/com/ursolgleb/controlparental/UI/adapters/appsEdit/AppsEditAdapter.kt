@@ -1,5 +1,6 @@
-package com.ursolgleb.controlparental.UI.adapters.marcarAppsParaBlockear
+package com.ursolgleb.controlparental.UI.adapters.marcarAppsPara
 
+import android.graphics.drawable.BitmapDrawable
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -10,7 +11,7 @@ import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
 import com.ursolgleb.controlparental.utils.AppsFun
 import com.ursolgleb.controlparental.utils.Fun
 
-class appsEditAdapter(
+class AppsEditAdapter(
     val apps: MutableList<AppEntity>,
     val appDataRepository: AppDataRepository,
     private val fragmentManager: androidx.fragment.app.FragmentManager
@@ -29,9 +30,9 @@ class appsEditAdapter(
     override fun onBindViewHolder(holder: appsEditViewHolder, position: Int) {
         val app = apps[position]
 
-        val icon = AppsFun.getAppIcon(appDataRepository.context, app.packageName)
+        val icon = BitmapDrawable(appDataRepository.context.resources, app.appIcon)
 
-        val formattedTimeDeUso = Fun.formatearMiliSec(app.tiempoUsoHoy)
+        val formattedTimeDeUso = Fun.formatearMiliSec(app.usageTimeToday)
 
         holder.bind(
             app,
