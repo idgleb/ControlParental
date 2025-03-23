@@ -123,6 +123,67 @@
                     android:visibility="gone" />
             </FrameLayout>
 
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/clCambiarHorarioLimite"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/cambiarHorario"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/radius_button_secundario"
+                    android:drawableStart="@drawable/horario_scaled"
+                    android:drawablePadding="0dp"
+                    android:drawableTint="@color/black"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:padding="12dp"
+                    android:layout_marginVertical="16dp"
+                    android:layout_marginStart="16sp"
+                    android:text="Cambiar horario de bloqueo"
+                    android:textAlignment="textStart"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:singleLine="false"
+                    android:maxLines="3"
+                    android:ellipsize="none"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/cambiarHorario2"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/cambiarHorario2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    android:layout_margin="16dp"
+                    android:background="@drawable/radius_button_secundario"
+                    android:drawableStart="@drawable/limite_scaled"
+                    android:drawablePadding="0dp"
+                    android:drawableTint="@color/black"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:text="Cambiar limite"
+                    android:textAlignment="textStart"
+                    android:textSize="12sp"
+                    android:singleLine="false"
+                    android:maxLines="3"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_boton"
+
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/cambiarHorario"
+
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/aggregarAppsABoton"

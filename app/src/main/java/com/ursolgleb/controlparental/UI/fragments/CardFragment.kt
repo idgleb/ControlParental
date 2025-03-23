@@ -57,13 +57,18 @@ class CardFragment(val categoria: StatusApp) : Fragment(R.layout.fragment_card) 
             StatusApp.BLOQUEADA.desc -> {
                 binding.iconDeLista.background =
                     ResourcesCompat.getDrawable(resources, R.drawable.lock, null)
+                val params = binding.iconDeLista.layoutParams
+                params.width = Fun.dpToPx(22, binding.iconDeLista)
+                params.height = Fun.dpToPx(22, binding.iconDeLista)
+                binding.iconDeLista.layoutParams = params
+
             }
 
             StatusApp.DISPONIBLE.desc -> {
                 binding.iconDeLista.background =
                     ResourcesCompat.getDrawable(resources, R.drawable.vecteezy_infinity, null)
                 val params = binding.iconDeLista.layoutParams
-                params.width = Fun.dpToPx(26, binding.iconDeLista)
+                params.width = Fun.dpToPx(23, binding.iconDeLista)
                 params.height = Fun.dpToPx(12, binding.iconDeLista)
                 binding.iconDeLista.layoutParams = params
             }
@@ -72,9 +77,10 @@ class CardFragment(val categoria: StatusApp) : Fragment(R.layout.fragment_card) 
                 binding.iconDeLista.background =
                     ResourcesCompat.getDrawable(resources, R.drawable.vect_clock_timer, null)
                 val params = binding.iconDeLista.layoutParams
-                params.width = Fun.dpToPx(43, binding.iconDeLista)
-                params.height = Fun.dpToPx(95, binding.iconDeLista)
+                params.width = Fun.dpToPx(40, binding.iconDeLista)
+                params.height = Fun.dpToPx(90, binding.iconDeLista)
                 binding.iconDeLista.layoutParams = params
+                binding.clCambiarHorarioLimite.visibility = View.VISIBLE
             }
 
             else -> {

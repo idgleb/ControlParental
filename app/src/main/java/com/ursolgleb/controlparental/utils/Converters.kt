@@ -17,4 +17,15 @@ class Converters {
     fun toBitmap(byteArray: ByteArray): Bitmap {
         return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
     }
+
+    @TypeConverter
+    fun fromDiasList(dias: List<Int>): String {
+        return dias.joinToString(",")
+    }
+
+    @TypeConverter
+    fun toDiasList(data: String): List<Int> {
+        return if (data.isEmpty()) emptyList() else data.split(",").map { it.toInt() }
+    }
+
 }
