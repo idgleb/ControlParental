@@ -41,6 +41,7 @@ import com.ursolgleb.controlparental.utils.Launcher
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.receiver.UpdateAppsBloquedasReceiver
 import com.ursolgleb.controlparental.databinding.ActivityDesarolloBinding
+import com.ursolgleb.controlparental.utils.Permisos
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -142,12 +143,7 @@ class DesarolloActivity : AppCompatActivity() {
 
         bindDesarollo.requestUsageStatsPermissionBoton.setOnClickListener {
 
-            val intent = Intent("com.ursolgleb.controlparental.UPDATE_BLOCKED_APPS")
-            intent.putExtra("mensaje", "¡Hola desde la boton!")
-            sendBroadcast(intent)
-            Log.w("MainActivityListaApps", "Broadcast enviado desde boton")
-
-            if (!hasUsageStatsPermission(this)) {
+            if (!Permisos.hasUsageStatsPermission(this)) {
                 requestUsageStatsPermission(this)
             } else {
                 val msg = "Ya tienes el permiso de Usage Stats"
@@ -180,7 +176,7 @@ class DesarolloActivity : AppCompatActivity() {
 
         bindDesarollo.getUsageStatsBoton.setOnClickListener {
 
-            if (!hasUsageStatsPermission(this)) {
+            if (!Permisos.hasUsageStatsPermission(this)) {
                 requestUsageStatsPermission(this)
                 return@setOnClickListener
             }
@@ -330,23 +326,7 @@ class DesarolloActivity : AppCompatActivity() {
 
     }
 
-    fun hasUsageStatsPermission(context: Context): Boolean {
-        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            appOps.unsafeCheckOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                android.os.Process.myUid(),
-                context.packageName
-            )
-        } else {
-            appOps.checkOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                android.os.Process.myUid(),
-                context.packageName
-            )
-        }
-        return mode == AppOpsManager.MODE_ALLOWED
-    }
+
 
     fun requestUsageStatsPermission(context: Context) {
         val intent = Intent(

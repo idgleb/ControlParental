@@ -15,6 +15,7 @@ import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.databinding.FragmentMainAdminBinding
+import com.ursolgleb.controlparental.utils.Permisos
 import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -28,9 +29,6 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
 
     private var _binding: FragmentMainAdminBinding? = null
     private val binding get() = _binding!!
-
-    //private val sharedViewModel: SharedViewModel by activityViewModels()
-
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -72,6 +70,16 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
             .commit()
 
 
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (!Permisos.hasUsageStatsPermission(appDataRepository.context)) {
+
+            val bottomSheetPermisos = BottomSheetPermisosFragment()
+            bottomSheetPermisos.show(parentFragmentManager, "BottomSheetDialog")
+
+        }
     }
 
     private fun initListeners() {

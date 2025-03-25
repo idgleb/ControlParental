@@ -2,7 +2,7 @@
     <!-- Estado cuando el botón está presionado -->
     <item android:drawable="@drawable/radius_button_secundario_pressed" android:state_pressed="true"/>
     <!-- Estado cuando el botón está deshabilitado -->
-    <item android:drawable="@drawable/radius_button_secundario_pressed" android:state_enabled="false"/>
+    <item android:drawable="@drawable/radius_button_desactivado" android:state_enabled="false"/>
     <!-- Estado normal del botón -->
     <item android:drawable="@drawable/radius_button_secundario"/>
 </selector>

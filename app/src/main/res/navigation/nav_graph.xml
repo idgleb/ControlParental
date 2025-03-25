@@ -31,6 +31,12 @@
             app:argType="string" />
     </fragment>
 
+    <fragment
+        android:id="@+id/PermisosFragment"
+        android:name="com.ursolgleb.controlparental.UI.fragments.PermisosFragment"
+        android:label="Blocked Apps" >
+    </fragment>
+
 
     <!-- Acción global para navegar a ... -->
     <action
@@ -39,6 +45,9 @@
     <action
         android:id="@+id/action_global_AppsEditFragment"
         app:destination="@id/appsEditFragment" />
+    <action
+        android:id="@+id/action_global_PermisosFragment"
+        app:destination="@id/PermisosFragment" />
 
 
 
