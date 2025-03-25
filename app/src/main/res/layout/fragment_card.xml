@@ -10,7 +10,9 @@
         android:id="@+id/cvAppsDispon"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="8dp"
+        android:layout_marginHorizontal="8dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="22dp"
         app:cardCornerRadius="8dp"
         app:cardElevation="3dp">
 
@@ -20,71 +22,87 @@
             android:orientation="vertical"
             android:padding="0dp">
 
-            <LinearLayout
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:padding="8dp">
 
+                <!-- Ícono -->
                 <View
                     android:id="@+id/iconDeLista"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="8dp"
                     android:background="@drawable/vecteezy_infinity"
-                    android:layout_marginStart="16dp"/>
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
 
-                <TextView
-                    android:id="@+id/tvNombreLista"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="16dp"
-                    android:text="Apps ..."
-                    android:textSize="18sp"
-                    android:textStyle="normal" />
-
-                <TextView
-                    android:id="@+id/tvCantidadApps"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/radius_background"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="3dp"
-                    android:textSize="10sp"
-                    tools:text="30" />
-
-                <androidx.constraintlayout.widget.ConstraintLayout
+                <!-- Contenedor flexible con nombre + cantidad -->
+                <LinearLayout
+                    android:id="@+id/contenedorNombreCantidad"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_margin="16dp"
-                    android:layout_weight="1"
+                    android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    app:layout_constraintStart_toEndOf="@id/iconDeLista"
+                    app:layout_constraintEnd_toStartOf="@id/botonVer"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent">
 
-                    <androidx.appcompat.widget.AppCompatButton
+                    <TextView
+                        android:id="@+id/tvNombreLista"
+                        android:layout_marginStart="8dp"
+                        android:paddingVertical="8dp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/radius_button_transporente_selector"
-                        android:clickable="false"
-                        android:drawableEnd="@drawable/flecha_mas_aladerecha_scaled"
-                        android:drawablePadding="0dp"
-                        android:drawableTint="@color/blue_principal"
-                        android:minWidth="0dp"
-                        android:minHeight="0dp"
-                        android:padding="6dp"
-                        android:text="Ver"
-                        android:textAllCaps="false"
-                        android:textColor="@color/blue_principal"
-                        android:textSize="14sp"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        tools:layout_editor_absoluteY="0dp" />
+                        android:text="Texto larhace vrtv er falta"
+                        android:textColor="@color/black"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:maxLines="2"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/tvCantidadApps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/radius_background"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="3dp"
+                        android:textColor="@color/white"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        tools:text="30" />
+                </LinearLayout>
+
+                <!-- Botón fijo a la derecha -->
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/botonVer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/radius_button_transporente_selector"
+                    android:drawableEnd="@drawable/flecha_mas_aladerecha_scaled"
+                    android:drawablePadding="0dp"
+                    android:drawableTint="@color/blue_principal"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:padding="6dp"
+                    android:text="Ver"
+                    android:textAllCaps="false"
+                    android:textColor="@color/blue_principal"
+                    android:textSize="14sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
 
-                </androidx.constraintlayout.widget.ConstraintLayout>
 
 
-            </LinearLayout>
+
 
 
             <FrameLayout
@@ -94,11 +112,12 @@
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvApps"
                     android:layout_width="match_parent"
-                    android:layout_height="114dp"
+                    android:layout_height="110dp"
                     android:background="@android:color/transparent"
                     android:clickable="false"
                     android:focusable="false"
                     android:focusableInTouchMode="false"
+                    android:paddingHorizontal="18dp"
                     android:touchscreenBlocksFocus="false"
                     android:visibility="visible" />
 
@@ -123,86 +142,106 @@
                     android:visibility="gone" />
             </FrameLayout>
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/clCambiarHorarioLimite"
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="gone">
+                android:clickable="true"
+                android:orientation="vertical">
 
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/cambiarHorario"
-                    android:layout_width="0dp"
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/clCambiarHorarioLimite"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/radius_button_secundario"
-                    android:drawableStart="@drawable/horario_scaled"
-                    android:drawablePadding="0dp"
-                    android:drawableTint="@color/black"
-                    android:minWidth="0dp"
-                    android:minHeight="0dp"
-                    android:padding="12dp"
                     android:layout_marginVertical="16dp"
-                    android:layout_marginStart="16sp"
-                    android:text="Cambiar horario de bloqueo"
-                    android:textAlignment="textStart"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:singleLine="false"
-                    android:maxLines="3"
-                    android:ellipsize="none"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/cambiarHorario2"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+
+                    <LinearLayout
+                        android:id="@+id/cambiarHorarioBoton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        app:layout_constraintEnd_toStartOf="@id/cambiarLimiteBoton"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
+
+                        <ImageButton
+                            android:layout_width="65dp"
+                            android:layout_height="65dp"
+                            android:layout_marginHorizontal="16dp"
+                            android:background="@drawable/cambiar_horario"
+                            android:clickable="false"
+                            android:focusable="false" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:clickable="false"
+                            android:focusable="false"
+                            android:gravity="center"
+                            android:paddingVertical="3dp"
+                            android:text="Cambiar horario\nde bloqueo"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+
+                    <LinearLayout
+                        android:id="@+id/cambiarLimiteBoton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/cambiarHorarioBoton"
+                        app:layout_constraintTop_toTopOf="parent">
+
+                        <ImageButton
+                            android:layout_width="65dp"
+                            android:layout_height="65dp"
+                            android:layout_marginHorizontal="16dp"
+                            android:background="@drawable/cambiar_limite"
+                            android:clickable="false"
+                            android:focusable="false" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:clickable="false"
+                            android:focusable="false"
+                            android:gravity="center"
+                            android:paddingVertical="3dp"
+                            android:text="Cambiar limite\nde uso"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
 
                 <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/cambiarHorario2"
-                    android:layout_width="0dp"
+                    android:id="@+id/aggregarAppsABoton"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="12dp"
                     android:layout_margin="16dp"
-                    android:background="@drawable/radius_button_secundario"
-                    android:drawableStart="@drawable/limite_scaled"
+                    android:background="@drawable/radius_button_principal_selector"
+                    android:drawableStart="@drawable/baseline_add_circle_outline_24"
                     android:drawablePadding="0dp"
-                    android:drawableTint="@color/black"
+                    android:drawableTint="@color/white"
                     android:minWidth="0dp"
                     android:minHeight="0dp"
-                    android:text="Cambiar limite"
-                    android:textAlignment="textStart"
-                    android:textSize="12sp"
-                    android:singleLine="false"
-                    android:maxLines="3"
+                    android:text="Agregar Apps..."
                     android:textAllCaps="false"
                     android:textColor="@color/text_boton"
-
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toEndOf="@id/cambiarHorario"
-
+                    android:textSize="15sp"
                     app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/aggregarAppsABoton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="16dp"
-                android:background="@drawable/radius_button_principal_selector"
-                android:drawableStart="@drawable/baseline_add_circle_outline_24"
-                android:drawablePadding="0dp"
-                android:drawableTint="@color/white"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                android:text="Agregar Apps..."
-                android:textAllCaps="false"
-                android:textColor="@color/text_boton"
-                android:textSize="15sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+            </LinearLayout>
 
 
         </LinearLayout>

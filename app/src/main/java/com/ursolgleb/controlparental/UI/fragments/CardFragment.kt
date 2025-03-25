@@ -58,8 +58,8 @@ class CardFragment(val categoria: StatusApp) : Fragment(R.layout.fragment_card) 
                 binding.iconDeLista.background =
                     ResourcesCompat.getDrawable(resources, R.drawable.lock, null)
                 val params = binding.iconDeLista.layoutParams
-                params.width = Fun.dpToPx(22, binding.iconDeLista)
-                params.height = Fun.dpToPx(22, binding.iconDeLista)
+                params.width = Fun.dpToPx(20, binding.iconDeLista)
+                params.height = Fun.dpToPx(20, binding.iconDeLista)
                 binding.iconDeLista.layoutParams = params
 
             }
@@ -68,7 +68,7 @@ class CardFragment(val categoria: StatusApp) : Fragment(R.layout.fragment_card) 
                 binding.iconDeLista.background =
                     ResourcesCompat.getDrawable(resources, R.drawable.vecteezy_infinity, null)
                 val params = binding.iconDeLista.layoutParams
-                params.width = Fun.dpToPx(23, binding.iconDeLista)
+                params.width = Fun.dpToPx(20, binding.iconDeLista)
                 params.height = Fun.dpToPx(12, binding.iconDeLista)
                 binding.iconDeLista.layoutParams = params
             }
@@ -77,8 +77,8 @@ class CardFragment(val categoria: StatusApp) : Fragment(R.layout.fragment_card) 
                 binding.iconDeLista.background =
                     ResourcesCompat.getDrawable(resources, R.drawable.vect_clock_timer, null)
                 val params = binding.iconDeLista.layoutParams
-                params.width = Fun.dpToPx(40, binding.iconDeLista)
-                params.height = Fun.dpToPx(90, binding.iconDeLista)
+                params.width = Fun.dpToPx(34, binding.iconDeLista)
+                params.height = Fun.dpToPx(75, binding.iconDeLista)
                 binding.iconDeLista.layoutParams = params
                 binding.clCambiarHorarioLimite.visibility = View.VISIBLE
             }
@@ -92,13 +92,14 @@ class CardFragment(val categoria: StatusApp) : Fragment(R.layout.fragment_card) 
         binding.tvNombreLista.text = when (categoria.desc) {
             StatusApp.BLOQUEADA.desc -> "Bloqueadas siempre"
             StatusApp.DISPONIBLE.desc -> "Disponibles siempre"
-            StatusApp.HORARIO.desc -> "Bajo de Horario"
+            StatusApp.HORARIO.desc -> "Bajo de horario y limite"
             else -> "Apps ..."
         }
+
         binding.aggregarAppsABoton.text = when (categoria.desc) {
             StatusApp.BLOQUEADA.desc -> "Agregar a siempre bloqueadas"
             StatusApp.DISPONIBLE.desc -> "Agregar a siempre disponibles"
-            StatusApp.HORARIO.desc -> "Agregar a bajo horario"
+            StatusApp.HORARIO.desc -> "Agregar a bajo de horario y limite"
             else -> "Agregar a ..."
         }
 

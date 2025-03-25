@@ -57,18 +57,19 @@
 
         <View
             android:id="@+id/iconDeLista"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:background="@drawable/lock"/>
 
         <TextView
             android:id="@+id/tvNombreLista"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="Apps Bloqueadas"
+            android:layout_marginHorizontal="8dp"
+            android:layout_marginVertical="16dp"
+            android:text="Apps ..."
             android:textSize="18sp"
-            android:textStyle="normal" />
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvCantidadApps"
@@ -78,6 +79,8 @@
             android:paddingHorizontal="8dp"
             android:paddingVertical="3dp"
             android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
             tools:text="30" />
     </LinearLayout>
 

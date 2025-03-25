@@ -103,7 +103,7 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
                 binding.svInfo.viewTreeObserver.removeOnGlobalLayoutListener(this)
                 val scrollViewHeight = binding.svInfo.height
                 // Calcula el 50% del alto y lo aplica a vFondo
-                val newHeight = (scrollViewHeight * 0.5).toInt()
+                val newHeight = (scrollViewHeight * 0.55).toInt()
                 val params = binding.vFondo.layoutParams
                 params.height = newHeight
                 binding.vFondo.layoutParams = params

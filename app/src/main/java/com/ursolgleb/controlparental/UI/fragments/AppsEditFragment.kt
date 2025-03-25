@@ -56,13 +56,17 @@ class AppsEditFragment : Fragment(R.layout.fragment_apps_edit) {
             StatusApp.BLOQUEADA.desc -> {
                 binding.iconDeLista.background =
                     ResourcesCompat.getDrawable(resources, R.drawable.lock, null)
+                val params = binding.iconDeLista.layoutParams
+                params.width = Fun.dpToPx(20, binding.iconDeLista)
+                params.height = Fun.dpToPx(20, binding.iconDeLista)
+                binding.iconDeLista.layoutParams = params
             }
 
             StatusApp.DISPONIBLE.desc -> {
                 binding.iconDeLista.background =
                     ResourcesCompat.getDrawable(resources, R.drawable.vecteezy_infinity, null)
                 val params = binding.iconDeLista.layoutParams
-                params.width = Fun.dpToPx(26, binding.iconDeLista)
+                params.width = Fun.dpToPx(20, binding.iconDeLista)
                 params.height = Fun.dpToPx(12, binding.iconDeLista)
                 binding.iconDeLista.layoutParams = params
             }
@@ -71,8 +75,8 @@ class AppsEditFragment : Fragment(R.layout.fragment_apps_edit) {
                 binding.iconDeLista.background =
                     ResourcesCompat.getDrawable(resources, R.drawable.vect_clock_timer, null)
                 val params = binding.iconDeLista.layoutParams
-                params.width = Fun.dpToPx(43, binding.iconDeLista)
-                params.height = Fun.dpToPx(95, binding.iconDeLista)
+                params.width = Fun.dpToPx(34, binding.iconDeLista)
+                params.height = Fun.dpToPx(75, binding.iconDeLista)
                 binding.iconDeLista.layoutParams = params
             }
 
@@ -86,13 +90,13 @@ class AppsEditFragment : Fragment(R.layout.fragment_apps_edit) {
         binding.tvNombreLista.text = when (args.category) {
             StatusApp.BLOQUEADA.desc -> "Bloqueadas siempre"
             StatusApp.DISPONIBLE.desc -> "Disponibles siempre"
-            StatusApp.HORARIO.desc -> "Bajo de Horario"
+            StatusApp.HORARIO.desc -> "Bajo de horario y limite"
             else -> "Apps ..."
         }
         binding.aggregarAppsABoton.text = when (args.category) {
             StatusApp.BLOQUEADA.desc -> "Agregar a siempre bloqueadas"
             StatusApp.DISPONIBLE.desc -> "Agregar a siempre disponibles"
-            StatusApp.HORARIO.desc -> "Agregar a bajo horario"
+            StatusApp.HORARIO.desc -> "Agregar a bajo de horario y limite"
             else -> "Agregar a ..."
         }
 
