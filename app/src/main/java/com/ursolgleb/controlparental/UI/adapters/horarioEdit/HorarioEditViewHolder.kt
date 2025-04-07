@@ -4,29 +4,28 @@ import android.graphics.drawable.Drawable
 import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.ursolgleb.controlparental.UI.fragments.BottomSheetActualizadaFragment
 import com.ursolgleb.controlparental.UI.fragments.BottomSheetMoverFragment
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
+import com.ursolgleb.controlparental.data.local.entities.HorarioEntity
 import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
+import com.ursolgleb.controlparental.databinding.ItemHorarioEditBinding
 
-class appsEditViewHolder(
-    private val binding: ItemAppEditBinding,
+class HorarioEditViewHolder(
+    private val binding: ItemHorarioEditBinding,
     private val fragmentManager: androidx.fragment.app.FragmentManager
 ) : RecyclerView.ViewHolder(binding.root) {
 
     fun bind(
-        app: AppEntity,
-        icon: Drawable?,
-        formattedTimeDeUso: String,
+        horario: HorarioEntity
     ) {
-        binding.tvAppName.text = app.appName
-        Glide.with(binding.ivIconoApp.context)
-            .load(icon)
-            .into(binding.ivIconoApp)
-        binding.tvHorasDeUso.text = "Uso hoy: $formattedTimeDeUso"
+        binding.tvHorarioName.text = horario.nombreDeHorario
+        binding.tvInicioFin.text = "${horario.horaInicio} - ${horario.horaFin}"
+        binding.tvDiasDeLaSemana.text = horario.diasDeSemana.joinToString(", ")
 
-        binding.itemAppEdit.setOnClickListener {
+        binding.itemHorarioEdit.setOnClickListener {
             Log.w("BottomSheetFragment", "onClick")
-            val bottomSheetSheetMover = BottomSheetMoverFragment(app, icon)
+            val bottomSheetSheetMover = BottomSheetActualizadaFragment()
             bottomSheetSheetMover.show(fragmentManager, "BottomSheetDialog")
 
         }

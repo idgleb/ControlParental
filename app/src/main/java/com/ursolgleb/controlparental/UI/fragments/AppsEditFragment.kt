@@ -124,7 +124,7 @@ class AppsEditFragment : Fragment(R.layout.fragment_apps_edit) {
             else -> appDataRepository.todosAppsFlow
         }
 
-        // 🔥 Observar cambios en la lista de apps bloqueadas
+        // 🔥 Observar cambios en la lista de apps
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 listaDeObservarFlow.collect { newList ->

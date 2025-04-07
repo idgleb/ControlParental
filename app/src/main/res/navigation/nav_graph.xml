@@ -37,6 +37,17 @@
         android:label="Blocked Apps" >
     </fragment>
 
+    <fragment
+        android:id="@+id/horarioEditFragment"
+        android:name="com.ursolgleb.controlparental.UI.fragments.HorarioEditFragment"
+        android:label="Blocked Apps" >
+    </fragment>
+    <fragment
+        android:id="@+id/horarioCrearFragment"
+        android:name="com.ursolgleb.controlparental.UI.fragments.HorarioCrearFragment"
+        android:label="Blocked Apps" >
+    </fragment>
+
 
     <!-- Acción global para navegar a ... -->
     <action
@@ -48,6 +59,13 @@
     <action
         android:id="@+id/action_global_PermisosFragment"
         app:destination="@id/PermisosFragment" />
+
+    <action
+        android:id="@+id/action_global_horarioEditFragment"
+        app:destination="@id/horarioEditFragment" />
+    <action
+        android:id="@+id/action_global_horarioCrearFragment"
+        app:destination="@id/horarioCrearFragment" />
 
 
 

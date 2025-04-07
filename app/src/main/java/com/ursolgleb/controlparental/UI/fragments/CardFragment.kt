@@ -120,6 +120,12 @@ class CardFragment(val categoria: StatusApp) : Fragment(R.layout.fragment_card) 
             navegarADisponAppsEdit()
         }
 
+        binding.cambiarHorarioBoton.setOnClickListener {
+            val action =
+                MainAdminFragmentDirections.actionGlobalHorarioEditFragment()
+            findNavController().navigate(action)
+        }
+
 
     }
 

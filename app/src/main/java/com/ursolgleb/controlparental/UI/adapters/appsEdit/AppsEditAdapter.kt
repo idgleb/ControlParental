@@ -17,10 +17,6 @@ class AppsEditAdapter(
     private val fragmentManager: androidx.fragment.app.FragmentManager
 ) : RecyclerView.Adapter<appsEditViewHolder>() {
 
-    private val selectedApps =
-        mutableSetOf<String>() // 🔥 Almacena los paquetes de apps seleccionadas
-
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): appsEditViewHolder {
         val binding =
             ItemAppEditBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -37,31 +33,19 @@ class AppsEditAdapter(
         holder.bind(
             app,
             icon,
-            formattedTimeDeUso,
-            selectedApps.contains(app.packageName)
-        ) { isChecked ->
-            if (isChecked) {
-                selectedApps.add(app.packageName) // ✅ Agrega a las apps seleccionadas
-            } else {
-                selectedApps.remove(app.packageName) // ✅ Elimina si se desmarca
-            }
-        }
-
+            formattedTimeDeUso
+        )
     }
-
 
     override fun getItemCount(): Int = apps.size
 
-    fun getSelectedApps(): Set<String> = selectedApps // 🔥 Método para obtener apps seleccionadas
-
-    // 🔥 ✅ Función para agregar una nueva app a la lista y actualizar la UI
+    //  Función para agregar una nueva app a la lista y actualizar la UI
     fun addAppEadaptador(newApp: AppEntity) {
         apps.add(newApp)  // Agregar a la lista
         notifyItemInserted(apps.size - 1)  // Notificar el cambio a RecyclerView
-
     }
 
-    // 🔥 ✅ Función para actualizar toda la lista
+    //  Función para actualizar toda la lista
     fun updateListEnAdaptador(newList: List<AppEntity>) {
         Log.w("AppsAdapter", "updateListAppEn blockedAppsEditAdapter")
         apps.clear()

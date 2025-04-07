@@ -6,6 +6,7 @@ package com.ursolgleb.controlparental.UI.activities
 //aplicacion de administracion(solo bloqueo la pantalla)
 //notificaciones
 //batarea solo para app
+
 //activar ubicacion
 //permiso de ubicacion siempre
 //permiso a tu actividad fisica

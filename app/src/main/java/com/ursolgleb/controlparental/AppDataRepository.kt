@@ -9,9 +9,11 @@ import android.os.DeadObjectException
 import android.util.Log
 import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.dao.AppDao
+import com.ursolgleb.controlparental.data.local.dao.HorarioDao
 import com.ursolgleb.controlparental.data.local.dao.UsageEventDao
 import com.ursolgleb.controlparental.data.local.dao.UsageStatsDao
 import com.ursolgleb.controlparental.data.local.entities.AppEntity
+import com.ursolgleb.controlparental.data.local.entities.HorarioEntity
 import com.ursolgleb.controlparental.data.local.entities.UsageEventEntity
 import com.ursolgleb.controlparental.data.local.entities.UsageStatsEntity
 import com.ursolgleb.controlparental.utils.AppsFun
@@ -36,8 +38,10 @@ class AppDataRepository @Inject constructor(
 ) {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val coroutineScopeHorario = CoroutineScope(Dispatchers.IO)
 
     private val appDao: AppDao = appDatabase.appDao()
+    private val horarioDao: HorarioDao = appDatabase.horarioDao()
     private val usageEventDao: UsageEventDao = appDatabase.usageEventDao()
     private val usageStatsDao: UsageStatsDao = appDatabase.usageStatsDao()
 
@@ -53,6 +57,8 @@ class AppDataRepository @Inject constructor(
     val blockedAppsFlow = MutableStateFlow<List<AppEntity>>(emptyList())
     val horarioAppsFlow = MutableStateFlow<List<AppEntity>>(emptyList())
     val disponAppsFlow = MutableStateFlow<List<AppEntity>>(emptyList())
+    //
+    val horariosFlow = MutableStateFlow<List<HorarioEntity>>(emptyList())
 
     val todosAppsMenosBloqueadosFlow = MutableStateFlow<List<AppEntity>>(emptyList())
     var todosAppsMenosHorarioFlow = MutableStateFlow<List<AppEntity>>(emptyList())
@@ -61,6 +67,7 @@ class AppDataRepository @Inject constructor(
     val mutexUpdateBDAppsStateFlow = MutableStateFlow(false)
     val mostrarBottomSheetActualizadaFlow = MutableStateFlow(false)
 
+    //========= Apps ===================================
     // mutexGlobal
     fun inicieDelecturaDeBD() {
         val locked = mutexInicieDelecturaDeBD.tryLock()
@@ -80,6 +87,7 @@ class AppDataRepository @Inject constructor(
                     blockedAppsFlow.value = apps.filter { it.appStatus == StatusApp.BLOQUEADA.desc }
                     horarioAppsFlow.value = apps.filter { it.appStatus == StatusApp.HORARIO.desc }
                     disponAppsFlow.value = apps.filter { it.appStatus == StatusApp.DISPONIBLE.desc }
+                    horariosFlow.value = horarioDao.getAllHorarios().first()
 
                     todosAppsMenosBloqueadosFlow.value =
                         apps.filter { it.appStatus != StatusApp.BLOQUEADA.desc }
@@ -110,26 +118,10 @@ class AppDataRepository @Inject constructor(
     private fun cargarAppsEnBackgroundDesdeBD() {
         coroutineScope.launch {
             appDao.getAllApps().collect { apps ->
-
                 todosAppsFlow.value = apps
                 blockedAppsFlow.value = apps.filter { it.appStatus == StatusApp.BLOQUEADA.desc }
                 horarioAppsFlow.value = apps.filter { it.appStatus == StatusApp.HORARIO.desc }
                 disponAppsFlow.value = apps.filter { it.appStatus == StatusApp.DISPONIBLE.desc }
-
-
-                /*      todosAppsFlow.value = apps
-                      val blockedApps = apps.filter { it.appStatus == StatusApp.BLOQUEADA.desc }
-                      if (blockedApps.toList() != blockedAppsFlow.value.toList()) { // ✅ Compara contenido, no referencias
-                          blockedAppsFlow.value = blockedApps.toList() // Nueva instancia, garantiza emisión
-                      }
-                      val horarioApps = apps.filter { it.appStatus == StatusApp.HORARIO.desc }
-                      if (horarioApps.toList() != horarioAppsFlow.value.toList()) { // ✅ Compara contenido, no referencias
-                          horarioAppsFlow.value = horarioApps.toList() // Nueva instancia, garantiza emisión
-                      }
-                      val disponApps = apps.filter { it.appStatus == StatusApp.DISPONIBLE.desc }
-                      if (disponApps.toList() != disponAppsFlow.value.toList()) { // ✅ Compara contenido, no referencias
-                          disponAppsFlow.value = disponApps.toList() // Nueva instancia, garantiza emisión
-                      }*/
 
                 todosAppsMenosBloqueadosFlow.value =
                     apps.filter { it.appStatus != StatusApp.BLOQUEADA.desc }
@@ -142,6 +134,11 @@ class AppDataRepository @Inject constructor(
                     "AppDataRepository",
                     "Apps cargadas de BD en cargarAppsEnBackgroundDesdeBD: ${apps.size}"
                 )
+            }
+
+            horarioDao.getAllHorarios().collect { horarios ->
+                horariosFlow.value = horarios
+                Log.d("AppDataRepository", "Horarios cargados de BD: ${horarios.size}")
             }
         }
     }
@@ -380,7 +377,6 @@ class AppDataRepository @Inject constructor(
 
     }
 
-    //========= Apps ===================================
     fun addNuevoPkgBD(pkgName: String) {
         val listaApplicationInfo = listOfNotNull(AppsFun.getApplicationInfo(context, pkgName))
         coroutineScope.launch { addListaAppsBD(listaApplicationInfo) }
@@ -388,6 +384,21 @@ class AppDataRepository @Inject constructor(
 
     fun siEsNuevoPkg(packageName: String) =
         todosAppsFlow.value.none { it.packageName == packageName }
+    //===================================================
+
+    //========= Horarios ================================
+
+    fun addHorarioBD(horario: HorarioEntity) {
+        coroutineScopeHorario.launch {
+            try {
+                horarioDao.insertHorario(horario)
+            }catch (e: Exception){
+                Log.e("AppDataRepository", "Error al insertar horario en la BD: ${e.message}")
+            }
+        }
+    }
+
+
     //===================================================
 
 
@@ -479,8 +490,6 @@ class AppDataRepository @Inject constructor(
         // 🔹 Procesar eventos en orden cronológico
         val sortedEvents = usageEventsBD.sortedBy { it.timestamp }
         sortedEvents.forEach { event ->
-
-            //if (event.packageName != "org.telegram.messenger") return@forEach
 
             // formamos 2 ultimos eventos por app
             val eventsForApp = lastTwoEventsByApp.getOrPut(event.packageName) { mutableListOf() }
