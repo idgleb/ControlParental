@@ -380,10 +380,10 @@ class AppDataRepository @Inject constructor(
         coroutineScope.launch { addListaAppsBD(listaApplicationInfo) }
     }
 
-    fun siEsNuevoPkg(packageName: String) = todosAppsFlow.value.none { it.packageName == packageName } //🎈🎈🎈🎈🎈🎈🎈🎈
+    fun siEsNuevoPkg(packageName: String) = todosAppsFlow.value.none { it.packageName == packageName } //🎈🎈🎈🎈🎈🎈
     //===================================================
 
-    //========= Horarios ================================
+    //========= Horarios ===============================
 
     fun addHorarioBD(horario: HorarioEntity) {
         coroutineScopeHorario.launch {
