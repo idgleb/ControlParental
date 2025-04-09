@@ -42,6 +42,8 @@ class AppBlockerService : AccessibilityService() {
 
     override fun onCreate() {
         super.onCreate()
+        appDataRepository.inicieDelecturaDeBD()
+        appDataRepository.updateBDApps()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -51,7 +53,10 @@ class AppBlockerService : AccessibilityService() {
         currentPkgEnPrimerPlano = event.packageName?.toString() ?: return
 
 
-        if (currentPkgEnPrimerPlano == "com.ursolgleb.controlparental") return
+        if (currentPkgEnPrimerPlano == "com.ursolgleb.controlparental") {
+            isBlockerEnabled = false
+            return
+        }
 
         val eventDetales = getEventDetails(event)
         Log.d("AppBlockerService", eventDetales)
@@ -72,27 +77,13 @@ class AppBlockerService : AccessibilityService() {
         }
 
 
-        var msg = "App en primer plano: $currentPkgEnPrimerPlano"
-        Log.w("AppBlockerService", msg)
-        Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
-
-
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
             if (currentPkgEnPrimerPlano == "com.android.settings") {
                 getEventTextoCapturado(event) { textoCapturado ->
                     for (blockedWord in blockedWords) {
                         if (textoCapturado.contains(blockedWord, ignoreCase = true)
                         ) {
-                            performGlobalAction(GLOBAL_ACTION_BACK)   // Simula botón "Atrás"
-                            isBlockerEnabled = true
-                            saveLogBlockedAppBD("$currentPkgEnPrimerPlano, ❌: $blockedWord")
-                            val msg =
-                                "Bloqueando app: $currentPkgEnPrimerPlano, porque contiene la palabra: $blockedWord"
-                            Log.e("AppBlockerService", msg)
-                            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-                            coroutineScope.launch {
-                                Archivo.appendTextToFile(this@AppBlockerService, DesarolloActivity.fileName, "\n $msg")
-                            }
+                            blockear("contiene la palabra: $blockedWord")
                             return@getEventTextoCapturado
                         }
                     }
@@ -106,16 +97,7 @@ class AppBlockerService : AccessibilityService() {
                 getEventTextoCapturado(event) { textoCapturado ->
                     for (blockedWordsSub in blockedWordsSub) {
                         if (textoCapturado.contains(blockedWordsSub, ignoreCase = true)) {
-                            performGlobalAction(GLOBAL_ACTION_BACK)
-                            isBlockerEnabled = true
-                            saveLogBlockedAppBD("$claseDeOrigen, ❌: $blockedWordsSub")
-                            val msg =
-                                "Bloqueando 555 app: $claseDeOrigen, porque contiene la palabra: $blockedWordsSub"
-                            Log.e("AppBlockerService", msg)
-                            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-                            coroutineScope.launch {
-                                Archivo.appendTextToFile(this@AppBlockerService, DesarolloActivity.fileName, "\n $msg")
-                            }
+                            blockear("contiene la palabra: $blockedWordsSub")
                             return@getEventTextoCapturado
                         }
                     }
@@ -125,29 +107,20 @@ class AppBlockerService : AccessibilityService() {
 
         if (isBlockerEnabled) {
             if (Launcher.getDefaultLauncherPackageName(this) != currentPkgEnPrimerPlano) {
-                val msg = "❤️❤️❤️Atras hasta Home 555: ${event.eventType}"
-                Log.w("AppBlockerService", msg)
-                coroutineScope.launch {
-                    Archivo.appendTextToFile(
-                        this@AppBlockerService,
-                        DesarolloActivity.fileName,
-                        "\n $msg"
-                    )
-                }
-                performGlobalAction(GLOBAL_ACTION_BACK)
+                blockear("❤️❤️❤️Atras hasta Home: ${event.eventType}")
             } else {
                 val msg = "😶‍🌫️😶‍🌫️😶‍🌫️LOCK_SCREEN😶‍🌫️😶‍🌫️😶‍🌫️: ${event.eventType}"
                 Log.w("AppBlockerService", msg)
                 Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
                 //performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
-                performGlobalAction(GLOBAL_ACTION_HOME)
+                //performGlobalAction(GLOBAL_ACTION_HOME)
                 isBlockerEnabled = false
             }
         }
 
         val isOnHomeScreen =
             Launcher.getDefaultLauncherPackageName(this) == currentPkgEnPrimerPlano
-        msg = "Está 888 en la pantalla de inicio? $isOnHomeScreen"
+        msg = "Está en la pantalla de inicio? $isOnHomeScreen"
         Log.w("AppBlockerService", msg)
         coroutineScope.launch {
             Archivo.appendTextToFile(this@AppBlockerService, DesarolloActivity.fileName, "\n $msg")
@@ -159,8 +132,7 @@ class AppBlockerService : AccessibilityService() {
         val blockedApps =
             appDataRepository.blockedAppsFlow.value // Obtener la lista actual de apps bloqueadas
         if (blockedApps.any { it.packageName == pkgName }) { // Chequear si el package está bloqueado
-            Log.w("AppBlockerService222", "El paquete $pkgName está en la lista negra. Bloq...")
-            blockear()
+            blockear("El paquete $pkgName está en la lista negra")
             return true
         }
         Log.w("AppBlockerService222", "El paquete $pkgName NO está en la lista negra.")
@@ -171,22 +143,21 @@ class AppBlockerService : AccessibilityService() {
         if (appDataRepository.siEsNuevoPkg(pkgName) &&
             AppsFun.siTieneUI(this@AppBlockerService, pkgName)
         ) {
-            Log.w("AppBlockerService111", "El paquete $pkgName es nuevo. Bloqueando...")
-            blockear()
+            blockear("El paquete $pkgName es nuevo")
             return true
         }
         return false
     }
 
-    private fun blockear() {
-        performGlobalAction(GLOBAL_ACTION_BACK)
+    private fun blockear(coment: String) {
+        //performGlobalAction(GLOBAL_ACTION_BACK)
         performGlobalAction(GLOBAL_ACTION_HOME)
         // performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
         isBlockerEnabled = true
 
-        currentPkgEnPrimerPlano?.let { saveLogBlockedAppBD(it) }
+        currentPkgEnPrimerPlano?.let { saveLogBlockedAppBD($it + " 🤷‍♂️ " + $coment) }
 
-        val msg = "Bloqueando app: $currentPkgEnPrimerPlano"
+        val msg = "Bloqueando app: $currentPkgEnPrimerPlano 🤷‍♂️ $coment"
         Log.e("AppBlockerService", msg)
 
         coroutineScope.launch {
@@ -209,6 +180,8 @@ class AppBlockerService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+
+        Log.w("Oreden de ejecucion", "AppBlockerService - onServiceConnected()")
 
         val msg = "Servicio de accesibilidad iniciado"
         Log.w("AppBlockerService", msg)

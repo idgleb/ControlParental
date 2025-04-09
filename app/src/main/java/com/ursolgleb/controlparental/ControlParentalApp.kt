@@ -2,6 +2,7 @@ package com.ursolgleb.controlparental
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import com.ursolgleb.controlparental.data.log.LogAppBlockerDatabase
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -40,6 +41,7 @@ class ControlParentalApp : Application(), Configuration.Provider {
 
         appDataRepository.inicieDelecturaDeBD()
         appDataRepository.updateBDApps()
+        Log.w("Oreden de ejecucion", "ControlParentalApp - onCreate()")
 
         startWorker(this)
     }
