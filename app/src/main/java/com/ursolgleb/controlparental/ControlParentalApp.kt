@@ -15,6 +15,7 @@ import com.ursolgleb.controlparental.workers.AppUsageWorker
 
 @HiltAndroidApp
 class ControlParentalApp : Application(), Configuration.Provider {
+    // proba Victor
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
