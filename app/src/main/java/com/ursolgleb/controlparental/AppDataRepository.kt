@@ -4,7 +4,6 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
-import android.graphics.drawable.BitmapDrawable
 import android.os.DeadObjectException
 import android.util.Log
 import com.ursolgleb.controlparental.data.local.AppDatabase
@@ -81,20 +80,19 @@ class AppDataRepository @Inject constructor(
                 mutexGlobal.withLock {
                     Log.e("AppDataRepository", "Iniciando inicieDelecturaDeBD")
                     val apps = appDao.getAllApps().first()
-                    // 🔥 Guardamos los datos en el repositorio compartido
+                    // Guardamos los datos en el repositorio compartido
                     todosAppsFlow.value = apps
-
                     blockedAppsFlow.value = apps.filter { it.appStatus == StatusApp.BLOQUEADA.desc }
                     horarioAppsFlow.value = apps.filter { it.appStatus == StatusApp.HORARIO.desc }
                     disponAppsFlow.value = apps.filter { it.appStatus == StatusApp.DISPONIBLE.desc }
-                    horariosFlow.value = horarioDao.getAllHorarios().first()
-
                     todosAppsMenosBloqueadosFlow.value =
                         apps.filter { it.appStatus != StatusApp.BLOQUEADA.desc }
                     todosAppsMenosHorarioFlow.value =
                         apps.filter { it.appStatus != StatusApp.HORARIO.desc }
                     todosAppsMenosDisponFlow.value =
                         apps.filter { it.appStatus != StatusApp.DISPONIBLE.desc }
+
+                    horariosFlow.value = horarioDao.getAllHorarios().first()
 
                     Log.e(
                         "AppDataRepository",
@@ -200,7 +198,7 @@ class AppDataRepository @Inject constructor(
             val drawable = app.loadIcon(pm)
             val bitmap = AppsFun.drawableToBitmap(drawable)// 🔹 Convertir Drawable a Bitmap
 
-            // condicion a donde poner las nuevas apps(block, entretenimiento o siempre disponibles)
+            // condicion a donde poner las nuevas apps(block, horario o disponibles)
             val entretenimiento = app.category in listOf(
                 ApplicationInfo.CATEGORY_GAME,
                 ApplicationInfo.CATEGORY_AUDIO,
@@ -245,7 +243,7 @@ class AppDataRepository @Inject constructor(
         }
     }
 
-    // (no puede ser mutexGlobal) Obtener nuevas apps instaladas en el sistema
+    // (no puede ser mutexGlobal) Obtener nuevas apps instaladas en el sistema 🎈🎈🎈🎈🎈🎈🎈
     suspend fun getNuevasAppsEnSistema(context: Context): List<ApplicationInfo> {
         val installedApps = AppsFun.getAllAppsWithUIdeSistema(context)
         if (installedApps.isEmpty()) return emptyList()
@@ -382,8 +380,7 @@ class AppDataRepository @Inject constructor(
         coroutineScope.launch { addListaAppsBD(listaApplicationInfo) }
     }
 
-    fun siEsNuevoPkg(packageName: String) =
-        todosAppsFlow.value.none { it.packageName == packageName }
+    fun siEsNuevoPkg(packageName: String) = todosAppsFlow.value.none { it.packageName == packageName } //🎈🎈🎈🎈🎈🎈🎈🎈
     //===================================================
 
     //========= Horarios ================================
@@ -825,8 +822,8 @@ class AppDataRepository @Inject constructor(
 
     //======================================================================
 
-    fun clear() {
-        coroutineScope.cancel() // ✅ Cancelar todas las corrutinas cuando ya no sea necesario
+    fun cancelarCorrutinas() {
+        coroutineScope.cancel() // Cancelar todas las corrutinas cuando ya no sea necesario
     }
 
     //======================================================================

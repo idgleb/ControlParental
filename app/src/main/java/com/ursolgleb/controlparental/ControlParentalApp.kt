@@ -45,7 +45,7 @@ class ControlParentalApp : Application(), Configuration.Provider {
 
     override fun onTerminate() {
         super.onTerminate()
-        appDataRepository.clear() // ✅ Cancela las corrutinas al cerrar la app
+        appDataRepository.cancelarCorrutinas() // ✅ Cancela las corrutinas al cerrar la app
     }
 
     fun startWorker(context: Context) {

@@ -59,6 +59,7 @@ class AppBlockerService : AccessibilityService() {
 
 
         if (blockearSiEnBlackList(currentPkgEnPrimerPlano!!)) return
+
         if (blockearSiEsNuevoAppYtieneUI(currentPkgEnPrimerPlano!!)){
             //agregar una nueva app a base de datos
             appDataRepository.addNuevoPkgBD(currentPkgEnPrimerPlano!!)
