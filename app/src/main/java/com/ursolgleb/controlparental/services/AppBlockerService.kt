@@ -42,8 +42,6 @@ class AppBlockerService : AccessibilityService() {
 
     override fun onCreate() {
         super.onCreate()
-        appDataRepository.inicieDelecturaDeBD()
-        appDataRepository.updateBDApps()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -65,11 +63,13 @@ class AppBlockerService : AccessibilityService() {
 
         if (blockearSiEnBlackList(currentPkgEnPrimerPlano!!)) return
 
-        if (blockearSiEsNuevoAppYtieneUI(currentPkgEnPrimerPlano!!)){
-            //agregar una nueva app a base de datos
-            appDataRepository.addNuevoPkgBD(currentPkgEnPrimerPlano!!)
-            return
+        coroutineScope.launch {
+            val pkg = currentPkgEnPrimerPlano ?: return@launch
+            if (blockearSiEsNuevoAppYtieneUI(pkg)) {
+                appDataRepository.addNuevoPkgBD(pkg)
+            }
         }
+
 
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED){
             //renovar tiempo de uso de app
@@ -120,7 +120,7 @@ class AppBlockerService : AccessibilityService() {
 
         val isOnHomeScreen =
             Launcher.getDefaultLauncherPackageName(this) == currentPkgEnPrimerPlano
-        msg = "Está en la pantalla de inicio? $isOnHomeScreen"
+        val msg = "Está en la pantalla de inicio? $isOnHomeScreen"
         Log.w("AppBlockerService", msg)
         coroutineScope.launch {
             Archivo.appendTextToFile(this@AppBlockerService, DesarolloActivity.fileName, "\n $msg")
@@ -139,7 +139,7 @@ class AppBlockerService : AccessibilityService() {
         return false
     }
 
-    private fun blockearSiEsNuevoAppYtieneUI(pkgName: String): Boolean {
+    private suspend fun blockearSiEsNuevoAppYtieneUI(pkgName: String): Boolean {
         if (appDataRepository.siEsNuevoPkg(pkgName) &&
             AppsFun.siTieneUI(this@AppBlockerService, pkgName)
         ) {
@@ -149,13 +149,14 @@ class AppBlockerService : AccessibilityService() {
         return false
     }
 
+
     private fun blockear(coment: String) {
         //performGlobalAction(GLOBAL_ACTION_BACK)
         performGlobalAction(GLOBAL_ACTION_HOME)
         // performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
         isBlockerEnabled = true
 
-        currentPkgEnPrimerPlano?.let { saveLogBlockedAppBD($it + " 🤷‍♂️ " + $coment) }
+        currentPkgEnPrimerPlano?.let { saveLogBlockedAppBD("$it  🤷‍♂️  $coment") }
 
         val msg = "Bloqueando app: $currentPkgEnPrimerPlano 🤷‍♂️ $coment"
         Log.e("AppBlockerService", msg)

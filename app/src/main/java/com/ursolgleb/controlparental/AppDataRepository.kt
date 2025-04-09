@@ -381,7 +381,11 @@ class AppDataRepository @Inject constructor(
     }
 
     //fun siEsNuevoPkg(packageName: String) = todosAppsFlow.value.none { it.packageName == packageName }
-    fun siEsNuevoPkg(packageName: String) = appDao.getAllApps().first().value.none { it.packageName == packageName } //🎈🎈🎈🎈🎈🎈
+    suspend fun siEsNuevoPkg(packageName: String): Boolean {
+        val lista = appDao.getAllApps().first()
+        return lista.none { it.packageName == packageName }
+    }
+    //🎈🎈🎈🎈🎈🎈
     //===================================================
 
     //========= Horarios ===============================
