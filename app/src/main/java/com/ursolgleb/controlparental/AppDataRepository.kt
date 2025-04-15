@@ -17,6 +17,7 @@ import com.ursolgleb.controlparental.data.local.entities.HorarioEntity
 import com.ursolgleb.controlparental.data.local.entities.UsageEventEntity
 import com.ursolgleb.controlparental.data.local.entities.UsageStatsEntity
 import com.ursolgleb.controlparental.data.log.LogBlockedAppEntity
+import com.ursolgleb.controlparental.services.AppBlockerService
 import com.ursolgleb.controlparental.utils.AppsFun
 import com.ursolgleb.controlparental.utils.Archivo
 import com.ursolgleb.controlparental.utils.Fun
@@ -88,6 +89,7 @@ class AppDataRepository @Inject constructor(
             try {
                 mutexGlobal.withLock {
                     Log.e("AppDataRepository", "Iniciando inicieDelecturaDeBD")
+                    putLog("Iniciando inicieDelecturaDeBD")
                     val apps = appDao.getAllApps().first()
                     // Guardamos los datos en el repositorio compartido
                     todosAppsFlow.value = apps
@@ -107,15 +109,19 @@ class AppDataRepository @Inject constructor(
                         "AppDataRepository",
                         "Apps cargadas de BD en inicieDelecturaDeBD: ${apps.size}"
                     )
+                    putLog("Apps cargadas de BD en inicieDelecturaDeBD: ${apps.size}")
                 }
             } catch (e: DeadObjectException) {
                 Log.e("AppDataRepository", "DeadObjectException: ${e.message}")
+                putLog("DeadObjectException: ${e.message}")
             } catch (e: Exception) {
-                Log.e("AppDataRepository", "Error en inicieDelecturaDeBD: ${e.message}")
+                Log.e("AppDataRepository", "⁉️Error en inicieDelecturaDeBD: ${e.message}")
+                putLog("⁉️Error en inicieDelecturaDeBD: ${e.message}")
             } finally {
                 cargarAppsEnBackgroundDesdeBD()
                 isInicieDeLecturaTermina = true
                 Log.e("AppDataRepository", "inicieDelecturaDeBD finalizada")
+                putLog("inicieDelecturaDeBD finalizada")
                 if (locked) mutexInicieDelecturaDeBD.unlock()
                 updateBDApps()
             }
@@ -141,10 +147,12 @@ class AppDataRepository @Inject constructor(
                     "AppDataRepository",
                     "Apps cargadas de BD en cargarAppsEnBackgroundDesdeBD: ${apps.size}"
                 )
+                putLog("Apps cargadas de BD en cargarAppsEnBackgroundDesdeBD: ${apps.size}")
             }
             horarioDao.getAllHorarios().collect { horarios ->
                 horariosFlow.value = horarios
                 Log.d("AppDataRepository", "Horarios cargados de BD: ${horarios.size}")
+                putLog("Horarios cargados de BD: ${horarios.size}")
             }
         }
     }
@@ -162,6 +170,7 @@ class AppDataRepository @Inject constructor(
             if (!locked) {
                 mutexUpdateBDAppsStateFlow.value = mutexUpdateBDApps.isLocked
                 Log.w("AppDataRepository1", "updateBDApps ya está en ejecución")
+                putLog("updateBDApps ya está en ejecución")
                 return@launch
             }
 
@@ -169,21 +178,28 @@ class AppDataRepository @Inject constructor(
             try {
                 mutexGlobal.withLock {
                     Log.e("AppDataRepository1", "Ejecutando updateBDApps")
+                    putLog("Ejecutando updateBDApps")
                     Log.w("AppDataRepository1", "Start getNuevasAppsEnSistema...")
+                    putLog("Start getNuevasAppsEnSistema...")
                     val appsNuevas = getNuevasAppsEnSistema(context)
                     Log.w("AppDataRepository1", "Finish getNuevasAppsEnSistema.")
+                    putLog("Finish getNuevasAppsEnSistema.")
                     if (appsNuevas.isNotEmpty()) {
                         Log.w("AppDataRepository1", "Start addListaAppsBD...")
+                        putLog("Start addListaAppsBD...")
                         addListaAppsBD(appsNuevas)
                         Log.w("AppDataRepository1", "Finish addListaAppsBD.")
+                        putLog("Finish addListaAppsBD.")
                     }
                 }
             } catch (e: Exception) {
-                Log.e("AppDataRepository1", "Error en updateBDApps: ${e.message}")
+                Log.e("AppDataRepository1", "⁉️Error en updateBDApps: ${e.message}")
+                putLog("⁉️Error en updateBDApps: ${e.message}")
             } finally {
                 mutexUpdateBDApps.unlock()
                 mutexUpdateBDAppsStateFlow.value = false
                 Log.e("AppDataRepository1", "updateBDApps finalizada")
+                putLog("updateBDApps finalizada")
             }
         }
 
@@ -195,10 +211,13 @@ class AppDataRepository @Inject constructor(
         val pm = context.packageManager
 
         Log.e("AppDataRepository1", "Start crear getTiempoDeUsoSeconds...")
+        putLog("Start crear getTiempoDeUsoSeconds...")
         val tiempoDeUso = getTiempoDeUsoHoy(appsNuevas) { app -> app.packageName }
         Log.e("AppDataRepository1", "Finish crear getTiempoDeUsoSeconds.")
+        putLog("Finish crear getTiempoDeUsoSeconds.")
 
         Log.d("AppDataRepository1", "Start crear nuevasEntidades...")
+        putLog("Start crear nuevasEntidades...")
 
         val nuevasEntidades = appsNuevas.map { app ->
 
@@ -233,22 +252,27 @@ class AppDataRepository @Inject constructor(
             )
         }
         Log.d("AppDataRepository1", "Finish crear nuevasEntidades.")
+        putLog("Finish crear nuevasEntidades.")
 
         try {
             Log.w("AppDataRepository1", "Start agregamos insertListaApps nuevasEntidades a BD...")
+            putLog("Start agregamos insertListaApps nuevasEntidades a BD...")
             appDao.insertListaApps(nuevasEntidades)
             mostrarBottomSheetActualizadaFlow.value = true
             Log.w("AppDataRepository1", "Finish agregamos insertListaApps nuevasEntidades a BD.")
+            putLog("Finish agregamos insertListaApps nuevasEntidades a BD.")
         } catch (e: Exception) {
             Log.e(
                 "AppDataRepository",
-                "addListaAppsBD Error al insertar apps en la BD: ${e.message}"
+                "addListaAppsBD ⁉️Error al insertar apps en la BD: ${e.message}"
             )
+            putLog("addListaAppsBD ⁉️Error al insertar apps en la BD: ${e.message}")
         } finally {
             Log.d(
                 "AppDataRepository",
                 "addListaAppsBD Nueva Lista App insertada a AppsBD: ${appsNuevas.size}"
             )
+            putLog("Nueva Lista App insertada a AppsBD: ${appsNuevas.size}")
         }
     }
 
@@ -261,6 +285,7 @@ class AppDataRepository @Inject constructor(
         val paquetesEnBD = appsDeBD.map { it.packageName }.toSet()
         val nuevosApps = installedApps.filter { it.packageName !in paquetesEnBD }
         Log.e("AppDataRepository", "NUEVAS APPS: ${nuevosApps.joinToString { it.packageName }}")
+        putLog("NUEVAS APPS: ${nuevosApps.joinToString { it.packageName }}")
         return nuevosApps
 
     }
@@ -287,17 +312,24 @@ class AppDataRepository @Inject constructor(
                         "AppDataRepository",
                         "addAppsASiempreBloqueadasBD agregamos apps a blocked a BD..."
                     )
+                    putLog("addAppsASiempreBloqueadasBD agregamos apps a blocked a BD...")
                     appDao.insertListaApps(appsBloqueadas)
                     mostrarBottomSheetActualizadaFlow.value = true
                 }
             } catch (e: Exception) {
                 Log.e(
                     "AppDataRepository",
-                    "addAppsASiempreBloqueadasBD Error al insertar apps bloqueadas en la BD: ${e.message}"
+                    "addAppsASiempreBloqueadasBD ⁉️Error al insertar apps bloqueadas en la BD: ${e.message}"
+                )
+                putLog(
+                    "addAppsASiempreBloqueadasBD ⁉️Error al insertar apps bloqueadas en la BD: ${e.message}"
                 )
             } finally {
                 Log.d(
                     "AppDataRepository",
+                    "addAppsASiempreBloqueadasBD Nueva Lista Apps bloqueadas: ${appsNuevas.size}"
+                )
+                putLog(
                     "addAppsASiempreBloqueadasBD Nueva Lista Apps bloqueadas: ${appsNuevas.size}"
                 )
             }
@@ -328,17 +360,24 @@ class AppDataRepository @Inject constructor(
                         "AppDataRepository",
                         "addAppsASiempreDisponiblesBD agregamos apps a disponibles a BD..."
                     )
+                    putLog("addAppsASiempreDisponiblesBD agregamos apps a disponibles a BD...")
                     appDao.insertListaApps(appsDispon)
                     mostrarBottomSheetActualizadaFlow.value = true
                 }
             } catch (e: Exception) {
                 Log.e(
                     "AppDataRepository",
-                    "addAppsASiempreDisponiblesBD Error al insertar apps en la BD: ${e.message}"
+                    "addAppsASiempreDisponiblesBD ⁉️Error al insertar apps en la BD: ${e.message}"
+                )
+                putLog(
+                    "addAppsASiempreDisponiblesBD ⁉️Error al insertar apps en la BD: ${e.message}"
                 )
             } finally {
                 Log.d(
                     "AppDataRepository",
+                    "addAppsASiempreDisponiblesBD Nueva Lista Apps: ${appsNuevas.size}"
+                )
+                putLog(
                     "addAppsASiempreDisponiblesBD Nueva Lista Apps: ${appsNuevas.size}"
                 )
             }
@@ -365,17 +404,24 @@ class AppDataRepository @Inject constructor(
                         "AppDataRepository",
                         "addAppsAEntretenimientoBD agregamos apps a Entretenimiento a BD..."
                     )
+                    putLog("addAppsAEntretenimientoBD agregamos apps a Entretenimiento a BD...")
                     appDao.insertListaApps(appsHorario)
                     mostrarBottomSheetActualizadaFlow.value = true
                 }
             } catch (e: Exception) {
                 Log.e(
                     "AppDataRepository",
-                    "addAppsAEntretenimientoBD Error al insertar apps en la BD: ${e.message}"
+                    "addAppsAEntretenimientoBD ⁉️Error al insertar apps en la BD: ${e.message}"
+                )
+                putLog(
+                    "addAppsAEntretenimientoBD ⁉️Error al insertar apps en la BD: ${e.message}"
                 )
             } finally {
                 Log.d(
                     "AppDataRepository",
+                    "addAppsAEntretenimientoBD Nueva Lista Apps: ${appsNuevas.size}"
+                )
+                putLog(
                     "addAppsAEntretenimientoBD Nueva Lista Apps: ${appsNuevas.size}"
                 )
             }
@@ -389,7 +435,16 @@ class AppDataRepository @Inject constructor(
         coroutineScope.launch { addListaAppsBD(listaApplicationInfo) }
     }
 
-    suspend fun siEsNuevoPkg(packageName: String) = appDao.getAllApps().first().none { it.packageName == packageName } //🎈🎈🎈🎈🎈🎈
+    suspend fun siEsNuevoPkg(packageName: String): Boolean {
+        Log.e("AppDataRepository", "siEsNuevoPkg: $packageName")
+        Log.e("AppDataRepository", "siEsNuevoPkg size: ${appDao.getAllApps().first().size}")
+        //Log.e("AppDataRepository", "siEsNuevoPkg: ${appDao.getAllApps().first()}")
+        //Log.e("AppDataRepository", "siEsNuevoPkg none: ${appDao.getAllApps().first().none { it.packageName == packageName }}")
+        Log.e("AppDataRepository", "siEsNuevoPkg filter: ${appDao.getAllApps().first().filter { it.packageName == packageName }}")
+        putLog("siEsNuevoPkg: $packageName")
+        putLog("siEsNuevoPkg filter: ${appDao.getAllApps().first().filter { it.packageName == packageName }}")
+        return appDao.getAllApps().first().none { it.packageName == packageName } //🎈🎈
+    }
     //===================================================
 
     //========= Horarios ===============================
@@ -399,8 +454,9 @@ class AppDataRepository @Inject constructor(
             try {
                 horarioDao.insertHorario(horario)
             }catch (e: Exception){
-                Log.e("AppDataRepository", "Error al insertar horario en la BD: ${e.message}")
+                Log.e("AppDataRepository", "⁉️Error al insertar horario en la BD: ${e.message}")
             }
+            putLog("Horario insertado en la BD: $horario")
         }
     }
 
@@ -421,13 +477,16 @@ class AppDataRepository @Inject constructor(
                     val tiempoHoy = tiempoDeUso[app]
                     tiempoDeUsoMap[app] = tiempoHoy ?: 0L
                     Log.w("AppDataRepository1", "Renovar tiempo de uso de app hoy: ${app}")
+                    putLog("Renovar tiempo de uso de app hoy: ${app}")
                 }
                 if (tiempoDeUsoMap.isNotEmpty()) appDao.updateUsageTimeHoy(tiempoDeUsoMap)
             } catch (e: Exception) {
-                Log.e("AppDataRepository1", "Error en renovarTiempoUsoApp: ${e.message}")
+                Log.e("AppDataRepository1", "⁉️Error en renovarTiempoUsoApp: ${e.message}")
+                putLog("⁉️Error en renovarTiempoUsoApp: ${e.message}")
             } finally {
                 mutexUpdateBDAppsStateFlow.value = false
                 Log.e("AppDataRepository1", "renovarTiempoUsoApp finalizada")
+                putLog("renovarTiempoUsoApp finalizada")
             }
         }
     }
@@ -438,12 +497,14 @@ class AppDataRepository @Inject constructor(
         if (!locked) {
             mutexUpdateBDAppsStateFlow.value = mutexUpdateTiempoDeUso.isLocked
             Log.w("AppDataRepository1", "updateTiempoUsoAppsHoy ya está en ejecución")
+            putLog("updateTiempoUsoAppsHoy ya está en ejecución")
             return@launch
         }
 
         mutexUpdateBDAppsStateFlow.value = true
         try {
             Log.w("AppDataRepository1", "Empezamos actualizar tiempo de uso de apps hoy")
+            putLog("Empezamos actualizar tiempo de uso de apps hoy")
 
             val tiempoDeUsoMapHoy = mutableMapOf<String, Long>()
 
@@ -457,16 +518,19 @@ class AppDataRepository @Inject constructor(
                         "AppDataRepository1",
                         "♻️ Actualizado tiempo de uso de app hoy: ${appBD.appName}"
                     )
+                    putLog("♻️ Actualizado tiempo de uso de app hoy: ${appBD.appName}")
                 }
             }
             if (tiempoDeUsoMapHoy.isNotEmpty()) appDao.updateUsageTimeHoy(tiempoDeUsoMapHoy)
 
         } catch (e: Exception) {
-            Log.e("AppDataRepository1", "Error en updateTiempoUsoAppsHoy: ${e.message}")
+            Log.e("AppDataRepository1", "⁉️Error en updateTiempoUsoAppsHoy: ${e.message}")
+            putLog("⁉️Error en updateTiempoUsoAppsHoy: ${e.message}")
         } finally {
             mutexUpdateTiempoDeUso.unlock()
             mutexUpdateBDAppsStateFlow.value = false
             Log.e("AppDataRepository1", "updateTiempoUsoAppsHoy finalizada")
+            putLog("updateTiempoUsoAppsHoy finalizada")
         }
     }
 
@@ -480,6 +544,7 @@ class AppDataRepository @Inject constructor(
         val endTimeAhora = System.currentTimeMillis() // tiempo actual
 
         Log.d("getStatsHoy", "getStatsHoy ${Fun.dateFormat.format(startTimeHoy)}")
+        putLog("getStatsHoy ${Fun.dateFormat.format(startTimeHoy)}")
 
         val listaApps = apps.map { getPackageName(it) }
         val statsMapBD = mutableMapOf<String, Long>()
@@ -559,6 +624,7 @@ class AppDataRepository @Inject constructor(
 
         // 🔹 Imprimir resultado
         Log.d("MioParametro", "statsMapBD $statsMapBD")
+        putLog("statsMapBD $statsMapBD")
 
         return statsMapBD
 
@@ -571,6 +637,7 @@ class AppDataRepository @Inject constructor(
         val endTimeAhora = System.currentTimeMillis() // tiempo actual
 
         Log.d("getStatsHoy", "getStatsHoy ${Fun.dateFormat.format(startTimeHoy)}")
+        putLog("getStatsHoy ${Fun.dateFormat.format(startTimeHoy)}")
 
         val statsMapBD = mutableMapOf<String, Long>()
 
@@ -651,6 +718,7 @@ class AppDataRepository @Inject constructor(
 
         // 🔹 Imprimir resultado
         Log.d("MioParametro", "statsMapBD $statsMapBD")
+        putLog("statsMapBD $statsMapBD")
 
         return statsMapBD
 
@@ -663,6 +731,7 @@ class AppDataRepository @Inject constructor(
 
     suspend fun saveUsEventsUltimoMesToDatabase() {
         Log.d("MioParametro", "🎈saveUsEventsUltimoMesToDatabase Start...")
+        putLog("🎈saveUsEventsUltimoMesToDatabase Start...")
         // 🔹 Obtener el último timestamp guardado
         val lastSavedTimestamp = usageEventDao.getLastTimestamp() ?: 0L
         val startTimeMesAtras = Fun.getTimeAtras(30)
@@ -673,6 +742,7 @@ class AppDataRepository @Inject constructor(
             startTime = lastSavedTimestamp + 1 // 🔹 Evita traer los eventos repetidos de pasado
         }
         Log.d("MioParametro", "startTime ${Fun.dateFormat.format(startTime)}")
+        putLog("startTime ${Fun.dateFormat.format(startTime)}")
 
         val endTime = System.currentTimeMillis() // 🔹 Hasta el momento actual
 
@@ -686,15 +756,6 @@ class AppDataRepository @Inject constructor(
 
         while (usageEvents.hasNextEvent()) {
             usageEvents.getNextEvent(event)
-
-            if (event.packageName == "com.google.android.youtube") {
-                Log.w(
-                    "MioParametro",
-                    "Even teventType: ${event.eventType}, pkg: ${event.packageName}, timestamp: ${
-                        Fun.dateFormat.format(event.timeStamp)
-                    } ms:${event.timeStamp}"
-                )
-            }
 
             when (event.eventType) {
                 UsageEvents.Event.DEVICE_SHUTDOWN, //26
@@ -717,6 +778,7 @@ class AppDataRepository @Inject constructor(
 
         usageEventDao.insertAll(eventList) // Guardar solo eventos nuevos
         Log.d("MioParametro", "🎈🎈saveUsEventsUltimoMesToDatabase End")
+        putLog("🎈🎈saveUsEventsUltimoMesToDatabase End")
     }
 
     suspend fun getEventsFromDatabase(startTime: Long, endTime: Long): List<UsageEventEntity> {
@@ -743,6 +805,7 @@ class AppDataRepository @Inject constructor(
 
     suspend fun saveUsStatsUltimaSemanaToDatabase() {
         Log.d("MioParametro", "🕧saveUsStatsUltimoSemanaToDatabase Start...")
+        putLog("봅saveUsStatsUltimoSemanaToDatabase Start...")
         // 🔹 Obtener el último timestamp guardado
         val lastSavedDia = usageStatsDao.getLastDia() ?: 0L
 
@@ -753,7 +816,6 @@ class AppDataRepository @Inject constructor(
         } else {
             startTime = lastSavedDia + (24 * 60 * 60 * 1000) // +1 día en milisegundos
         }
-        Log.d("MioParametro", "startDia ${Fun.dateFormat.format(startTime)}")
 
         val endTime = Fun.getTimeAtras(0) // 🔹 Hasta el dia actual a la medianoche
 
@@ -776,6 +838,7 @@ class AppDataRepository @Inject constructor(
         usageStatsDao.insertAllUsageStats(statsEntityList) // Guardar stats nuevos a BD
 
         Log.d("MioParametro", "🕧🕧saveUsStatsUltimoSemanaToDatabase End")
+        putLog("봅saveUsStatsUltimoSemanaToDatabase End")
     }
 
     fun getUsageStatsEnSistema(
@@ -836,6 +899,20 @@ class AppDataRepository @Inject constructor(
     }
 
     //======================================================================
+
+
+    private fun putLog(msg: String) {
+
+        val fullMsg = "AppDataRepository: $msg"
+        coroutineScope.launch {
+            try {
+                Archivo.appendTextToFile(context, "\n $fullMsg")
+            } catch (e: Exception) {
+                Log.e("AppBlockerService", "Error al escribir log en archivo: ${e.message}", e)
+            }
+            Log.e("AppBlockerService", fullMsg)
+        }
+    }
 
 
 }

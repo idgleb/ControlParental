@@ -8,16 +8,17 @@ import com.ursolgleb.controlparental.AppDataRepository
 
 import com.ursolgleb.controlparental.LogDataRepository
 import com.ursolgleb.controlparental.utils.Archivo
-import com.ursolgleb.controlparental.utils.Launcher
 import java.util.Locale
 import kotlinx.coroutines.SupervisorJob
 import com.ursolgleb.controlparental.utils.AppsFun
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -28,6 +29,20 @@ class AppBlockerService : AccessibilityService() {
 
     @Inject
     lateinit var logDataRepository: LogDataRepository
+
+    // Mapa para almacenar los jobs en ejecución para cada paquete.
+    private val packageJobsBlockNuevaApp = mutableMapOf<String, Job>()
+    // Mutex para sincronizar el acceso al mapa y evitar condiciones de carrera.
+    private val jobsBlockNuevaAppMutex = Mutex()
+
+    private val packageJobsRenovarTiempoDeUsoHoy = mutableMapOf<String, Job>()
+    private val jobsRenovarTiempoDeUsoHoyMutex = Mutex()
+    // Mapa para almacenar el timestamp de la última ejecución para cada paquete.
+    private val lastRenovacionTimeForPkg = mutableMapOf<String, Long>()
+    // Mutex para sincronizar el acceso al mapa de tiempos.
+    private val timeMutex = Mutex()
+
+
 
     private var isOnHomeScreen: Boolean? = null
     private var isBlockerEnabled = false
@@ -52,14 +67,14 @@ class AppBlockerService : AccessibilityService() {
         // putLog("$eventDetales\n")
 
         if (currentPkg != appDataRepository.defLauncher) {
-            handleAppDetection()
+            handleAppBlockedDetection()
+            launchJobBlockNuevaApp(event)
             handleClickEvents(event)
             handleSubSettingsDetection(event)
         }
 
-        if (!isBlockerEnabled && event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            handleEventTypeWindowChanged()
-        }
+        launchJobRenovarTiempoDeUsoHoy(event)
+
 
         if (!isBlockerEnabled && (currentPkg == appDataRepository.defLauncher) != isOnHomeScreen) {
             isOnHomeScreen = currentPkg == appDataRepository.defLauncher
@@ -79,7 +94,7 @@ class AppBlockerService : AccessibilityService() {
     }
 
 
-    private fun handleAppDetection() {
+    private fun handleAppBlockedDetection() {
         try {
             val pkg = currentPkg ?: return
             if (!isBlockerEnabled && isAppBlocked(pkg)) {
@@ -88,22 +103,6 @@ class AppBlockerService : AccessibilityService() {
             }
         } catch (e: Exception) {
             Log.e("AppBlockerService", "Error en isAppBlocked: ${e.message}", e)
-        }
-        coroutineScope.launch {
-            try {
-                val pkgAsync = currentPkg ?: return@launch
-                if (!isBlockerEnabled && isNewAppWithUi(pkgAsync)) {
-                    isBlockerEnabled = true
-                    putBlockLog("👁️ App nueva con UI detectada")
-                    appDataRepository.addNuevoPkgBD(currentPkg!!)
-                }
-            } catch (e: Exception) {
-                Log.e(
-                    "AppBlockerService",
-                    "Error en isNewAppWithUi o addNuevoPkgBD: ${e.message}",
-                    e
-                )
-            }
         }
     }
 
@@ -132,11 +131,80 @@ class AppBlockerService : AccessibilityService() {
         }
     }
 
-    private fun handleEventTypeWindowChanged() {
-        putLog("Primer plano: $currentPkg")
+    private fun launchJobRenovarTiempoDeUsoHoy(event: AccessibilityEvent) {
+        if (isBlockerEnabled || event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        val pkg = currentPkg ?: return
 
-        if (currentPkg in appDataRepository.todosAppsFlow.value.map { it.packageName }) {
-            appDataRepository.renovarTiempoUsoAppHoy(currentPkg!!)
+        coroutineScope.launch {
+            // Sincronizamos el acceso al mapa de tiempos y al mapa de jobs
+            jobsRenovarTiempoDeUsoHoyMutex.withLock outer@{
+                timeMutex.withLock {
+                    val currentTime = System.currentTimeMillis()
+                    val lastTime = lastRenovacionTimeForPkg[pkg] ?: 0L
+                    // Si han pasado menos de 10 segundo, se omite lanzar el job
+                    if (currentTime - lastTime < 10000L) return@outer
+                    // Se actualiza el timestamp para el paquete
+                    lastRenovacionTimeForPkg[pkg] = currentTime
+                }
+                // Verificar si ya existe un job activo para este paquete
+                if (packageJobsRenovarTiempoDeUsoHoy[pkg]?.isActive == true) return@outer
+
+                val job = launch {
+                    try {
+                        putLog("Primer plano: $currentPkg")
+                        if (currentPkg in appDataRepository.todosAppsFlow.value.map { it.packageName }) {
+                            appDataRepository.renovarTiempoUsoAppHoy(currentPkg!!)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("AppBlockerService", "Error en renovarTiempoUsoAppHoy: ${e.message}", e)
+                    } finally {
+                        jobsRenovarTiempoDeUsoHoyMutex.withLock {
+                            packageJobsRenovarTiempoDeUsoHoy.remove(pkg)
+                        }
+                    }
+                }
+                packageJobsRenovarTiempoDeUsoHoy[pkg] = job
+            }
+        }
+    }
+
+
+    // En lugar de lanzar directamente la coroutine, lo hacemos de la siguiente forma:
+    fun launchJobBlockNuevaApp(event: AccessibilityEvent) {
+        // Validamos que currentPkg no sea nulo
+        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        val pkg = currentPkg ?: return
+
+        // Usamos el mutex para sincronizar el acceso al mapa
+        coroutineScope.launch {
+            jobsBlockNuevaAppMutex.withLock {
+                // Comprobamos si ya existe un job activo para este paquete
+                if (packageJobsBlockNuevaApp[pkg]?.isActive == true) return@withLock
+                // Si no existe, lanzamos un nuevo job y lo registramos en el mapa
+                val job = launch {
+                    try {
+                        // Verificamos la condición: si no está activado el bloqueo y la app es nueva con UI
+                        if (!isBlockerEnabled && isNewAppWithUi(pkg)) {
+                            isBlockerEnabled = true
+                            putBlockLog("👁️ App nueva con UI detectada")
+                            appDataRepository.addNuevoPkgBD(pkg)
+                        }
+                    } catch (e: Exception) {
+                        Log.e(
+                            "AppBlockerService",
+                            "Error en isNewAppWithUi o addNuevoPkgBD: ${e.message}",
+                            e
+                        )
+                    } finally {
+                        // Al finalizar el job, se elimina del mapa para permitir futuros lanzamientos para ese paquete.
+                        jobsBlockNuevaAppMutex.withLock {
+                            packageJobsBlockNuevaApp.remove(pkg)
+                        }
+                    }
+                }
+                // Se registra el job en el mapa para el paquete actual.
+                packageJobsBlockNuevaApp[pkg] = job
+            }
         }
     }
 
@@ -167,8 +235,9 @@ class AppBlockerService : AccessibilityService() {
                 Log.e("AppBlockerService", "Error al escribir en archivo: ${e.message}", e)
             }
 
-            try { logDataRepository.saveLogBlockedApp(fullMsg) }
-            catch (e: Exception) {
+            try {
+                logDataRepository.saveLogBlockedApp(fullMsg)
+            } catch (e: Exception) {
                 Log.e("AppBlockerService", "Error al guardar log en BD: ${e.message}", e)
             }
             Log.e("AppBlockerService", fullMsg)
@@ -197,20 +266,21 @@ class AppBlockerService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-/*        coroutineScope.launch {
-            try {
-                delay(500) // espera para asegurar contexto estable
-                putLog("Servicio de accesibilidad iniciado")
-            } catch (e: Exception) {
-                Log.e("AppBlockerService", "Error en onServiceConnected: ${e.message}", e)
-            }
-        }*/
+        /*        coroutineScope.launch {
+                    try {
+                        delay(500) // espera para asegurar contexto estable
+                        putLog("Servicio de accesibilidad iniciado")
+                    } catch (e: Exception) {
+                        Log.e("AppBlockerService", "Error en onServiceConnected: ${e.message}", e)
+                    }
+                }*/
     }
 
 
     override fun onInterrupt() {
         putLog("Servicio de accesibilidad interrumpido")
     }
+
 
     private fun getEventDetails(event: AccessibilityEvent): String {
         val eventType = when (event.eventType) {

@@ -21,7 +21,7 @@ import com.ursolgleb.controlparental.utils.Converters
                 UsageLimitEntity::class,
                 UsageEventEntity::class,
                 UsageStatsEntity::class],
-    version = 16,
+    version = 17,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
