@@ -87,13 +87,6 @@
             android:textSize="20sp"/>
 
         <Button
-            android:id="@+id/mostrarPantallaDeBloqueoBoton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="mostrar PantallaDeBloqueo"
-            android:textSize="20sp"/>
-
-        <Button
             android:id="@+id/mostrarLauncherBoton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

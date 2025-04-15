@@ -2,29 +2,27 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permisos -->
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-
-    <!-- Secciones de queries para listar launchers -->
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- Sección <queries> para poder listar launchers instalados -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
+
             <category android:name="android.intent.category.HOME" />
         </intent>
-    </queries>
+    </queries> <!-- Consultar cualquier aplicación con intent de MAIN y LAUNCHER -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
+
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
     </queries>
+
+    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
         android:enableOnBackInvokedCallback="true"
@@ -40,7 +38,7 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="tiramisu">
 
-        <!-- Actividad principal -->
+
         <activity
             android:name=".UI.activities.ContainerActivity"
             android:exported="true">
@@ -50,11 +48,12 @@
             </intent-filter>
         </activity>
 
+
         <activity
             android:name=".UI.activities.DesarolloActivity"
             android:exported="true" />
 
-        <!-- Servicio de Accesibilidad -->
+
         <service
             android:foregroundServiceType="dataSync"
             android:name=".services.AppBlockerService"
@@ -68,16 +67,6 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
-
-        <!-- Receiver para BOOT_COMPLETED -->
-        <receiver
-            android:name=".receiver.BootReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
 
 
     </application>

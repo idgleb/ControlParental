@@ -13,7 +13,6 @@ package com.ursolgleb.controlparental.UI.activities
 
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.ActivityManager
-import android.app.AppOpsManager
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
@@ -35,6 +34,7 @@ import android.view.accessibility.AccessibilityManager
 import android.widget.TextView
 import android.widget.Toast
 import com.ursolgleb.controlparental.ControlParentalApp
+import com.ursolgleb.controlparental.LogDataRepository
 import com.ursolgleb.controlparental.services.AppBlockerService
 import com.ursolgleb.controlparental.utils.Archivo
 import com.ursolgleb.controlparental.utils.FileWatcher
@@ -43,17 +43,29 @@ import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.receiver.UpdateAppsBloquedasReceiver
 import com.ursolgleb.controlparental.databinding.ActivityDesarolloBinding
 import com.ursolgleb.controlparental.utils.Permisos
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
+import androidx.core.net.toUri
 
+@AndroidEntryPoint
 class DesarolloActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var logDataRepository: LogDataRepository
+
     lateinit var bindDesarollo: ActivityDesarolloBinding
 
     companion object {
         const val fileName = "log.txt"
     }
+
+    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private lateinit var fileWatcher: FileWatcher
 
@@ -94,6 +106,7 @@ class DesarolloActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         fileWatcher.stopWatching()
+        coroutineScope.cancel()
     }
 
     private fun initUpdateAppsBloquedasReceiver() {
@@ -112,8 +125,8 @@ class DesarolloActivity : AppCompatActivity() {
     }
 
     private fun actualizarListaAppsBloqueadas() {
-        CoroutineScope(Dispatchers.IO).launch {
-            val blockedApps = ControlParentalApp.dbLogs.logBlockedAppDao().getLogBlockedApps()
+        coroutineScope.launch {
+            val blockedApps = logDataRepository.logDao.getLogBlockedApps()
             val blockedAppsText = blockedApps.joinToString("\n") { app ->
                 "🔒 ${app.packageName}  ⌚${app.blockedAt}"
             }
@@ -124,8 +137,8 @@ class DesarolloActivity : AppCompatActivity() {
     }
 
     fun eliminarAppsBloqueadas(view: View) {
-        CoroutineScope(Dispatchers.IO).launch {
-            ControlParentalApp.dbLogs.logBlockedAppDao().deleteLogAllBlockedApps()
+        coroutineScope.launch {
+            logDataRepository.logDao.deleteLogAllBlockedApps()
             withContext(Dispatchers.Main) {
                 actualizarListaAppsBloqueadas()
             }
@@ -134,10 +147,15 @@ class DesarolloActivity : AppCompatActivity() {
 
     private fun initFileWatcher() {
         fileWatcher = FileWatcher.observeFileChanges(this, fileName) { newContent ->
-            CoroutineScope(Dispatchers.Main).launch {
-                leerYMostrarInfoDeArchivo(fileName)
+            coroutineScope.launch {
+                withContext(Dispatchers.Main) {
+                    bindDesarollo.tvInformacion.text = newContent
+                    bindDesarollo.tvInformacion.scrollToBottom()
+                }
             }
         }
+        fileWatcher.startWatching()
+
     }
 
     private fun initListeners() {
@@ -149,7 +167,12 @@ class DesarolloActivity : AppCompatActivity() {
             } else {
                 val msg = "Ya tienes el permiso de Usage Stats"
                 Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-                Archivo.appendTextToFile(this, fileName, "\n $msg")
+                coroutineScope.launch {
+                    Archivo.appendTextToFile(
+                        this@DesarolloActivity,
+                        "\n $msg"
+                    )
+                }
             }
         }
 
@@ -159,7 +182,12 @@ class DesarolloActivity : AppCompatActivity() {
             } else {
                 val msg = "Ya tienes el servicio de accesibilidad habilitado"
                 Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-                Archivo.appendTextToFile(this, fileName, "\n $msg")
+                coroutineScope.launch {
+                    Archivo.appendTextToFile(
+                        this@DesarolloActivity,
+                        "\n $msg"
+                    )
+                }
             }
         }
 
@@ -170,7 +198,12 @@ class DesarolloActivity : AppCompatActivity() {
             for (app in apps) {
                 val msg = "App: ${app.loadLabel(pm)} - Package: ${app.packageName}"
                 Log.d("AppBlockerService", msg)
-                Archivo.appendTextToFile(this, fileName, "\n $msg")
+                coroutineScope.launch {
+                    Archivo.appendTextToFile(
+                        this@DesarolloActivity,
+                        "\n $msg"
+                    )
+                }
             }
         }
 
@@ -184,11 +217,12 @@ class DesarolloActivity : AppCompatActivity() {
 
             val msg = "Lista de Usage Stats: "
             Log.w("AppBlockerService", msg)
-            Archivo.appendTextToFile(this, fileName, "\n $msg")
+            coroutineScope.launch { Archivo.appendTextToFile(this@DesarolloActivity, "\n $msg") }
 
             val listUsageStatus = getUsageStats()
             val pm = packageManager  // Obtener PackageManager
-            val listaUsageStatsTimeMasCero = listUsageStatus.filter { it.value.totalTimeInForeground > 0 }
+            val listaUsageStatsTimeMasCero =
+                listUsageStatus.filter { it.value.totalTimeInForeground > 0 }
 
             for (usageStats in listaUsageStatsTimeMasCero) {
 
@@ -202,7 +236,12 @@ class DesarolloActivity : AppCompatActivity() {
                 val msg =
                     "$appName - Pkg: ${usageStats.value.packageName} - Uso: ${usageStats.value.totalTimeInForeground}"
                 Log.d("AppBlockerService", msg)
-                Archivo.appendTextToFile(this, fileName, "\n $msg")
+                coroutineScope.launch {
+                    Archivo.appendTextToFile(
+                        this@DesarolloActivity,
+                        "\n $msg"
+                    )
+                }
             }
         }
 
@@ -211,30 +250,24 @@ class DesarolloActivity : AppCompatActivity() {
             val foregroundApp = getForegroundApp()
             val msg = "App en primer plano: $foregroundApp"
             Log.d("AppBlockerService", msg)
-            Archivo.appendTextToFile(this, fileName, "\n $msg")
+            coroutineScope.launch { Archivo.appendTextToFile(this@DesarolloActivity, "\n $msg") }
         }
 
         bindDesarollo.redirigirAlaPantallaDeInicioBoton.setOnClickListener {
             redirigirAlaPantallaDeInicio()
         }
 
-        bindDesarollo.mostrarPantallaDeBloqueoBoton.setOnClickListener {
-            // Lógica para mostrar la pantalla de bloqueo
-            mostrarPantallaDeBloqueo()
-        }
-
-
         bindDesarollo.mostrarLauncherBoton.setOnClickListener {
             val msg = "Launcher: ${Launcher.getDefaultLauncherPackageName(this)}"
             Log.w("AppBlockerService", msg)
-            Archivo.appendTextToFile(this, fileName, "\n $msg")
+            coroutineScope.launch { Archivo.appendTextToFile(this@DesarolloActivity, "\n $msg") }
         }
 
         bindDesarollo.getSecureSettingsBoton.setOnClickListener {
             val msg = "SecureSettings: ${getSecureSettings(this)}"
             Log.e("AppBlockerService", msg)
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-            Archivo.appendTextToFile(this, fileName, "\n $msg")
+            coroutineScope.launch { Archivo.appendTextToFile(this@DesarolloActivity, "\n $msg") }
         }
 
         bindDesarollo.clearFileBoton.setOnClickListener {
@@ -245,6 +278,7 @@ class DesarolloActivity : AppCompatActivity() {
         bindDesarollo.actualizarBoton.setOnClickListener {
             leerYMostrarInfoDeArchivo(fileName)
         }
+
         bindDesarollo.arribaBoton.setOnClickListener {
             bindDesarollo.scrollView.scrollTo(0, 0)
         }
@@ -252,17 +286,24 @@ class DesarolloActivity : AppCompatActivity() {
     }
 
     private fun leerYMostrarInfoDeArchivo(fileName: String) {
-        val logContent = Archivo.readTextFromFile(this, fileName)
-        bindDesarollo.tvInformacion.text = logContent
-        bindDesarollo.tvInformacion.scrollToBottom()
+        // Lectura del archivo en un hilo de IO
+        coroutineScope.launch {
+            val logContent = Archivo.readTextFromFile(this@DesarolloActivity, fileName)
+            // Cambio al hilo principal para actualizar la UI
+            withContext(Dispatchers.Main) {
+                bindDesarollo.tvInformacion.text = logContent
+                bindDesarollo.tvInformacion.scrollToBottom()
+            }
+        }
     }
+
 
     private fun requestAccessibilityService() {
         val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
         startActivity(intent)
         val msg = "Habilita el servicio de accesibilidad"
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
-        Archivo.appendTextToFile(this, fileName, "\n $msg")
+        coroutineScope.launch { Archivo.appendTextToFile(this@DesarolloActivity, "\n $msg") }
     }
 
     fun isAccessibilityServiceEnabled(context: Context, serviceClass: Class<*>): Boolean {
@@ -317,22 +358,10 @@ class DesarolloActivity : AppCompatActivity() {
         ) == 1
     }
 
-    private fun mostrarPantallaDeBloqueo() {
-        val overlayIntent = Intent(this, LockScreenActivity::class.java)
-        overlayIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        startActivity(overlayIntent)
-    }
-
-    class LockScreenActivity {
-
-    }
-
-
-
     fun requestUsageStatsPermission(context: Context) {
         val intent = Intent(
             Settings.ACTION_USAGE_ACCESS_SETTINGS,
-            Uri.parse("package:$packageName")
+            "package:$packageName".toUri()
         )
         context.startActivity(intent)
     }

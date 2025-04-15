@@ -3,23 +3,25 @@ package com.ursolgleb.controlparental.di
 import android.content.Context
 import androidx.room.Room
 import com.ursolgleb.controlparental.data.local.AppDatabase
+import com.ursolgleb.controlparental.data.log.LogAppBlockerDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object DatabaseModule {
+object LogDatabaseModule {
     @Singleton
     @Provides
-    fun provideAppDatabase(@ApplicationContext appContext: Context): AppDatabase {
+    fun provideLogAppBlockerDatabase(@ApplicationContext appContext: Context): LogAppBlockerDatabase {
         return Room.databaseBuilder(
             appContext,
-            AppDatabase::class.java,
-            "app_database.db"
+            LogAppBlockerDatabase::class.java,
+            "app_blocker.db"
         ).fallbackToDestructiveMigration().build()
+
     }
 }

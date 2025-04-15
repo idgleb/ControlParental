@@ -16,8 +16,12 @@ import com.ursolgleb.controlparental.data.local.entities.UsageStatsEntity
 import com.ursolgleb.controlparental.utils.Converters
 
 @Database(
-    entities = [AppEntity::class, HorarioEntity::class, UsageLimitEntity::class, UsageEventEntity::class, UsageStatsEntity::class],
-    version = 13,
+    entities = [AppEntity::class,
+                HorarioEntity::class,
+                UsageLimitEntity::class,
+                UsageEventEntity::class,
+                UsageStatsEntity::class],
+    version = 16,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

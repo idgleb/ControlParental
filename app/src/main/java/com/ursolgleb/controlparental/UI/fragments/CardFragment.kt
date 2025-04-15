@@ -23,30 +23,37 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class CardFragment(val categoria: StatusApp) : Fragment(R.layout.fragment_card) {
+class CardFragment : Fragment(R.layout.fragment_card){
 
     @Inject
     lateinit var appDataRepository: AppDataRepository
 
-    lateinit var appDao: AppDao
+    private lateinit var categoria: StatusApp
+    private lateinit var appDao: AppDao
 
     private var _binding: FragmentCardBinding? = null
     private val binding get() = _binding!!
 
     private var appCardAdapter: AppsCardAdapter? = null
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val desc = arguments?.getString("category") ?: StatusApp.DEFAULT.desc
+        categoria = StatusApp.fromDescription(desc)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        _binding = FragmentCardBinding.bind(view)
 
         appDao = appDataRepository.appDatabase.appDao()
 
-        initUI(view)
+        initUI()
         initListeners()
         initObservers()
     }
 
-    private fun initUI(view: View) {
-        _binding = FragmentCardBinding.bind(view)
+    private fun initUI() {
 
         appCardAdapter = AppsCardAdapter(mutableListOf(), appDataRepository)
         binding.rvApps.layoutManager = LinearLayoutManager(requireContext())
@@ -184,6 +191,17 @@ class CardFragment(val categoria: StatusApp) : Fragment(R.layout.fragment_card) 
         super.onDestroyView()
         Log.e("BlockedAppsFragment", "onDestroyView")
         _binding = null // 🔥 Evitar memory leaks
+    }
+
+
+    companion object {
+        fun newInstance(categoria: StatusApp): CardFragment {
+            val fragment = CardFragment()
+            val args = Bundle()
+            args.putString("category", categoria.desc)
+            fragment.arguments = args
+            return fragment
+        }
     }
 
 }

@@ -10,12 +10,19 @@ import androidx.work.Configuration
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
+import com.ursolgleb.controlparental.utils.Archivo
 import com.ursolgleb.controlparental.workers.AppUsageWorker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 
 @HiltAndroidApp
 class ControlParentalApp : Application(), Configuration.Provider {
-    // proba Victor
+    // proba Gleb
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
@@ -23,30 +30,27 @@ class ControlParentalApp : Application(), Configuration.Provider {
     @Inject
     lateinit var appDataRepository: AppDataRepository
 
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
             .build()
 
-    companion object {
-        lateinit var dbLogs: LogAppBlockerDatabase
-            private set
-    }
 
     override fun onCreate() {
         super.onCreate()
-        dbLogs = LogAppBlockerDatabase.getDatabase(this)
-
         appDataRepository.inicieDelecturaDeBD()
         appDataRepository.updateBDApps()
-
-        startWorker(this)
+        //
+        //startWorker(this)
     }
 
     override fun onTerminate() {
         super.onTerminate()
         appDataRepository.cancelarCorrutinas() // ✅ Cancela las corrutinas al cerrar la app
+        coroutineScope.cancel()
     }
 
     fun startWorker(context: Context) {

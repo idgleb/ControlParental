@@ -54,15 +54,15 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
         initHeightDeSvInfo()
 
         childFragmentManager.beginTransaction()
-            .replace(R.id.fragment_apps_horario, CardFragment(StatusApp.HORARIO))
+            .replace(R.id.fragment_apps_horario, CardFragment.newInstance(StatusApp.HORARIO))
             .commit()
 
         childFragmentManager.beginTransaction()
-            .replace(R.id.fragment_apps_disponibles, CardFragment(StatusApp.DISPONIBLE))
+            .replace(R.id.fragment_apps_disponibles, CardFragment.newInstance(StatusApp.DISPONIBLE))
             .commit()
         
         childFragmentManager.beginTransaction()
-            .replace(R.id.fragment_apps_bloqueadas, CardFragment(StatusApp.BLOQUEADA))
+            .replace(R.id.fragment_apps_bloqueadas, CardFragment.newInstance(StatusApp.BLOQUEADA))
             .commit()
 
         childFragmentManager.beginTransaction()

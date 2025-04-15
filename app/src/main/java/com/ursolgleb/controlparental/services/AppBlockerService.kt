@@ -1,26 +1,23 @@
 package com.ursolgleb.controlparental.services
 
 import android.accessibilityservice.AccessibilityService
-import android.content.Intent
 import android.graphics.Rect
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import android.widget.Toast
 import com.ursolgleb.controlparental.AppDataRepository
 
-import com.ursolgleb.controlparental.ControlParentalApp
+import com.ursolgleb.controlparental.LogDataRepository
 import com.ursolgleb.controlparental.utils.Archivo
 import com.ursolgleb.controlparental.utils.Launcher
 import java.util.Locale
-import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
-import com.ursolgleb.controlparental.data.log.LogBlockedAppEntity
+import kotlinx.coroutines.SupervisorJob
 import com.ursolgleb.controlparental.utils.AppsFun
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -29,176 +26,167 @@ class AppBlockerService : AccessibilityService() {
     @Inject
     lateinit var appDataRepository: AppDataRepository
 
+    @Inject
+    lateinit var logDataRepository: LogDataRepository
+
+    private var isOnHomeScreen: Boolean? = null
     private var isBlockerEnabled = false
-    private var currentPkgEnPrimerPlano: String? = null
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private var currentPkg: String? = null
 
-    private val blockedWords = listOf(
-        "app"
-    )
-    private val blockedWordsSub = listOf(
-        "app"
-    )
+    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    override fun onCreate() {
-        super.onCreate()
-    }
+    private val blockedWords = listOf("app", "aplicac")
+    private val blockedWordsSub = listOf("app")
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-
         if (event == null) return
 
-        currentPkgEnPrimerPlano = event.packageName?.toString() ?: return
+        currentPkg = event.packageName?.toString() ?: return
+        if (currentPkg == "com.ursolgleb.controlparental") return
 
+        if (!::appDataRepository.isInitialized) return
+        if (!::logDataRepository.isInitialized) return
 
-        if (currentPkgEnPrimerPlano == "com.ursolgleb.controlparental") return
+        // 🔍 Captura detalles del evento para depuración
+        //val eventDetales = getEventDetails(event)
+        // putLog("$eventDetales\n")
 
-        val eventDetales = getEventDetails(event)
-        Log.d("AppBlockerService", eventDetales)
-        Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $eventDetales")
-
-
-        if (blockearSiEnBlackList(currentPkgEnPrimerPlano!!)) return
-
-        if (blockearSiEsNuevoAppYtieneUI(currentPkgEnPrimerPlano!!)){
-            //agregar una nueva app a base de datos
-            appDataRepository.addNuevoPkgBD(currentPkgEnPrimerPlano!!)
-            return
+        if (currentPkg != appDataRepository.defLauncher) {
+            handleAppDetection()
+            handleClickEvents(event)
+            handleSubSettingsDetection(event)
         }
 
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED){
-            //renovar tiempo de uso de app
-            appDataRepository.renovarTiempoUsoAppHoy(currentPkgEnPrimerPlano!!)
+        if (!isBlockerEnabled && event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            handleEventTypeWindowChanged()
         }
 
-
-        var msg = "App en primer plano: $currentPkgEnPrimerPlano"
-        Log.w("AppBlockerService", msg)
-        Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
-
-
-        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
-            if (currentPkgEnPrimerPlano == "com.android.settings") {
-                getEventTextoCapturado(event) { textoCapturado ->
-                    for (blockedWord in blockedWords) {
-                        if (textoCapturado.contains(blockedWord, ignoreCase = true)
-                        ) {
-                            performGlobalAction(GLOBAL_ACTION_BACK)   // Simula botón "Atrás"
-                            isBlockerEnabled = true
-                            saveLogBlockedAppBD("$currentPkgEnPrimerPlano, ❌: $blockedWord")
-                            val msg =
-                                "Bloqueando app: $currentPkgEnPrimerPlano, porque contiene la palabra: $blockedWord"
-                            Log.e("AppBlockerService", msg)
-                            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-                            coroutineScope.launch {
-                                Archivo.appendTextToFile(this@AppBlockerService, DesarolloActivity.fileName, "\n $msg")
-                            }
-                            return@getEventTextoCapturado
-                        }
-                    }
-                }
-            }
-        }
-
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            val claseDeOrigen = event.className?.toString() ?: return
-            if (claseDeOrigen == "com.android.settings.SubSettings") {
-                getEventTextoCapturado(event) { textoCapturado ->
-                    for (blockedWordsSub in blockedWordsSub) {
-                        if (textoCapturado.contains(blockedWordsSub, ignoreCase = true)) {
-                            performGlobalAction(GLOBAL_ACTION_BACK)
-                            isBlockerEnabled = true
-                            saveLogBlockedAppBD("$claseDeOrigen, ❌: $blockedWordsSub")
-                            val msg =
-                                "Bloqueando 555 app: $claseDeOrigen, porque contiene la palabra: $blockedWordsSub"
-                            Log.e("AppBlockerService", msg)
-                            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-                            coroutineScope.launch {
-                                Archivo.appendTextToFile(this@AppBlockerService, DesarolloActivity.fileName, "\n $msg")
-                            }
-                            return@getEventTextoCapturado
-                        }
-                    }
-                }
-            }
+        if (!isBlockerEnabled && (currentPkg == appDataRepository.defLauncher) != isOnHomeScreen) {
+            isOnHomeScreen = currentPkg == appDataRepository.defLauncher
+            putLog("¿Está en la pantalla de inicio? $isOnHomeScreen")
         }
 
         if (isBlockerEnabled) {
-            if (Launcher.getDefaultLauncherPackageName(this) != currentPkgEnPrimerPlano) {
-                val msg = "❤️❤️❤️Atras hasta Home 555: ${event.eventType}"
-                Log.w("AppBlockerService", msg)
-                coroutineScope.launch {
-                    Archivo.appendTextToFile(
-                        this@AppBlockerService,
-                        DesarolloActivity.fileName,
-                        "\n $msg"
-                    )
-                }
-                performGlobalAction(GLOBAL_ACTION_BACK)
+            if (currentPkg != appDataRepository.defLauncher) {
+                putLog("❤️ Atras hasta Home: ${event.eventType}")
+                performGlobalAction(GLOBAL_ACTION_HOME)
             } else {
-                val msg = "😶‍🌫️😶‍🌫️😶‍🌫️LOCK_SCREEN😶‍🌫️😶‍🌫️😶‍🌫️: ${event.eventType}"
-                Log.w("AppBlockerService", msg)
-                Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
-                //performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
+                putLog("😶 LOCK_SCREEN 😶‍: ${event.eventType}")
                 performGlobalAction(GLOBAL_ACTION_HOME)
                 isBlockerEnabled = false
             }
         }
+    }
 
-        val isOnHomeScreen =
-            Launcher.getDefaultLauncherPackageName(this) == currentPkgEnPrimerPlano
-        msg = "Está 888 en la pantalla de inicio? $isOnHomeScreen"
-        Log.w("AppBlockerService", msg)
+
+    private fun handleAppDetection() {
+        try {
+            val pkg = currentPkg ?: return
+            if (!isBlockerEnabled && isAppBlocked(pkg)) {
+                isBlockerEnabled = true
+                putBlockLog("❌ Bloqueada por lista de apps")
+            }
+        } catch (e: Exception) {
+            Log.e("AppBlockerService", "Error en isAppBlocked: ${e.message}", e)
+        }
         coroutineScope.launch {
-            Archivo.appendTextToFile(this@AppBlockerService, DesarolloActivity.fileName, "\n $msg")
+            try {
+                val pkgAsync = currentPkg ?: return@launch
+                if (!isBlockerEnabled && isNewAppWithUi(pkgAsync)) {
+                    isBlockerEnabled = true
+                    putBlockLog("👁️ App nueva con UI detectada")
+                    appDataRepository.addNuevoPkgBD(currentPkg!!)
+                }
+            } catch (e: Exception) {
+                Log.e(
+                    "AppBlockerService",
+                    "Error en isNewAppWithUi o addNuevoPkgBD: ${e.message}",
+                    e
+                )
+            }
         }
-
     }
 
-    private fun blockearSiEnBlackList(pkgName: String): Boolean {
-        val blockedApps =
-            appDataRepository.blockedAppsFlow.value // Obtener la lista actual de apps bloqueadas
-        if (blockedApps.any { it.packageName == pkgName }) { // Chequear si el package está bloqueado
-            Log.w("AppBlockerService222", "El paquete $pkgName está en la lista negra. Bloq...")
-            blockear()
-            return true
-        }
-        Log.w("AppBlockerService222", "El paquete $pkgName NO está en la lista negra.")
-        return false
-    }
 
-    private fun blockearSiEsNuevoAppYtieneUI(pkgName: String): Boolean {
-        if (appDataRepository.siEsNuevoPkg(pkgName) &&
-            AppsFun.siTieneUI(this@AppBlockerService, pkgName)
+    private fun handleClickEvents(event: AccessibilityEvent) {
+        if (!isBlockerEnabled &&
+            event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            currentPkg == "com.android.settings"
         ) {
-            Log.w("AppBlockerService111", "El paquete $pkgName es nuevo. Bloqueando...")
-            blockear()
-            return true
+            if (shouldBlockAppByText(event, blockedWords)) {
+                isBlockerEnabled = true
+                putBlockLog("❌ Bloqueada por texto (settings)")
+            }
         }
-        return false
     }
 
-    private fun blockear() {
-        performGlobalAction(GLOBAL_ACTION_BACK)
-        performGlobalAction(GLOBAL_ACTION_HOME)
-        // performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
-        isBlockerEnabled = true
-
-        currentPkgEnPrimerPlano?.let { saveLogBlockedAppBD(it) }
-
-        val msg = "Bloqueando app: $currentPkgEnPrimerPlano"
-        Log.e("AppBlockerService", msg)
-
-        coroutineScope.launch {
-            Archivo.appendTextToFile(
-                this@AppBlockerService,
-                DesarolloActivity.fileName,
-                "\n $msg"
-            )
+    private fun handleSubSettingsDetection(event: AccessibilityEvent) {
+        if (!isBlockerEnabled &&
+            event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+            event.className?.toString() == "com.android.settings.SubSettings"
+        ) {
+            if (shouldBlockAppByText(event, blockedWordsSub)) {
+                isBlockerEnabled = true
+                putBlockLog("❌ Bloqueada por texto (SubSettings)")
+            }
         }
+    }
 
-        Toast.makeText(this@AppBlockerService, msg, Toast.LENGTH_SHORT).show()
+    private fun handleEventTypeWindowChanged() {
+        putLog("Primer plano: $currentPkg")
 
+        if (currentPkg in appDataRepository.todosAppsFlow.value.map { it.packageName }) {
+            appDataRepository.renovarTiempoUsoAppHoy(currentPkg!!)
+        }
+    }
+
+    private fun isAppBlocked(pkgName: String): Boolean {
+        return appDataRepository.blockedAppsFlow.value.any { it.packageName == pkgName }
+    }
+
+    private suspend fun isNewAppWithUi(pkgName: String): Boolean {
+        return appDataRepository.siEsNuevoPkg(pkgName) &&
+                AppsFun.siTieneUI(this@AppBlockerService, pkgName)
+    }
+
+    private fun shouldBlockAppByText(
+        event: AccessibilityEvent,
+        blockedList: List<String>
+    ): Boolean {
+        val text = event.text.joinToString(", ")
+        return blockedList.any { word -> text.contains(word, ignoreCase = true) }
+    }
+
+    private fun putBlockLog(msg: String) {
+        val pkg = currentPkg ?: "Paquete desconocido"
+        val fullMsg = "$msg: $pkg"
+        coroutineScope.launch {
+            try {
+                Archivo.appendTextToFile(this@AppBlockerService, "\n $fullMsg")
+            } catch (e: Exception) {
+                Log.e("AppBlockerService", "Error al escribir en archivo: ${e.message}", e)
+            }
+
+            try { logDataRepository.saveLogBlockedApp(fullMsg) }
+            catch (e: Exception) {
+                Log.e("AppBlockerService", "Error al guardar log en BD: ${e.message}", e)
+            }
+            Log.e("AppBlockerService", fullMsg)
+        }
+    }
+
+
+    private fun putLog(msg: String) {
+        val pkg = currentPkg ?: "Paquete desconocido"
+        val fullMsg = "$msg: $pkg"
+        coroutineScope.launch {
+            try {
+                Archivo.appendTextToFile(this@AppBlockerService, "\n $fullMsg")
+            } catch (e: Exception) {
+                Log.e("AppBlockerService", "Error al escribir log en archivo: ${e.message}", e)
+            }
+            Log.e("AppBlockerService", fullMsg)
+        }
     }
 
 
@@ -209,21 +197,20 @@ class AppBlockerService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-
-        val msg = "Servicio de accesibilidad iniciado"
-        Log.w("AppBlockerService", msg)
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-        Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
-
+/*        coroutineScope.launch {
+            try {
+                delay(500) // espera para asegurar contexto estable
+                putLog("Servicio de accesibilidad iniciado")
+            } catch (e: Exception) {
+                Log.e("AppBlockerService", "Error en onServiceConnected: ${e.message}", e)
+            }
+        }*/
     }
 
 
     override fun onInterrupt() {
-        val msg = "Servicio de accesibilidad interrumpido"
-        Log.w("AppBlockerService", msg)
-        Archivo.appendTextToFile(this, DesarolloActivity.fileName, "\n $msg")
+        putLog("Servicio de accesibilidad interrumpido")
     }
-
 
     private fun getEventDetails(event: AccessibilityEvent): String {
         val eventType = when (event.eventType) {
@@ -255,99 +242,43 @@ class AppBlockerService : AccessibilityService() {
             else -> "Evento desconocido (${event.eventType})"
         }
 
-        val packageNameEvent = event.packageName?.toString() ?: "Desconocido"
+        val packageName = event.packageName?.toString() ?: "Desconocido"
         val className = event.className?.toString() ?: "Desconocido"
-        val viewClass = event.source?.className?.toString() ?: "Desconocido"
-        val viewId = event.source?.viewIdResourceName ?: "ID no disponible"
-        val contentDesc = event.source?.contentDescription?.toString() ?: "Sin descripción"
-        val eventTextOriginal = event.text.joinToString(", ") ?: "Sin texto"
+        val eventText = event.text.joinToString(", ").ifEmpty { "Sin texto" }
         val idioma = Locale.getDefault().language
 
-        // Información avanzada del evento
-        val eventTime = event.eventTime
-        val beforeText = event.beforeText?.toString() ?: "No disponible"
-        val isChecked = event.isChecked
-        val isPassword = event.isPassword
-        val isEnabled = event.isEnabled
-        val isFullScreen = event.isFullScreen
-        val isScrollable = event.isScrollable
-        val scrollX = event.scrollX
-        val scrollY = event.scrollY
-        val itemCount = event.itemCount
-        val currentItemIndex = event.currentItemIndex
-        val addedCount = event.addedCount
-        val removedCount = event.removedCount
-        val action = event.action
-        val recordCount = event.recordCount
-        val movementGranularity = event.movementGranularity
-        val parcelableData = event.parcelableData?.toString() ?: "No disponible"
+        val source = event.source
+        val viewClass = source?.className?.toString() ?: "Desconocido"
+        val viewId = source?.viewIdResourceName ?: "ID no disponible"
+        val contentDesc = source?.contentDescription?.toString() ?: "Sin descripción"
 
-        // Información detallada del nodo de accesibilidad
-        val node = event.source
-        val nodeInfo = if (node != null) {
-            val bounds = Rect()
-            node.getBoundsInScreen(bounds)
-            val boundsInfo = "(${bounds.left}, ${bounds.top}, ${bounds.right}, ${bounds.bottom})"
+        val nodeInfo = if (source != null) {
+            val bounds = Rect().apply { source.getBoundsInScreen(this) }
             """
-            📌 **Detalles de la vista de origen:**
-            🖥 **Clase:** ${node.className}
-            🏷 **ID:** ${node.viewIdResourceName ?: "No disponible"}
-            🗣 **Descripción del contenido:** ${node.contentDescription ?: "Sin descripción"}
-            """.trimIndent()
+        📌 **Detalles de la vista de origen:**
+        🖥 **Clase:** ${source.className}
+        🏷 **ID:** ${viewId}
+        🗣 **Descripción del contenido:** ${contentDesc}
+        📐 **Bounds:** (${bounds.left}, ${bounds.top}, ${bounds.right}, ${bounds.bottom})
+        """.trimIndent()
         } else {
             "📌 No hay información del nodo de accesibilidad."
         }
 
-        // Construcción del mensaje con toda la información disponible
-        val detallesBase = """
-            
-        🔹 **Tipo de evento:** $eventType
-        📦 **Paquete:** $packageNameEvent
-        🏷 **Clase de origen:** $className
-        🖥 **Vista donde ocurrió:** $viewClass
-        🏷 **ID del elemento:** $viewId
-        🗣 **Descripción del contenido:** $contentDesc
-        📝 **Texto capturado:** $eventTextOriginal
-        🌍 **Idioma:** $idioma
-        🎮 **Acción realizada:** $action
-        $nodeInfo
-        
-    """.trimIndent()
-
-        return detallesBase
-    }
-
-
-    private fun getEventTextoCapturado(
-        event: AccessibilityEvent,
-        onResult: (String) -> Unit
-    ) {
-        val eventTextOriginal = event.text.joinToString(", ")
-        val textoCapturado = eventTextOriginal.trimIndent()
-        onResult(textoCapturado)
-    }
-
-    private fun saveLogBlockedAppBD(pkgName: String) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val existingApp =
-                ControlParentalApp.dbLogs.logBlockedAppDao().getLogBlockedApp(pkgName)
-
-            if (existingApp != null) {
-                // Si el pkgName ya existe, actualiza el campo blockedAt
-                val updatedApp = existingApp.copy(blockedAt = System.currentTimeMillis())
-                ControlParentalApp.dbLogs.logBlockedAppDao().updateLogBlockedApp(updatedApp)
-            } else {
-                // Si no existe, inserta un nuevo registro
-                ControlParentalApp.dbLogs.logBlockedAppDao()
-                    .insertLogBlockedApp(LogBlockedAppEntity(packageName = pkgName))
-            }
-            withContext(Dispatchers.Main) {
-                val intent = Intent("com.ursolgleb.controlparental.UPDATE_BLOCKED_APPS")
-                sendBroadcast(intent)
-                Log.w("MainActivityListaApps", "Broadcast enviado desde saveBlockedAppBaseDeDatos")
-            }
+        return buildString {
+            appendLine("🔹 **Tipo de evento:** $eventType")
+            appendLine("📦 **Paquete:** $packageName")
+            appendLine("🏷 **Clase de origen:** $className")
+            appendLine("🖥 **Vista donde ocurrió:** $viewClass")
+            appendLine("🏷 **ID del elemento:** $viewId")
+            appendLine("🗣 **Descripción del contenido:** $contentDesc")
+            appendLine("📝 **Texto capturado:** $eventText")
+            appendLine("🌍 **Idioma:** $idioma")
+            appendLine("🎮 **Acción realizada:** ${event.action}")
+            appendLine(nodeInfo)
         }
     }
 
 
 }
+

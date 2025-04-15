@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.DeadObjectException
 import android.util.Log
+import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.local.dao.AppDao
 import com.ursolgleb.controlparental.data.local.dao.HorarioDao
@@ -15,11 +16,15 @@ import com.ursolgleb.controlparental.data.local.entities.AppEntity
 import com.ursolgleb.controlparental.data.local.entities.HorarioEntity
 import com.ursolgleb.controlparental.data.local.entities.UsageEventEntity
 import com.ursolgleb.controlparental.data.local.entities.UsageStatsEntity
+import com.ursolgleb.controlparental.data.log.LogBlockedAppEntity
 import com.ursolgleb.controlparental.utils.AppsFun
+import com.ursolgleb.controlparental.utils.Archivo
 import com.ursolgleb.controlparental.utils.Fun
+import com.ursolgleb.controlparental.utils.Launcher
 import com.ursolgleb.controlparental.utils.StatusApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -36,8 +41,10 @@ class AppDataRepository @Inject constructor(
     val context: Context
 ) {
 
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
-    private val coroutineScopeHorario = CoroutineScope(Dispatchers.IO)
+    val defLauncher = Launcher.getDefaultLauncherPackageName(context)
+
+    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val coroutineScopeHorario = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val appDao: AppDao = appDatabase.appDao()
     private val horarioDao: HorarioDao = appDatabase.horarioDao()
@@ -67,8 +74,10 @@ class AppDataRepository @Inject constructor(
     val mostrarBottomSheetActualizadaFlow = MutableStateFlow(false)
 
     //========= Apps ===================================
+
     // mutexGlobal
     fun inicieDelecturaDeBD() {
+
         val locked = mutexInicieDelecturaDeBD.tryLock()
         if (!locked) {
             Log.w("AppDataRepository", "inicieDelecturaDeBD ya está en ejecución")
@@ -133,7 +142,6 @@ class AppDataRepository @Inject constructor(
                     "Apps cargadas de BD en cargarAppsEnBackgroundDesdeBD: ${apps.size}"
                 )
             }
-
             horarioDao.getAllHorarios().collect { horarios ->
                 horariosFlow.value = horarios
                 Log.d("AppDataRepository", "Horarios cargados de BD: ${horarios.size}")
@@ -205,6 +213,7 @@ class AppDataRepository @Inject constructor(
                 ApplicationInfo.CATEGORY_VIDEO
             )
             var status = if (entretenimiento) StatusApp.HORARIO.desc else StatusApp.BLOQUEADA.desc
+
             status = StatusApp.BLOQUEADA.desc
             //////
 
@@ -380,7 +389,7 @@ class AppDataRepository @Inject constructor(
         coroutineScope.launch { addListaAppsBD(listaApplicationInfo) }
     }
 
-    fun siEsNuevoPkg(packageName: String) = todosAppsFlow.value.none { it.packageName == packageName } //🎈🎈🎈🎈🎈🎈
+    suspend fun siEsNuevoPkg(packageName: String) = appDao.getAllApps().first().none { it.packageName == packageName } //🎈🎈🎈🎈🎈🎈
     //===================================================
 
     //========= Horarios ===============================

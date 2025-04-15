@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.R
+import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.UI.activities.DesarolloActivity.Companion.fileName
 import com.ursolgleb.controlparental.UI.adapters.marcarAppsPara.MarcarAppsParaAgregarAdapter
 import com.ursolgleb.controlparental.databinding.FragmentAddAppsBinding
@@ -25,8 +26,12 @@ import com.ursolgleb.controlparental.utils.Archivo
 import com.ursolgleb.controlparental.utils.Permisos
 import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -38,6 +43,8 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
 
     private var _binding: FragmentPermisosBinding? = null
     private val binding get() = _binding!!
+
+    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -90,7 +97,7 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
             } else {
                 val msg = "Ya tienes el permiso de Usage Stats"
                 Toast.makeText(appDataRepository.context, msg, Toast.LENGTH_SHORT).show()
-                Archivo.appendTextToFile(appDataRepository.context, fileName, "\n $msg")
+                coroutineScope.launch { Archivo.appendTextToFile(requireContext(), "\n $msg") }
             }
         }
 
@@ -111,5 +118,6 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null // Evitar memory leaks
+        coroutineScope.cancel()
     }
 }
