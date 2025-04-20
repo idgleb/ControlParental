@@ -170,7 +170,7 @@ class AppBlockerService : AccessibilityService() {
 
 
     // En lugar de lanzar directamente la coroutine, lo hacemos de la siguiente forma:
-    fun launchJobBlockNuevaApp(event: AccessibilityEvent) {
+    private fun launchJobBlockNuevaApp(event: AccessibilityEvent) {
         // Validamos que currentPkg no sea nulo
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = currentPkg ?: return

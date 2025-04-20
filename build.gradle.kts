@@ -8,12 +8,22 @@ plugins {
     id("com.android.library") version "8.1.4" apply false
     id("com.google.dagger.hilt.android") version "2.49" apply false
 
+    id("jp.ntsk.room-schema-docs") version "1.1.0"  // 👈 plugin del diagrama
+
 }
+
+roomSchemaDocs {
+    schemaDir = "$projectDir/app/schemas"
+    outputDir = "$projectDir/app/schemas-docs"
+    // en terminal: ./gradlew generateRoomSchemaDocs
+}
+
 
 buildscript {
     repositories {
         google()
         mavenCentral()
+        gradlePluginPortal()    // ← imprescindible
     }
     dependencies {
         classpath (libs.gradle) // Ejemplo
