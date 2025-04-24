@@ -5,10 +5,7 @@ Aplicación Android de control parental desarrollada en **Kotlin**, utilizando *
 
 [Propuesta de valor](https://docs.google.com/document/d/12kFZDpTqzES0-sYFv3g2N5VKG0sBjfh_hx_XMg7oy6Q/edit?usp=sharing)
 
-
-
-[Propuesta de valor]([[https://www.mermaidchart.com/raw/a014271e-0d37-4536-9adc-ee1455d9f9c9?theme=light&version=v0.1&format=svg](https://docs.google.com/document/d/1rpAelZsWywcVWXfYSeQUA5GreiuIhPb2)])
-
+[ESR](https://docs.google.com/document/d/12kFZDpTqzES0-sYFv3g2N5VKG0sBjfh_hx_XMg7oy6Q/edit?usp=sharing)
 
 ---
 
