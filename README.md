@@ -3,6 +3,13 @@
 
 Aplicación Android de control parental desarrollada en **Kotlin**, utilizando **Room**, **WorkManager**, **Dagger Hilt** y servicios de accesibilidad para supervisar, limitar y registrar el uso de aplicaciones.
 
+[Propuesta de valor]([https://www.mermaidchart.com/raw/a014271e-0d37-4536-9adc-ee1455d9f9c9?theme=light&version=v0.1&format=svg](https://docs.google.com/document/d/12kFZDpTqzES0-sYFv3g2N5VKG0sBjfh_hx_XMg7oy6Q/edit?usp=sharing))
+
+
+
+[Propuesta de valor]([[https://www.mermaidchart.com/raw/a014271e-0d37-4536-9adc-ee1455d9f9c9?theme=light&version=v0.1&format=svg](https://docs.google.com/document/d/1rpAelZsWywcVWXfYSeQUA5GreiuIhPb2)])
+
+
 ---
 
 ## 🧠 Características principales
@@ -62,7 +69,20 @@ El proyecto sigue una arquitectura modular y desacoplada:
 
 ## 📌 Diagrama de clases
 
-[Podés visualizar el diagrama de arquitectura UML usando este archivo:](https://www.mermaidchart.com/raw/a014271e-0d37-4536-9adc-ee1455d9f9c9?theme=light&version=v0.1&format=svg)
+[Podés visualizar el diagrama de arquitectura UML usando este link](https://www.mermaidchart.com/raw/a014271e-0d37-4536-9adc-ee1455d9f9c9?theme=light&version=v0.1&format=svg)
+
+![Diagrama de clases-contr-parent](https://github.com/user-attachments/assets/cd262fee-0fb2-4a6f-935f-26451eb0a8ef)
+
+---
+## 📌 Diagrama de casos de uso
+
+![use_case_diagram_contr-parent](https://github.com/user-attachments/assets/e2089043-ea10-4dab-a593-3c15c7f00494)
+
+---
+## 📌 Diagrama de entidad relacion
+
+![er_diagram-cont-parent](https://github.com/user-attachments/assets/424f72fe-1597-4343-a2e7-af6caab76207)
+
 
 ---
 
