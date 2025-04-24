@@ -62,9 +62,7 @@ El proyecto sigue una arquitectura modular y desacoplada:
 
 ## 📌 Diagrama de clases
 
-Podés visualizar el diagrama de arquitectura UML en [MermaidChart](https://www.mermaidchart.com/) usando este archivo:
-
-📄 [`control_parental_all_methods_members_full.mmd`](./control_parental_all_methods_members_full.mmd)
+[Podés visualizar el diagrama de arquitectura UML usando este archivo:](https://www.mermaidchart.com/raw/a014271e-0d37-4536-9adc-ee1455d9f9c9?theme=light&version=v0.1&format=svg)
 
 ---
 
