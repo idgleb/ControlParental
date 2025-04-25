@@ -27,7 +27,7 @@ class AppUsageWorker(
     override suspend fun doWork(): Result {
         Log.e("MioParametro", "Ejecutando doWork()...")
 
-        // ✅ Recuperar `AppDataRepository` manualmente usando `EntryPoints`
+        //  Recuperar `AppDataRepository` manualmente usando `EntryPoints`
         val appDataRepository = EntryPointAccessors
             .fromApplication(applicationContext, AppUsageWorkerEntryPoint::class.java)
             .getAppDataRepository()
@@ -35,10 +35,10 @@ class AppUsageWorker(
         Log.w("MioParametro", "Worker blockedAppsFlow: ${appDataRepository.blockedAppsFlow.value.map { it.appName }}")
 
 
-        // ✅ Llamar a updateTiempoUsoApps()
+        //  Llamar a updateTiempoUsoApps()
         appDataRepository.updateTiempoUsoAppsHoy()
 
-        // 🔹 Reprogramar el worker
+        //  Reprogramar el worker
         scheduleNextWork(applicationContext)
 
         return Result.success()

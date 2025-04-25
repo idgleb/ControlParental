@@ -42,8 +42,6 @@ class AppBlockerService : AccessibilityService() {
     // Mutex para sincronizar el acceso al mapa de tiempos.
     private val timeMutex = Mutex()
 
-
-
     private var isOnHomeScreen: Boolean? = null
     private var isBlockerEnabled = false
     private var currentPkg: String? = null
@@ -262,18 +260,6 @@ class AppBlockerService : AccessibilityService() {
     override fun onDestroy() {
         super.onDestroy()
         coroutineScope.cancel()
-    }
-
-    override fun onServiceConnected() {
-        super.onServiceConnected()
-        /*        coroutineScope.launch {
-                    try {
-                        delay(500) // espera para asegurar contexto estable
-                        putLog("Servicio de accesibilidad iniciado")
-                    } catch (e: Exception) {
-                        Log.e("AppBlockerService", "Error en onServiceConnected: ${e.message}", e)
-                    }
-                }*/
     }
 
 

@@ -43,27 +43,12 @@ class ControlParentalApp : Application(), Configuration.Provider {
         super.onCreate()
         appDataRepository.inicieDelecturaDeBD()
         appDataRepository.updateBDApps()
-        //
-        //startWorker(this)
     }
 
     override fun onTerminate() {
         super.onTerminate()
-        appDataRepository.cancelarCorrutinas() // ✅ Cancela las corrutinas al cerrar la app
+        appDataRepository.cancelarCorrutinas() // Cancela las corrutinas al cerrar la app
         coroutineScope.cancel()
     }
-
-    fun startWorker(context: Context) {
-        val workRequest = OneTimeWorkRequestBuilder<AppUsageWorker>()
-            .build()
-
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            "AppUsageWorker",
-            ExistingWorkPolicy.APPEND_OR_REPLACE, // 🔹 NO cancela el anterior, lo agrega en cola
-            workRequest
-        )
-    }
-
-
 
 }
