@@ -73,7 +73,8 @@ El proyecto sigue una arquitectura modular y desacoplada:
 ---
 ## 📌 Diagrama de casos de uso
 
-![use_case_diagram_contr-parent](https://github.com/user-attachments/assets/e2089043-ea10-4dab-a593-3c15c7f00494)
+![Diagrama de casos de uso de Control parental - Página 2.png](../../Downloads/Ursol-etc1.1/Diagrama%20de%20casos%20de%20uso%20de%20Control%20parental%20-%20P%C3%A1gina%202.png)
+
 
 ---
 ## 📌 Diagrama de entidad relacion
