@@ -90,12 +90,6 @@ Otra base de datos solo para logs:
 
 ---
 
-## 🤝 Contribuciones
-
-¡Se aceptan mejoras! Abrí un `issue` o mandá un `pull request` con tus sugerencias o mejoras.
-
----
-
 ## 🧑‍💻 Autor
 
 **Gleb Ursol**  
