@@ -75,6 +75,7 @@ El proyecto sigue una arquitectura modular y desacoplada:
 
 ![Diagrama de casos de uso de Control parental - Página 2](https://github.com/user-attachments/assets/16ae9efe-2349-4186-a0fb-17119e9f6e97)
 
+[Diagrama de casos de uso de Control parental](https://lucid.app/lucidchart/6ba2d302-7073-4598-b272-1eeeb985a417/edit?viewport_loc=-1801%2C-831%2C4200%2C2404%2CsjI~UfAdr-eT&invitationId=inv_18c096de-ea59-49dc-8db0-ff7b3636c7fe)
 
 
 ---
