@@ -43,15 +43,24 @@ El proyecto sigue una arquitectura modular y desacoplada:
 
 ```
 📦 app
- ┣ 📂 data
- ┃ ┣ 📂 local (Room DAOs, entidades, DB)
- ┃ ┗ 📂 log   (Base de datos de logs)
- ┣ 📂 di      (Módulos Dagger Hilt)
- ┣ 📂 receiver
- ┣ 📂 services
- ┣ 📂 utils   (helpers, permisos, logging, etc.)
- ┣ 📂 workers
- ┗ 🧠 repositories (AppDataRepository, LogDataRepository)
+ ┣ 📂 checkers 🟢 (Validadores para bloqueo de apps)
+ ┣ 📂 data 🔵 (Bases de datos y repositorios)
+ ┃ ┣ 📂 apps 🔹 (Room: DAOs, entidades, DB, proveedores)
+ ┃ ┗ 📂 log 🔸 (Registro de bloqueos)
+ ┣ 📂 detectors 🟡 (Detectores de eventos específicos)
+ ┣ 📂 di 🟣 (Inyección de dependencias con Dagger Hilt)
+ ┣ 📂 handlers 🔴 (Manejo de bloqueos y acciones)
+ ┣ 📂 receiver 📥 (Recepción de eventos del sistema)
+ ┣ 📂 services ⚙️ (Servicios en segundo plano)
+ ┣ 📂 UI 🎨 (Interfaz de usuario)
+ ┃ ┣ 📂 activities 🖥️ (Pantallas principales)
+ ┃ ┣ 📂 adapters 📋 (Adaptadores para listas)
+ ┃ ┣ 📂 fragments 🧩 (Fragmentos reutilizables)
+ ┃ ┗ 📂 viewmodel 🧠 (ViewModels compartidos)
+ ┣ 📂 utils 🛠️ (Funciones y utilidades generales)
+ ┣ 📂 workers ⏰ (Trabajos periódicos con WorkManager)
+ ┗ 🧠 ControlParentalApp.kt 🚀 (Clase Application principal)
+
 ```
 
 ---
