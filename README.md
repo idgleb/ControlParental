@@ -101,14 +101,14 @@ Base de datos principal:
 
 --
 
-<div align="center"">
+<div align="center">
   <img src="https://github.com/user-attachments/assets/424f72fe-1597-4343-a2e7-af6caab76207" style="width: 70%;" />
 </div>
 
 Otra base de datos solo para logs:
 --
 
-<div align="center"">
+<div align="center">
   <img src="https://github.com/user-attachments/assets/03c43144-2d6d-4c7f-addc-19994982c2a2" style="width: 50%;" />
 </div>
 
