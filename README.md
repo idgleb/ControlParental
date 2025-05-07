@@ -73,18 +73,25 @@ El proyecto sigue una arquitectura modular y desacoplada:
 
 ---
 
+---
+
 ## 📌 Diagrama de casos de uso
 
 [Podés visualizar el diagrama de casos de uso](https://lucid.app/lucidchart/6ba2d302-7073-4598-b272-1eeeb985a417/edit?viewport_loc=-5688%2C-462%2C3647%2C2088%2CsjI~UfAdr-eT&invitationId=inv_18c096de-ea59-49dc-8db0-ff7b3636c7fe)
 
 ![Diagrama de casos de uso de Control parental](https://github.com/user-attachments/assets/67477d44-fd85-4142-8f13-0894a2624753)
 
+---
+
+---
 
 ## 📌 Diagrama de clases
 
-[Podés visualizar el diagrama de arquitectura UML usando este link](https://www.mermaidchart.com/raw/a014271e-0d37-4536-9adc-ee1455d9f9c9?theme=light&version=v0.1&format=svg)
+[Podés visualizar el diagrama de clases UML usando este link](https://lucid.app/lucidchart/6ba2d302-7073-4598-b272-1eeeb985a417/edit?viewport_loc=-1924%2C336%2C4200%2C2404%2CCmMawoI6KhXr&invitationId=inv_18c096de-ea59-49dc-8db0-ff7b3636c7fe)
 
-![Diagrama de clases-contr-parent](https://github.com/user-attachments/assets/cd262fee-0fb2-4a6f-935f-26451eb0a8ef)
+
+![Diagrama de clases](https://github.com/user-attachments/assets/5f61b5e0-33c4-4f32-9305-32a41b980c50)
+
 
 ---
 ## 📌 Diagrama de casos de uso
