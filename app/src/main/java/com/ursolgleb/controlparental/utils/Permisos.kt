@@ -9,6 +9,7 @@ import android.provider.Settings
 
 class Permisos {
     companion object{
+
         fun hasUsageStatsPermission(context: Context): Boolean {
             val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
             val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -35,8 +36,6 @@ class Permisos {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) // ✅ necesario fuera de Activity
             context.startActivity(intent)
         }
-
-
 
     }
 }

@@ -12,7 +12,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.ursolgleb.controlparental.AppDataRepository
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.adapters.marcarAppsPara.AppsEditAdapter
 import com.ursolgleb.controlparental.databinding.FragmentAppsEditBinding
@@ -75,8 +75,8 @@ class AppsEditFragment : Fragment(R.layout.fragment_apps_edit) {
                 binding.iconDeLista.background =
                     ResourcesCompat.getDrawable(resources, R.drawable.vect_clock_timer, null)
                 val params = binding.iconDeLista.layoutParams
-                params.width = Fun.dpToPx(34, binding.iconDeLista)
-                params.height = Fun.dpToPx(75, binding.iconDeLista)
+                params.width = Fun.dpToPx(20, binding.iconDeLista)
+                params.height = Fun.dpToPx(20, binding.iconDeLista)
                 binding.iconDeLista.layoutParams = params
             }
 

@@ -10,7 +10,9 @@
 
     <!-- Checkmark icon -->
     <item
-        android:drawable="@drawable/clock_and_calendar"
+        android:width="29dp"
+        android:height="29dp"
+        android:drawable="@drawable/boligrafo_calendario_24"
         android:gravity="center">
 
     </item>

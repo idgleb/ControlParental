@@ -30,8 +30,6 @@ class Archivo {
             }
         }
 
-
-
         fun readTextFromFile(context: Context, fileName: String): String {
             val file = File(context.filesDir, fileName)
             return if (file.exists()) {
@@ -47,7 +45,6 @@ class Archivo {
                 file.writeText("") // Sobrescribe el archivo con una cadena vacía
             }
         }
-
 
 
     }

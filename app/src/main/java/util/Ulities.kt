@@ -7,13 +7,7 @@ import android.content.pm.PackageManager
 import android.graphics.Rect
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import androidx.lifecycle.viewModelScope
-import com.ursolgleb.controlparental.ControlParentalApp
 import com.ursolgleb.controlparental.utils.Launcher
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import java.util.Locale
 
 

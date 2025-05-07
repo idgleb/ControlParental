@@ -1,35 +1,16 @@
 package com.ursolgleb.controlparental.UI.viewmodel
 
 import android.app.Application
-import android.app.usage.UsageStats
-import android.app.usage.UsageStatsManager
-import android.content.Context
-import android.content.Intent
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
-import android.os.DeadObjectException
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.ursolgleb.controlparental.AppDataRepository
-import com.ursolgleb.controlparental.data.local.AppDatabase
-import com.ursolgleb.controlparental.data.local.entities.AppEntity
-import com.ursolgleb.controlparental.utils.Fun
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.apps.entities.AppEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import java.net.HttpURLConnection
-import java.net.URL
-import java.util.Calendar
 import javax.inject.Inject
 
 @HiltViewModel

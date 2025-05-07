@@ -1,15 +1,17 @@
-package com.ursolgleb.controlparental.data.local.dao
+package com.ursolgleb.controlparental.data.apps.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Update
-import com.ursolgleb.controlparental.data.local.entities.AppEntity
+import com.ursolgleb.controlparental.data.apps.entities.AppEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AppDao {
+
+    @Query("SELECT COUNT(*) FROM apps WHERE packageName = :pkg LIMIT 1")
+    suspend fun countByPackage(pkg: String): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertListaApps(apps: List<AppEntity>)

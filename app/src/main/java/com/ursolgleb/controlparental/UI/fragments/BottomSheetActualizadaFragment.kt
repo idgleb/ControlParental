@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.ursolgleb.controlparental.AppDataRepository
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.utils.NavBarUtils
 import dagger.hilt.android.AndroidEntryPoint

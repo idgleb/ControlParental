@@ -1,6 +1,6 @@
 package com.ursolgleb.controlparental.di
 
-import com.ursolgleb.controlparental.AppDataRepository
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent

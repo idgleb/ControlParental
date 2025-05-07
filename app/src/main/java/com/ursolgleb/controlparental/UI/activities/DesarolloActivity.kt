@@ -19,7 +19,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -33,8 +32,7 @@ import android.view.View
 import android.view.accessibility.AccessibilityManager
 import android.widget.TextView
 import android.widget.Toast
-import com.ursolgleb.controlparental.ControlParentalApp
-import com.ursolgleb.controlparental.LogDataRepository
+import com.ursolgleb.controlparental.data.log.LogDataRepository
 import com.ursolgleb.controlparental.services.AppBlockerService
 import com.ursolgleb.controlparental.utils.Archivo
 import com.ursolgleb.controlparental.utils.FileWatcher

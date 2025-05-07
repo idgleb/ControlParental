@@ -3,23 +3,17 @@ package com.ursolgleb.controlparental.UI.fragments
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.ursolgleb.controlparental.AppDataRepository
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.UI.adapters.marcarAppsPara.AppsEditAdapter
 import com.ursolgleb.controlparental.UI.adapters.marcarAppsPara.HorarioEditAdapter
-import com.ursolgleb.controlparental.databinding.FragmentAppsEditBinding
 import com.ursolgleb.controlparental.databinding.FragmentHorarioEditBinding
-import com.ursolgleb.controlparental.utils.Fun
-import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -76,7 +70,7 @@ class HorarioEditFragment : Fragment(R.layout.fragment_horario_edit) {
                 appDataRepository.horariosFlow.collect { newList ->
                     Log.w(
                         "AppsEditFragment",
-                        "Lista Horario actualizada: $newList"
+                        "Lista Horario actualizada 555: $newList"
                     )
 
                     HorarioEditAdapter.updateListEnAdaptador(newList)

@@ -15,6 +15,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
 class AppsFun {
+
     companion object {
 
         // Obtener todas las apps con UI
@@ -67,7 +68,6 @@ class AppsFun {
             drawable.draw(canvas)
             return bitmap
         }
-
 
         // Obtener clasificación de edad de una app
         suspend fun getAppAgeRatingScraper(packageName: String): String {

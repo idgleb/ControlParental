@@ -1,10 +1,10 @@
-package com.ursolgleb.controlparental.data.local.dao
+package com.ursolgleb.controlparental.data.apps.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.ursolgleb.controlparental.data.local.entities.UsageEventEntity
+import com.ursolgleb.controlparental.data.apps.entities.UsageEventEntity
 
 @Dao
 interface UsageEventDao {

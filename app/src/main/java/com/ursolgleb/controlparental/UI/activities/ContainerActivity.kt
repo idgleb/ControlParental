@@ -2,7 +2,6 @@ package com.ursolgleb.controlparental.UI.activities
 
 import android.os.Build
 import android.os.Bundle
-import android.view.WindowInsetsController
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.work.WorkManager

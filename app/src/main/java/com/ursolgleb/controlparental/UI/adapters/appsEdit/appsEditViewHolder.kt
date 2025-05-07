@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.ursolgleb.controlparental.UI.fragments.BottomSheetMoverFragment
-import com.ursolgleb.controlparental.data.local.entities.AppEntity
+import com.ursolgleb.controlparental.data.apps.entities.AppEntity
 import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
 
 class appsEditViewHolder(

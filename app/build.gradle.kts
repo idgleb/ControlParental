@@ -1,12 +1,14 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("kotlin-kapt") //  Agregar esta línea para habilitar KAPT
+    id("kotlin-kapt")
 
     id("dagger.hilt.android.plugin")
     id("com.google.dagger.hilt.android") // 👈 Plugin de Hilt
 
     id ("androidx.navigation.safeargs.kotlin")
+
+    id ("com.squareup.sqldelight")
 
 }
 
@@ -19,7 +21,7 @@ android {
 
         arguments {
             arg("room.schemaLocation", "$projectDir/schemas")
-            arg("room.incremental", "true")   // opcional
+            arg("room.incremental", "true")
         }
 
     }
@@ -31,7 +33,6 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -136,6 +137,12 @@ dependencies {
 
     implementation(libs.gson)
 
+    implementation (libs.kotlinx.coroutines.core)
+
+    implementation(libs.cache4k)
+
+    implementation (libs.sqlDelightAndroidDriver)
+    implementation (libs.sqlDelightCoroutines)
 
 
 }

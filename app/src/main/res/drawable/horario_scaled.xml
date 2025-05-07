@@ -5,5 +5,5 @@
         android:end="8dp"
         android:width="15dp"
         android:height="15dp"
-        android:drawable="@drawable/clock_and_calendar" />
+        android:drawable="@drawable/boligrafo_calendario_24" />
 </layer-list>

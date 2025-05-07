@@ -11,8 +11,8 @@ import com.bumptech.glide.Glide
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.ursolgleb.controlparental.AppDataRepository
-import com.ursolgleb.controlparental.data.local.entities.AppEntity
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.apps.entities.AppEntity
 import com.ursolgleb.controlparental.databinding.BottomSheetMoverLayoutBinding
 import com.ursolgleb.controlparental.utils.NavBarUtils
 import com.ursolgleb.controlparental.utils.StatusApp

@@ -1,19 +1,14 @@
 package com.ursolgleb.controlparental.UI.adapters.marcarAppsPara
 
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.ursolgleb.controlparental.AppDataRepository
-import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.data.local.entities.AppEntity
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.apps.entities.AppEntity
 import com.ursolgleb.controlparental.databinding.ItemAppGrandeBinding
-import com.ursolgleb.controlparental.utils.AppsFun
 import com.ursolgleb.controlparental.utils.Fun
-import com.ursolgleb.controlparental.utils.StatusApp
 
 class MarcarAppsParaAgregarAdapter(
     val apps: MutableList<AppEntity>,

@@ -2,7 +2,6 @@ package com.ursolgleb.controlparental.di
 
 import android.content.Context
 import androidx.room.Room
-import com.ursolgleb.controlparental.data.local.AppDatabase
 import com.ursolgleb.controlparental.data.log.LogAppBlockerDatabase
 import dagger.Module
 import dagger.Provides

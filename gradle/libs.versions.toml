@@ -1,10 +1,16 @@
 [versions]
+sqlDelight = "1.5.5"
 agp = "8.9.1"
 appcompatV7 = "28.0.0"
+cache4k = "0.9.0"
+caffeine = "3.1.6"
 fragmentKtx = "1.8.5"
 glide = "4.16.0"
 gradle = "8.9.1"
+gradlePlugin = "1.5.5"
+gradleVersion = "8.0.2"
 gson = "2.10.1"
+guava = "31.1-android"
 hiltAndroidGradlePlugin = "2.44"
 hiltWorkVersion = "1.0.0"
 json = "20210307"
@@ -17,6 +23,7 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 appcompat = "1.7.0"
 kotlinGradlePlugin = "1.8.10"
+kotlinxCoroutinesCore = "1.7.3"
 lifecycleViewmodelKtx = "2.8.7"
 material = "1.12.0"
 activity = "1.10.0"
@@ -31,6 +38,9 @@ workRuntimeKtxVersion = "2.8.1"
 hiltWork = "1.2.0"
 
 [libraries]
+sqlDelightGradle = { module = "com.squareup.sqldelight:gradle-plugin", version.ref = "sqlDelight" }
+sqlDelightAndroidDriver = { module = "com.squareup.sqldelight:android-driver", version.ref = "sqlDelight" }
+sqlDelightCoroutines = { module = "com.squareup.sqldelight:coroutines-extensions", version.ref = "sqlDelight" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragmentKtx" }
 androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltWork" }
@@ -44,10 +54,15 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "workRuntimeKtx" }
 androidx-work-runtime-ktx-v281 = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtxVersion" }
 appcompat-v7 = { module = "com.android.support:appcompat-v7", version.ref = "appcompatV7" }
+cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
+gradle-plugin = { module = "com.squareup.sqldelight:gradle-plugin", version.ref = "gradlePlugin" }
+gradle-v802 = { module = "com.android.tools.build:gradle", version.ref = "gradleVersion" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroidGradlePlugin" }
 hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hiltAndroidGradlePlugin" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltAndroidGradlePlugin" }
@@ -59,6 +74,7 @@ androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "j
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }

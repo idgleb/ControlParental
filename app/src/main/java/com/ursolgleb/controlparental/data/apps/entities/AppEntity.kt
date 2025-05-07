@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental.data.local.entities
+package com.ursolgleb.controlparental.data.apps.entities
 
 import android.graphics.Bitmap
 import androidx.room.Entity
@@ -14,7 +14,6 @@ data class AppEntity(
     var isSystemApp: Boolean,
     var usageTimeToday: Long,
     var timeStempUsageTimeToday: Long,
-
     var appStatus: String,
 
     var dailyUsageLimitMinutes: Int,

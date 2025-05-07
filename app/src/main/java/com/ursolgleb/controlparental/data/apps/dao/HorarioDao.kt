@@ -1,7 +1,7 @@
-package com.ursolgleb.controlparental.data.local.dao
+package com.ursolgleb.controlparental.data.apps.dao
 
 import androidx.room.*
-import com.ursolgleb.controlparental.data.local.entities.HorarioEntity
+import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -13,7 +13,7 @@ interface HorarioDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHorarios(horarios: List<HorarioEntity>)
 
-    @Query("SELECT * FROM horarios ORDER BY nombreDeHorario")
+    @Query("SELECT * FROM horarios ORDER BY id")
     fun getAllHorarios(): Flow<List<HorarioEntity>>
 
     @Query("SELECT * FROM horarios WHERE nombreDeHorario = :nombre LIMIT 1")

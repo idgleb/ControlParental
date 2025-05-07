@@ -39,6 +39,4 @@ object NavBarUtils {
     }
 
 
-
-
 }

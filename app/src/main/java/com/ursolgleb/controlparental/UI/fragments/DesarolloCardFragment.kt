@@ -6,12 +6,9 @@ import android.view.View
 import androidx.fragment.app.Fragment
 import com.ursolgleb.controlparental.R
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
-import com.ursolgleb.controlparental.AppDataRepository
-import com.ursolgleb.controlparental.data.local.dao.AppDao
-import com.ursolgleb.controlparental.databinding.FragmentCardBinding
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.apps.dao.AppDao
 import com.ursolgleb.controlparental.databinding.FragmentDesarolloCardBinding
-import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

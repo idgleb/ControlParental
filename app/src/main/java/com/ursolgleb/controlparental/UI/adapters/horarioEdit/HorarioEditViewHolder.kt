@@ -1,14 +1,9 @@
 package com.ursolgleb.controlparental.UI.adapters.marcarAppsPara
 
-import android.graphics.drawable.Drawable
 import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.ursolgleb.controlparental.UI.fragments.BottomSheetActualizadaFragment
-import com.ursolgleb.controlparental.UI.fragments.BottomSheetMoverFragment
-import com.ursolgleb.controlparental.data.local.entities.AppEntity
-import com.ursolgleb.controlparental.data.local.entities.HorarioEntity
-import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
+import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
 import com.ursolgleb.controlparental.databinding.ItemHorarioEditBinding
 
 class HorarioEditViewHolder(

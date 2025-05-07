@@ -66,5 +66,32 @@ class Fun {
             ).toInt()
         }
 
+        fun getHoraActual(): String {
+            val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+            return formatter.format(System.currentTimeMillis())
+        }
+
+        fun getDiaDeLaSemana(): Int {
+            val calendar = Calendar.getInstance()
+            val dia = calendar.get(Calendar.DAY_OF_WEEK)
+            return if (dia == Calendar.SUNDAY) 7 else dia - 1 // 1 = lunes, ..., 7 = domingo
+        }
+
+        fun estaDentroDelHorario(actual: String, inicio: String, fin: String): Boolean {
+            val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+            val horaActual = formatter.parse(actual) ?: return false
+            val horaInicio = formatter.parse(inicio) ?: return false
+            val horaFin = formatter.parse(fin) ?: return false
+
+            return if (horaInicio.before(horaFin)) {
+                horaActual.after(horaInicio) && horaActual.before(horaFin)
+            } else {
+                // caso en que el horario cruza medianoche (ej: 22:00 - 06:00)
+                horaActual.after(horaInicio) || horaActual.before(horaFin)
+            }
+        }
+
+
+
     }
 }

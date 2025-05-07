@@ -13,8 +13,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
-import com.ursolgleb.controlparental.AppDataRepository
-import com.ursolgleb.controlparental.data.local.dao.AppDao
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.apps.dao.AppDao
 import com.ursolgleb.controlparental.databinding.FragmentCardBinding
 import com.ursolgleb.controlparental.utils.Fun
 import com.ursolgleb.controlparental.utils.StatusApp
@@ -84,8 +84,8 @@ class CardFragment : Fragment(R.layout.fragment_card){
                 binding.iconDeLista.background =
                     ResourcesCompat.getDrawable(resources, R.drawable.vect_clock_timer, null)
                 val params = binding.iconDeLista.layoutParams
-                params.width = Fun.dpToPx(34, binding.iconDeLista)
-                params.height = Fun.dpToPx(75, binding.iconDeLista)
+                params.width = Fun.dpToPx(20, binding.iconDeLista)
+                params.height = Fun.dpToPx(20, binding.iconDeLista)
                 binding.iconDeLista.layoutParams = params
                 binding.clCambiarHorarioLimite.visibility = View.VISIBLE
             }
@@ -121,10 +121,10 @@ class CardFragment : Fragment(R.layout.fragment_card){
         }
 
         binding.cvAppsDispon.setOnClickListener {
-            navegarADisponAppsEdit()
+            navegarAppsEdit()
         }
         binding.tvEmptyMessage.setOnClickListener {
-            navegarADisponAppsEdit()
+            navegarAppsEdit()
         }
 
         binding.cambiarHorarioBoton.setOnClickListener {
@@ -136,7 +136,7 @@ class CardFragment : Fragment(R.layout.fragment_card){
 
     }
 
-    private fun navegarADisponAppsEdit() {
+    private fun navegarAppsEdit() {
         val action =
             MainAdminFragmentDirections.actionGlobalAppsEditFragment(category = categoria.desc)
         findNavController().navigate(action)
@@ -184,8 +184,6 @@ class CardFragment : Fragment(R.layout.fragment_card){
             }
         }
     }
-
-
 
     override fun onDestroyView() {
         super.onDestroyView()

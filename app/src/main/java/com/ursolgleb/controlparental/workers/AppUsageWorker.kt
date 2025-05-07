@@ -2,21 +2,14 @@ package com.ursolgleb.controlparental.workers
 
 import android.content.Context
 import android.util.Log
-import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import androidx.work.Worker
 import androidx.work.WorkerParameters
-import com.ursolgleb.controlparental.AppDataRepository
 import com.ursolgleb.controlparental.di.AppUsageWorkerEntryPoint
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
 import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.android.qualifiers.ApplicationContext
 
 
 class AppUsageWorker(
@@ -34,8 +27,6 @@ class AppUsageWorker(
 
         Log.w("MioParametro", "Worker blockedAppsFlow: ${appDataRepository.blockedAppsFlow.value.map { it.appName }}")
 
-
-        //  Llamar a updateTiempoUsoApps()
         appDataRepository.updateTiempoUsoAppsHoy()
 
         //  Reprogramar el worker

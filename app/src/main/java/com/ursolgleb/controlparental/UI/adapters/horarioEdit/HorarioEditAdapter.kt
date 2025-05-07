@@ -1,16 +1,12 @@
 package com.ursolgleb.controlparental.UI.adapters.marcarAppsPara
 
-import android.graphics.drawable.BitmapDrawable
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.ursolgleb.controlparental.AppDataRepository
-import com.ursolgleb.controlparental.data.local.entities.AppEntity
-import com.ursolgleb.controlparental.data.local.entities.HorarioEntity
-import com.ursolgleb.controlparental.databinding.ItemAppEditBinding
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
 import com.ursolgleb.controlparental.databinding.ItemHorarioEditBinding
-import com.ursolgleb.controlparental.utils.Fun
 
 class HorarioEditAdapter(
     val horarios: MutableList<HorarioEntity>,

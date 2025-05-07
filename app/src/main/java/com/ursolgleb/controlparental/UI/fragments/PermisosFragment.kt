@@ -1,6 +1,5 @@
 package com.ursolgleb.controlparental.UI.fragments
 
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -8,28 +7,15 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import androidx.navigation.fragment.navArgs
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.ursolgleb.controlparental.AppDataRepository
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
-import com.ursolgleb.controlparental.UI.activities.DesarolloActivity.Companion.fileName
-import com.ursolgleb.controlparental.UI.adapters.marcarAppsPara.MarcarAppsParaAgregarAdapter
-import com.ursolgleb.controlparental.databinding.FragmentAddAppsBinding
 import com.ursolgleb.controlparental.databinding.FragmentPermisosBinding
 import com.ursolgleb.controlparental.utils.Archivo
 import com.ursolgleb.controlparental.utils.Permisos
-import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch

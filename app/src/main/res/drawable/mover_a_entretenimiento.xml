@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Oval background -->
-    <item>
-        <shape android:shape="oval">
-            <solid android:color="@color/gris_mover" />
-        </shape>
-    </item>
+<!-- Oval background -->
+<item>
+    <shape android:shape="oval">
+        <solid android:color="@color/gris_mover" />
+        <size android:width="48dp" android:height="48dp" />
+    </shape>
+</item>
 
-    <!-- Checkmark icon -->
-    <item
-        android:width="39dp"
-        android:height="82dp"
-        android:drawable="@drawable/vect_clock_timer"
-        android:gravity="center">
+<!-- Checkmark icon -->
+<item
+    android:drawable="@drawable/vect_clock_timer"
+    android:gravity="center">
 
-    </item>
+</item>
 
 </layer-list>

@@ -2,7 +2,12 @@ package com.ursolgleb.controlparental.di
 
 import android.content.Context
 import androidx.room.Room
-import com.ursolgleb.controlparental.data.local.AppDatabase
+import com.ursolgleb.controlparental.data.apps.AppDatabase
+import com.ursolgleb.controlparental.data.apps.dao.AppDao
+import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
+import com.ursolgleb.controlparental.data.apps.dao.UsageEventDao
+import com.ursolgleb.controlparental.data.apps.dao.UsageLimitDao
+import com.ursolgleb.controlparental.data.apps.dao.UsageStatsDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,4 +27,34 @@ object DatabaseModule {
             "app_database.db"
         ).fallbackToDestructiveMigration().build()
     }
+
+    @Singleton
+    @Provides
+    fun provideAppDao(db: AppDatabase): AppDao =
+        db.appDao()
+
+    @Singleton
+    @Provides
+    fun provideHorarioDao(db: AppDatabase): HorarioDao =
+        db.horarioDao()
+
+    @Singleton
+    @Provides
+    fun provideUsageEventDao(db: AppDatabase): UsageEventDao =
+        db.usageEventDao()
+
+    @Singleton
+    @Provides
+    fun provideUsageStatsDao(db: AppDatabase): UsageStatsDao =
+        db.usageStatsDao()
+
+    @Singleton
+    @Provides
+    fun provideUsageLimitDao(db: AppDatabase): UsageLimitDao =
+        db.usageLimitDao()
+
+
+
+
+
 }

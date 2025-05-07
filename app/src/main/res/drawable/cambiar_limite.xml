@@ -10,9 +10,10 @@
 
     <!-- Checkmark icon -->
     <item
-        android:width="24dp"
-        android:height="24dp"
+        android:width="29dp"
+        android:height="29dp"
         android:drawable="@drawable/timer_stopwatch_time_watch_svgrepo_com"
+        android:left="4dp"
         android:gravity="center">
 
     </item>

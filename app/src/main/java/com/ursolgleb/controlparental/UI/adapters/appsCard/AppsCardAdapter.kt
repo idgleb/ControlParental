@@ -4,10 +4,9 @@ import android.graphics.drawable.BitmapDrawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.ursolgleb.controlparental.AppDataRepository
-import com.ursolgleb.controlparental.data.local.entities.AppEntity
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.apps.entities.AppEntity
 import com.ursolgleb.controlparental.databinding.ItemBlockedAppBinding
-import com.ursolgleb.controlparental.utils.AppsFun
 import javax.inject.Inject
 
 class AppsCardAdapter @Inject constructor(

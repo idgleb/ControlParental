@@ -9,11 +9,8 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.ursolgleb.controlparental.AppDataRepository
-import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.databinding.BottomSheetMoverLayoutBinding
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.databinding.BottomSheetPermisosLayoutBinding
-import com.ursolgleb.controlparental.databinding.FragmentMainAdminBinding
 import com.ursolgleb.controlparental.utils.NavBarUtils
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
