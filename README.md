@@ -92,15 +92,9 @@ El proyecto sigue una arquitectura modular y desacoplada:
 
 ![Diagrama de clases](https://github.com/user-attachments/assets/5f61b5e0-33c4-4f32-9305-32a41b980c50)
 
-
 ---
-## 📌 Diagrama de casos de uso
-
-[Diagrama de casos de uso de Control parental](https://lucid.app/lucidchart/6ba2d302-7073-4598-b272-1eeeb985a417/edit?viewport_loc=-1801%2C-831%2C4200%2C2404%2CsjI~UfAdr-eT&invitationId=inv_18c096de-ea59-49dc-8db0-ff7b3636c7fe)
-
-![Diagrama de casos de uso de Control parental](https://github.com/user-attachments/assets/16ae9efe-2349-4186-a0fb-17119e9f6e97)
-
 ---
+
 ## 📌 Diagrama de entidad relacion
 
 Base de datos principal:
@@ -108,7 +102,6 @@ Base de datos principal:
 
 Otra base de datos solo para logs:
 ![er lod](https://github.com/user-attachments/assets/03c43144-2d6d-4c7f-addc-19994982c2a2)
-
 
 
 ---
