@@ -13,20 +13,6 @@ Aplicación Android de control parental desarrollada en **Kotlin**, utilizando *
 </div>
 
 
-<div style="display: flex; gap: 10px;">
-  <img src="https://github.com/user-attachments/assets/df6b475a-06df-47be-b62d-75355bae7c02" 
-       style="width: 200px; transition: transform 0.3s;" 
-       onmouseover="this.style.transform='scale(1.05)';" 
-       onmouseout="this.style.transform='scale(1)';" />
-  
-  <img src="https://github.com/user-attachments/assets/2006e55e-7470-45a4-a8b8-7bde61a2132e" 
-       style="width: 200px; transition: transform 0.3s;" 
-       onmouseover="this.style.transform='scale(1.05)';" 
-       onmouseout="this.style.transform='scale(1)';" />
-</div>
-
-
-
 ---
 
 ## 🧠 Características principales
