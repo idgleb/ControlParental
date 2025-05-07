@@ -107,7 +107,7 @@ Otra base de datos solo para logs:
 --
 
 <div align="center" style="width: 50%;">
-  <img src="https://github.com/user-attachments/assets/03c43144-2d6d-4c7f-addc-19994982c2a2" style="width: 100%;" />
+  <img src="https://github.com/user-attachments/assets/03c43144-2d6d-4c7f-addc-19994982c2a2" style="width: 50%;" />
 </div>
 
 
