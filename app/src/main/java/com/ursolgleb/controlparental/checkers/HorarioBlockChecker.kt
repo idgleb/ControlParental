@@ -1,7 +1,10 @@
 package com.ursolgleb.controlparental.checkers
 
+import android.util.Log
+import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.utils.Fun
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -10,18 +13,20 @@ class HorarioBlockChecker @Inject constructor(
     private val appDataRepository: AppDataRepository
 ) {
     fun shouldBlock(packageName: String): Boolean {
-        val app = appDataRepository.horarioAppsFlow.value.firstOrNull { it.packageName == packageName }
+        // 1. Verificar si la app tiene status HORARIO
+        appDataRepository.horarioAppsFlow.value.firstOrNull { it.packageName == packageName }
             ?: return false
 
-        val horario = appDataRepository.horariosFlow.value.firstOrNull { it.nombreDeHorario == app.appName }
-            ?: return false // si no tiene horario asignado, no bloquear
+        val currentTime = Fun.getHoraActual()
+        val currentDay = Fun.getDiaDeLaSemana() // 1 = lunes, ..., 7 = domingo
+        Log.w("HorarioBlockChecker", "currentDay $currentDay")
 
-        val ahora = Fun.getHoraActual() // formato HH:mm
-        val dia = Fun.getDiaDeLaSemana() // 1 = lunes ... 7 = domingo
-
-        val estaDentroDelBloqueo = dia in horario.diasDeSemana &&
-                Fun.estaDentroDelHorario(ahora, horario.horaInicio, horario.horaFin)
-
-        return estaDentroDelBloqueo // bloquear si estamos dentro del horario
+        // 3. Obtener todos los horarios y verificar si alguno está activo y coincide
+        val horarios = appDataRepository.horariosFlow.value
+        return horarios.any { horario ->
+            horario.isActive && // Solo considerar horarios activos
+            currentDay in horario.diasDeSemana && 
+            Fun.estaDentroDelHorario(currentTime, horario.horaInicio, horario.horaFin)
+        }
     }
 }

@@ -68,11 +68,6 @@ class HorarioEditFragment : Fragment(R.layout.fragment_horario_edit) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 appDataRepository.horariosFlow.collect { newList ->
-                    Log.w(
-                        "AppsEditFragment",
-                        "Lista Horario actualizada 555: $newList"
-                    )
-
                     HorarioEditAdapter.updateListEnAdaptador(newList)
                     //  Si la lista está vacía, mostrar "Empty"
                     binding.tvEmptyMessage.text = if (newList.isEmpty()) {

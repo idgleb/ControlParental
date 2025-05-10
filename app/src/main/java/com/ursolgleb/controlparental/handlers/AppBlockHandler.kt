@@ -56,6 +56,9 @@ class AppBlockHandler @Inject constructor(
 
     private fun handleAppBlockedDetection(pkg: String) {
         try {
+            val app = appDataRepository.todosAppsFlow.value.firstOrNull { it.packageName == pkg }
+            if (app == null) return
+
             when {
                 appBlockChecker.isAppBlocked(pkg) -> {
                     isBlockerEnabled = true
@@ -129,16 +132,9 @@ class AppBlockHandler @Inject constructor(
         }
     }
 
-    private fun logBlocked(message: String, pkg: String) {
-        coroutineScope.launch {
-            val fullMessage = "$message: $pkg"
-            try {
-                Logger.info(appDataRepository.context, "AppBlockHandler", fullMessage)
-                logDataRepository.saveLogBlockedApp(pkg)
-            } catch (e: Exception) {
-                Logger.error(appDataRepository.context, "AppBlockHandler", "Error al registrar bloqueo: ${e.message}", e)
-            }
-        }
+    private fun logBlocked(reason: String, packageName: String) {
+        logDataRepository.saveLogBlockedApp("$reason: $packageName")
+        Logger.info(appDataRepository.context, "AppBlockHandler", "$reason: $packageName")
     }
 
     fun log(message: String, pkg: String) {

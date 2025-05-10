@@ -16,7 +16,20 @@ class HorarioEditViewHolder(
     ) {
         binding.tvHorarioName.text = horario.nombreDeHorario
         binding.tvInicioFin.text = "${horario.horaInicio} - ${horario.horaFin}"
-        binding.tvDiasDeLaSemana.text = horario.diasDeSemana.joinToString(", ")
+
+        val diasMap = mapOf(
+            1 to "Lu",
+            2 to "Ma",
+            3 to "Mi",
+            4 to "Ju",
+            5 to "Vi",
+            6 to "Sa",
+            7 to "Do"
+        )
+        binding.tvDiasDeLaSemana.text = horario.diasDeSemana
+            .mapNotNull { diasMap[it] }
+            .joinToString(", ")
+
 
         binding.itemHorarioEdit.setOnClickListener {
             Log.w("BottomSheetFragment", "onClick")

@@ -6,7 +6,9 @@ import android.view.View
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
+import java.time.LocalTime
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 
 class Fun {
@@ -66,9 +68,8 @@ class Fun {
             ).toInt()
         }
 
-        fun getHoraActual(): String {
-            val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
-            return formatter.format(System.currentTimeMillis())
+        fun getHoraActual(): LocalTime {
+            return LocalTime.now()
         }
 
         fun getDiaDeLaSemana(): Int {
@@ -77,21 +78,14 @@ class Fun {
             return if (dia == Calendar.SUNDAY) 7 else dia - 1 // 1 = lunes, ..., 7 = domingo
         }
 
-        fun estaDentroDelHorario(actual: String, inicio: String, fin: String): Boolean {
-            val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
-            val horaActual = formatter.parse(actual) ?: return false
-            val horaInicio = formatter.parse(inicio) ?: return false
-            val horaFin = formatter.parse(fin) ?: return false
-
-            return if (horaInicio.before(horaFin)) {
-                horaActual.after(horaInicio) && horaActual.before(horaFin)
-            } else {
-                // caso en que el horario cruza medianoche (ej: 22:00 - 06:00)
-                horaActual.after(horaInicio) || horaActual.before(horaFin)
-            }
+        fun estaDentroDelHorario(horaActual: LocalTime, horaInicio: LocalTime, horaFin: LocalTime): Boolean {
+            return horaActual.isAfter(horaInicio) && horaActual.isBefore(horaFin)
         }
 
-
+        fun millisToFormattedDate(millis: Long, pattern: String = "dd/MM/yyyy HH:mm:ss"): String {
+            val formatter = SimpleDateFormat(pattern, Locale.getDefault())
+            return formatter.format(Date(millis))
+        }
 
     }
 }

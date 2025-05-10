@@ -16,19 +16,20 @@ import com.ursolgleb.controlparental.data.apps.entities.UsageStatsEntity
 import com.ursolgleb.controlparental.utils.Converters
 
 @Database(
-    entities = [AppEntity::class,
-                HorarioEntity::class,
-                UsageLimitEntity::class,
-                UsageEventEntity::class,
-                UsageStatsEntity::class],
-    version = 17,
+    entities = [
+        AppEntity::class,
+        HorarioEntity::class,
+        UsageLimitEntity::class,
+        UsageEventEntity::class,
+        UsageStatsEntity::class],
+    version = 18,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun appDao(): AppDao
     abstract fun horarioDao(): HorarioDao
-    abstract fun usageLimitDao(): UsageLimitDao
     abstract fun usageEventDao(): UsageEventDao
     abstract fun usageStatsDao(): UsageStatsDao
+    abstract fun usageLimitDao(): UsageLimitDao
 }

@@ -24,4 +24,10 @@ interface HorarioDao {
 
     @Query("DELETE FROM horarios")
     suspend fun deleteAll()
+
+    @Query("UPDATE horarios SET isActive = :isActive WHERE id = :horarioId")
+    suspend fun setHorarioActive(horarioId: Int, isActive: Boolean)
+
+    @Query("UPDATE horarios SET isActive = :isActive")
+    suspend fun setAllHorariosActive(isActive: Boolean)
 }

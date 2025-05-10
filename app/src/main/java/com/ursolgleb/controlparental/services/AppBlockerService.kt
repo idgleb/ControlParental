@@ -18,7 +18,6 @@ class AppBlockerService : AccessibilityService() {
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private var currentPkg: String? = null
-    private var isOnHomeScreen: Boolean? = null
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
@@ -26,11 +25,6 @@ class AppBlockerService : AccessibilityService() {
         currentPkg = event.packageName?.toString() ?: return
 
         appBlockHandler.handle(event, currentPkg ?: return)
-
-        if (!appBlockHandler.isBlocking && (currentPkg == appDataRepository.defLauncher) != isOnHomeScreen) {
-            isOnHomeScreen = currentPkg == appDataRepository.defLauncher
-            appBlockHandler.log("¿Está en la pantalla de inicio? $isOnHomeScreen", currentPkg!!)
-        }
 
         if (appBlockHandler.isBlocking) {
             if (currentPkg != appDataRepository.defLauncher) {

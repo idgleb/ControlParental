@@ -4,26 +4,30 @@ import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class LogDataRepository @Inject constructor(
-    val logDatabase: LogAppBlockerDatabase,
+    logDatabase: LogAppBlockerDatabase,
     @ApplicationContext val context: Context
 ) {
 
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     val logDao: LogBlockedAppDao = logDatabase.logBlockedAppDao()
 
-    suspend fun saveLogBlockedApp(pkgName: String) {
-        val existingApp = logDao.getLogBlockedApp(pkgName)
-        if (existingApp != null) {
-            val updatedApp = existingApp.copy(blockedAt = System.currentTimeMillis())
-            logDao.updateLogBlockedApp(updatedApp)
-        } else {
-            logDao.insertLogBlockedApp(LogBlockedAppEntity(packageName = pkgName))
+    fun saveLogBlockedApp(pkgName: String) {
+        scope.launch {
+            val existingApp = logDao.getLogBlockedApp(pkgName)
+            if (existingApp != null) {
+                val updatedApp = existingApp.copy(blockedAt = System.currentTimeMillis())
+                logDao.updateLogBlockedApp(updatedApp)
+            } else {
+                logDao.insertLogBlockedApp(LogBlockedAppEntity(packageName = pkgName))
+            }
         }
     }
 

@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.room.TypeConverter
 import java.io.ByteArrayOutputStream
+import java.time.LocalTime
 
 class Converters {
     @TypeConverter
@@ -28,4 +29,13 @@ class Converters {
         return if (data.isEmpty()) emptyList() else data.split(",").map { it.toInt() }
     }
 
+    @TypeConverter
+    fun fromLocalTime(time: LocalTime): String {
+        return time.toString()
+    }
+
+    @TypeConverter
+    fun toLocalTime(timeString: String): LocalTime {
+        return LocalTime.parse(timeString)
+    }
 }

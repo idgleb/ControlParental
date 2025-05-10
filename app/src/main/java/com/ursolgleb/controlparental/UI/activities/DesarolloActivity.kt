@@ -50,6 +50,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import androidx.core.net.toUri
+import com.ursolgleb.controlparental.utils.Fun
 
 @AndroidEntryPoint
 class DesarolloActivity : AppCompatActivity() {
@@ -126,7 +127,7 @@ class DesarolloActivity : AppCompatActivity() {
         coroutineScope.launch {
             val blockedApps = logDataRepository.logDao.getLogBlockedApps()
             val blockedAppsText = blockedApps.joinToString("\n") { app ->
-                "🔒 ${app.packageName}  ⌚${app.blockedAt}"
+                "${app.packageName}  ⌚${Fun.millisToFormattedDate(app.blockedAt)}"
             }
             withContext(Dispatchers.Main) {
                 bindDesarollo.tvAppsBloqueadas.text = blockedAppsText
