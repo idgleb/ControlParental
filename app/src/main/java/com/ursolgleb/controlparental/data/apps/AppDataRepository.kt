@@ -371,6 +371,24 @@ class AppDataRepository @Inject constructor(
         }
     }
 
+    fun deleteHorarioBD(horario: HorarioEntity) {
+        scope.launch {
+            try {
+                horarioDao.deleteHorario(horario)
+                Logger.info(context, "AppDataRepository", "Horario eliminado en BD: $horario")
+            } catch (e: Exception) {
+                Logger.error(
+                    context,
+                    "AppDataRepository",
+                    "Error al eliminar horario en la BD: ${e.message}",
+                    e
+                )
+            }
+        }
+    }
+
+
+
     fun updateTiempoDeUsoUnaApp(pkgName: String) = scope.launch {
         val locked = lockUpdateTiempoDeUsoUnaApp.tryLock()
         if (!locked) {

@@ -10,6 +10,8 @@ plugins {
 
     id ("com.squareup.sqldelight")
 
+    id ("kotlin-parcelize")
+
 }
 
 android {

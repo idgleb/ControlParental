@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_add_apps"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -32,6 +31,7 @@
 
 
         <TextView
+            android:id="@+id/tvTituloDeFragment"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -57,9 +57,29 @@
         app:layout_constraintBottom_toTopOf="@id/barra_baja"
         app:layout_constraintTop_toBottomOf="@id/barra_arriba">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_gravity="center"
+            android:gravity="center">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnEliminarHorario"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:background="@drawable/radius_button_principal_selector"
+                android:drawableEnd="@drawable/basura_24"
+                android:drawablePadding="10dp"
+                android:drawableTint="@color/white"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:text="Eliminar Horario"
+                android:textAllCaps="false"
+                android:textColor="@color/text_boton"
+                android:textSize="15sp"
+                android:visibility="gone"/>
 
             <TextView
                 android:id="@+id/tvTitle"
@@ -67,9 +87,8 @@
                 android:layout_height="wrap_content"
                 android:text="Nombre de horario"
                 android:textAlignment="center"
-                android:textSize="20dp"
+                android:textSize="15dp"
                 android:textStyle="bold"
-                android:layout_margin="16dp"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"/>
@@ -82,32 +101,137 @@
                 android:padding="8dp"
                 android:background="@drawable/rounded_edittext"
                 android:hint="Nombre de horario"
-                android:layout_margin="16dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginVertical="10dp"
                 app:layout_constraintTop_toBottomOf="@id/tvTitle"/>
 
-            <EditText
-                android:id="@+id/etHoraInicio"
-                android:layout_width="match_parent"
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:autofillHints=""
-                android:padding="8dp"
+                android:layout_marginTop="8dp"
+                android:text="Inicio"
+                android:textAlignment="center"
+                android:textSize="15dp"
+                android:textStyle="bold" />
+
+            <TimePicker
+                android:id="@+id/tpHoraInicio"
+                android:layout_width="match_parent"
+                android:layout_height="165dp"
+                android:timePickerMode="spinner"
                 android:background="@drawable/rounded_edittext"
-                android:hint="Inicio"
-                android:layout_margin="16dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginVertical="10dp"
                 app:layout_constraintTop_toBottomOf="@id/etNombreHorario"/>
 
-            <EditText
-                android:id="@+id/etHoraFin"
-                android:layout_width="match_parent"
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:autofillHints=""
-                android:padding="8dp"
-                android:background="@drawable/rounded_edittext"
-                android:hint="Fin"
-                android:layout_margin="16dp"
-                app:layout_constraintTop_toBottomOf="@id/etHoraInicio"/>
+                android:layout_marginTop="8dp"
+                android:text="Fin"
+                android:textAlignment="center"
+                android:textSize="15dp"
+                android:textStyle="bold" />
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+            <TimePicker
+                android:id="@+id/tpHoraFin"
+                android:layout_width="match_parent"
+                android:layout_height="165dp"
+                android:timePickerMode="spinner"
+                android:background="@drawable/rounded_edittext"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginVertical="10dp"
+                app:layout_constraintTop_toBottomOf="@id/tpHoraInicio"/>
+
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupDias"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                app:chipSpacingHorizontal="3dp"
+                app:chipSpacingVertical="2dp"
+                android:layout_margin="10dp">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipLunes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lu"
+                    app:chipBackgroundColor="@color/checkbox_selector"
+                    app:chipStrokeWidth="0dp"
+                    app:checkedIconEnabled="false"
+                    app:chipIconEnabled="false"
+                    android:checkable="true"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipMartes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ma"
+                    app:chipBackgroundColor="@color/checkbox_selector"
+                    app:chipStrokeWidth="0dp"
+                    app:checkedIconEnabled="false"
+                    app:chipIconEnabled="false"
+                    android:checkable="true"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipMiercoles"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mi"
+                    app:chipBackgroundColor="@color/checkbox_selector"
+                    app:chipStrokeWidth="0dp"
+                    app:checkedIconEnabled="false"
+                    app:chipIconEnabled="false"
+                    android:checkable="true"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipJueves"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ju"
+                    app:chipBackgroundColor="@color/checkbox_selector"
+                    app:chipStrokeWidth="0dp"
+                    app:checkedIconEnabled="false"
+                    app:chipIconEnabled="false"
+                    android:checkable="true"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipViernes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Vi"
+                    app:chipBackgroundColor="@color/checkbox_selector"
+                    app:chipStrokeWidth="0dp"
+                    app:checkedIconEnabled="false"
+                    app:chipIconEnabled="false"
+                    android:checkable="true"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipSabado"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sá"
+                    app:chipBackgroundColor="@color/checkbox_selector"
+                    app:chipStrokeWidth="0dp"
+                    app:checkedIconEnabled="false"
+                    app:chipIconEnabled="false"
+                    android:checkable="true"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipDomingo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Do"
+                    app:chipBackgroundColor="@color/checkbox_selector"
+                    app:chipStrokeWidth="0dp"
+                    app:checkedIconEnabled="false"
+                    app:chipIconEnabled="false"
+                    android:checkable="true"/>
+            </com.google.android.material.chip.ChipGroup>
+
+        </LinearLayout>
 
     </ScrollView>
 
@@ -126,12 +250,11 @@
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
             android:background="@drawable/radius_button_principal_selector"
-            android:drawableStart="@drawable/baseline_add_circle_outline_24"
             android:drawablePadding="0dp"
             android:drawableTint="@color/white"
             android:minWidth="0dp"
             android:minHeight="0dp"
-            android:text="Crear horario de bloqueo"
+            android:text="Guardar"
             android:textAllCaps="false"
             android:textColor="@color/text_boton"
             android:textSize="15sp"

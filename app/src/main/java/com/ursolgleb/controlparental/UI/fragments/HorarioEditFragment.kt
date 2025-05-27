@@ -13,9 +13,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.adapters.marcarAppsPara.HorarioEditAdapter
+import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
 import com.ursolgleb.controlparental.databinding.FragmentHorarioEditBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.time.LocalTime
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -57,7 +59,14 @@ class HorarioEditFragment : Fragment(R.layout.fragment_horario_edit) {
         }
 
         binding.aggregarHorariosABoton.setOnClickListener {
-            val action = MainAdminFragmentDirections.actionGlobalHorarioCrearFragment()
+            val horario = HorarioEntity(
+                nombreDeHorario = "",
+                diasDeSemana = listOf(),
+                horaInicio = LocalTime.of(0, 0),
+                horaFin = LocalTime.of(0, 0),
+                isActive = true
+            )
+            val action = MainAdminFragmentDirections.actionGlobalHorarioCrearFragment(horario)
             findNavController().navigate(action)
         }
     }

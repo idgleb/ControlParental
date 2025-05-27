@@ -6,14 +6,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
+import com.google.android.material.chip.Chip
 import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
 import com.ursolgleb.controlparental.databinding.FragmentHorarioCrearBinding
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.LocalTime
+import java.util.Locale
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class HorarioCrearFragment : Fragment() {
+
+    private val args: HorarioCrearFragmentArgs by navArgs()   // import androidx.navigation.fragment.navArgs
+    private lateinit var horario: HorarioEntity
 
     private var _binding: FragmentHorarioCrearBinding? = null
     private val binding get() = _binding!!
@@ -32,13 +38,46 @@ class HorarioCrearFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        horario = args.horario
+
         initUI()
         initListeners()
         initObservers()
     }
 
     private fun initUI() {
-        // Inicializar UI si es necesario
+
+        if (horario.id != 0) {
+            binding.tvTituloDeFragment.text = "Editar horario de bloqueo"
+            binding.btnEliminarHorario.visibility = View.VISIBLE
+        }
+        binding.tpHoraInicio.setIs24HourView(true)
+        binding.tpHoraFin.setIs24HourView(true)
+
+        binding.etNombreHorario.setText(horario.nombreDeHorario)
+
+        val inicio = horario.horaInicio
+        binding.tpHoraInicio.apply {
+            hour = inicio.hour
+            minute = inicio.minute
+        }
+        val fin = horario.horaFin
+        binding.tpHoraFin.apply {
+            hour = fin.hour
+            minute = fin.minute
+        }
+
+
+        val diasActivos = horario.diasDeSemana.toSet()
+        binding.chipGroupDias.apply {
+            for (i in 0 until childCount) {
+                val chip = getChildAt(i) as Chip
+                val numeroDia = i + 1
+                chip.isChecked = numeroDia in diasActivos // marca si corresponde
+            }
+        }
+
+
     }
 
     private fun initListeners() {
@@ -46,11 +85,28 @@ class HorarioCrearFragment : Fragment() {
             findNavController().popBackStack()
         }
 
+        binding.btnEliminarHorario.setOnClickListener {
+            appDataRepository.deleteHorarioBD(horario)
+            findNavController().popBackStack()
+        }
+
         binding.crearHorarioBoton.setOnClickListener {
             val nombreHorario = binding.etNombreHorario.text.toString()
-            val horaInicioStr = binding.etHoraInicio.text.toString()
-            val horaFinStr = binding.etHoraFin.text.toString()
-            val diasDeSemana: List<Int> = listOf(1, 2, 3, 4, 5, 6, 7)
+
+            val horaInicio = binding.tpHoraInicio.hour
+            val minutoInicio = binding.tpHoraInicio.minute
+            val horaInicioStr = String.format(Locale.ROOT, "%02d:%02d", horaInicio, minutoInicio)
+
+            val horaFin = binding.tpHoraFin.hour
+            val minutoFin = binding.tpHoraFin.minute
+            val horaFinStr = String.format(Locale.ROOT, "%02d:%02d", horaFin, minutoFin)
+
+            val diasDeSemana: List<Int> =
+                binding.chipGroupDias.checkedChipIds.map { id ->
+                    val chipView = binding.chipGroupDias.findViewById<Chip>(id)
+                    binding.chipGroupDias.indexOfChild(chipView) + 1
+                }.sorted()
+
 
             if (nombreHorario.isEmpty() || horaInicioStr.isEmpty() || horaFinStr.isEmpty() || diasDeSemana.isEmpty()) {
                 return@setOnClickListener
@@ -64,13 +120,16 @@ class HorarioCrearFragment : Fragment() {
                     return@setOnClickListener
                 }
 
-                val horario = HorarioEntity(
+
+                horario = HorarioEntity(
+                    id = horario.id,
                     nombreDeHorario = nombreHorario,
                     diasDeSemana = diasDeSemana,
                     horaInicio = horaInicio,
                     horaFin = horaFin,
-                    isActive = true // Por defecto el horario está activo
+                    isActive = horario.isActive // Por defecto el horario está activo
                 )
+
                 appDataRepository.addHorarioBD(horario)
                 findNavController().popBackStack()
             } catch (e: Exception) {

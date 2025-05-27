@@ -17,7 +17,7 @@ class HorarioEditAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HorarioEditViewHolder {
         val binding =
             ItemHorarioEditBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return HorarioEditViewHolder(binding, fragmentManager)
+        return HorarioEditViewHolder(binding, fragmentManager, appDataRepository)
     }
 
     override fun onBindViewHolder(holder: HorarioEditViewHolder, position: Int) {
@@ -29,12 +29,6 @@ class HorarioEditAdapter(
 
 
     override fun getItemCount(): Int = horarios.size
-
-    //  Función para agregar una nueva app a la lista y actualizar la UI
-    fun addAppEadaptador(horarios: HorarioEntity) {
-        /*horarios.add(newApp)  // Agregar a la lista
-        notifyItemInserted(horarios.size - 1)  // Notificar el cambio a RecyclerView*/
-    }
 
     //  Función para actualizar toda la lista
     fun updateListEnAdaptador(newList: List<HorarioEntity>) {

@@ -2,7 +2,10 @@ package com.ursolgleb.controlparental.UI.fragments
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.TextView
+
 import android.view.View
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -13,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.data.apps.dao.AppDao
 import com.ursolgleb.controlparental.databinding.FragmentCardBinding
@@ -133,6 +137,18 @@ class CardFragment : Fragment(R.layout.fragment_card){
             findNavController().navigate(action)
         }
 
+        binding.cambiarLimiteBoton.setOnClickListener {
+            Snackbar
+                .make(
+                    /* parentView = */ binding.root,           // vista que contiene al Snackbar
+                    /* text       = */ "Está en desarrollo…",
+                    /* duration   = */ Snackbar.LENGTH_SHORT
+                )
+                .setAnchorView(binding.cambiarLimiteBoton)
+                .setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.mercadopago))
+                .setAction("OK") { /* cerrar o cualquier lógica */ }
+                .show()
+        }
 
     }
 

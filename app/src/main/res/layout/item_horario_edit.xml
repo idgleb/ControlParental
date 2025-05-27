@@ -19,7 +19,9 @@
             android:id="@+id/switchHorario"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"/>
+            app:trackTint="@color/track_tint"
+            app:thumbTint="@color/track_tint"
+            android:layout_marginEnd="25dp"/>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -31,8 +33,9 @@
                 android:id="@+id/tvHorarioName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="15dp"
+                android:textSize="18dp"
                 tools:text="Nombre App"
+                android:textStyle="bold"
                 android:padding="2dp"/>
 
             <TextView

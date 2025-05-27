@@ -46,6 +46,9 @@
         android:id="@+id/horarioCrearFragment"
         android:name="com.ursolgleb.controlparental.UI.fragments.HorarioCrearFragment"
         android:label="Blocked Apps" >
+        <argument
+            android:name="horario"
+            app:argType="com.ursolgleb.controlparental.data.apps.entities.HorarioEntity" />
     </fragment>
 
 

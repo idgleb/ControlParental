@@ -1,15 +1,18 @@
 package com.ursolgleb.controlparental.UI.adapters.marcarAppsPara
 
-import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
-import com.ursolgleb.controlparental.UI.fragments.BottomSheetActualizadaFragment
+import com.ursolgleb.controlparental.UI.fragments.MainAdminFragmentDirections
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
 import com.ursolgleb.controlparental.databinding.ItemHorarioEditBinding
+import androidx.navigation.findNavController
 
 class HorarioEditViewHolder(
     private val binding: ItemHorarioEditBinding,
-    private val fragmentManager: androidx.fragment.app.FragmentManager
+    private val fragmentManager: androidx.fragment.app.FragmentManager,
+    val appDataRepository: AppDataRepository,
 ) : RecyclerView.ViewHolder(binding.root) {
+
 
     fun bind(
         horario: HorarioEntity
@@ -30,13 +33,18 @@ class HorarioEditViewHolder(
             .mapNotNull { diasMap[it] }
             .joinToString(", ")
 
+        binding.switchHorario.isChecked = horario.isActive
+
+        binding.switchHorario.setOnCheckedChangeListener { _, isChecked ->
+            horario.isActive = isChecked
+            appDataRepository.addHorarioBD(horario)
+        }
 
         binding.itemHorarioEdit.setOnClickListener {
-            Log.w("BottomSheetFragment", "onClick")
-            val bottomSheetSheetMover = BottomSheetActualizadaFragment()
-            bottomSheetSheetMover.show(fragmentManager, "BottomSheetDialog")
-
+            val action = MainAdminFragmentDirections.actionGlobalHorarioCrearFragment(horario)
+            binding.root.findNavController().navigate(action)
         }
+
     }
 }
 
