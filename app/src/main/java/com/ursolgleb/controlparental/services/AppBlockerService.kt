@@ -12,34 +12,33 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class AppBlockerService : AccessibilityService() {
 
-    @Inject lateinit var appBlockHandler: AppBlockHandler //
-    @Inject lateinit var appDataRepository: AppDataRepository//
+    @Inject lateinit var appBlockHandler: AppBlockHandler
+    @Inject lateinit var appDataRepository: AppDataRepository
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    private var currentPkg: String? = null
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
-        currentPkg = event.packageName?.toString() ?: return
+        appDataRepository.currentPkg = event.packageName?.toString() ?: return
 
-        appBlockHandler.handle(event, currentPkg ?: return)
+        appBlockHandler.handle(event, appDataRepository.currentPkg ?: return)
 
         if (appBlockHandler.isBlocking) {
-            if (currentPkg != appDataRepository.defLauncher) {
-                appBlockHandler.log("🔴 Ejecutando GLOBAL_ACTION_HOME (x2)", currentPkg!!)
+            if (appDataRepository.currentPkg != appDataRepository.defLauncher) {
+                appBlockHandler.log("🔴 Ejecutando GLOBAL_ACTION_HOME (x2)", appDataRepository.currentPkg!!)
                 performGlobalAction(GLOBAL_ACTION_HOME)
                 coroutineScope.launch {
                     delay(500)
                     performGlobalAction(GLOBAL_ACTION_HOME)
                 }
             } else {
-                appBlockHandler.log("🟢 En launcher, reseteando bloqueo", currentPkg!!)
+                appBlockHandler.log("🟢 En launcher, reseteando bloqueo", appDataRepository.currentPkg!!)
                 performGlobalAction(GLOBAL_ACTION_HOME)
                 appBlockHandler.resetBlockFlag()
             }
         }
+
     }
 
     override fun onDestroy() {
@@ -48,6 +47,6 @@ class AppBlockerService : AccessibilityService() {
     }
 
     override fun onInterrupt() {
-        appBlockHandler.log("Servicio de accesibilidad interrumpido", currentPkg ?: "")
+        appBlockHandler.log("Servicio de accesibilidad interrumpido", appDataRepository.currentPkg ?: "")
     }
 }

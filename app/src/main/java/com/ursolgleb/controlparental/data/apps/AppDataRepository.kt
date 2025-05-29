@@ -30,19 +30,21 @@ import javax.inject.Singleton
 
 @Singleton
 class AppDataRepository @Inject constructor(
-    val appDatabase: AppDatabase,//
+    val appDatabase: AppDatabase,
     @ApplicationContext val context: Context,
-    private val newAppsProvider: NewAppsProvider,//
-    private val usageTimeProvider: UsageTimeProvider,//
-    private val usageStatsProvider: UsageStatsProvider//
+    private val newAppsProvider: NewAppsProvider,
+    private val usageTimeProvider: UsageTimeProvider,
+    private val usageStatsProvider: UsageStatsProvider
 ) {
+
+    var currentPkg: String? = null
 
     val defLauncher = Launcher.getDefaultLauncherPackageName(context)
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    private val appDao: AppDao = appDatabase.appDao()//
-    private val horarioDao: HorarioDao = appDatabase.horarioDao()//
+    private val appDao: AppDao = appDatabase.appDao()
+    private val horarioDao: HorarioDao = appDatabase.horarioDao()
 
     private var isInicieDeLecturaTermina = false
 
