@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental.data.apps
+package com.ursolgleb.controlparental.data.apps.providers
 
 import android.app.usage.UsageStatsManager
 import android.content.Context
@@ -9,7 +9,6 @@ import com.ursolgleb.controlparental.utils.Logger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.reactivecircus.cache4k.Cache
 import java.util.Calendar
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.DurationUnit

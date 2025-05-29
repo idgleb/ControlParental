@@ -1,21 +1,16 @@
 package com.ursolgleb.controlparental.data.apps
 
-import android.app.usage.UsageEvents
-import kotlinx.coroutines.runBlocking
-import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.DeadObjectException
 import com.ursolgleb.controlparental.data.apps.dao.AppDao
 import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
-import com.ursolgleb.controlparental.data.apps.dao.UsageEventDao
-import com.ursolgleb.controlparental.data.apps.dao.UsageStatsDao
 import com.ursolgleb.controlparental.data.apps.entities.AppEntity
 import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
-import com.ursolgleb.controlparental.data.apps.entities.UsageEventEntity
-import com.ursolgleb.controlparental.data.apps.entities.UsageStatsEntity
+import com.ursolgleb.controlparental.data.apps.providers.NewAppsProvider
+import com.ursolgleb.controlparental.data.apps.providers.UsageStatsProvider
+import com.ursolgleb.controlparental.data.apps.providers.UsageTimeProvider
 import com.ursolgleb.controlparental.utils.AppsFun
-import com.ursolgleb.controlparental.utils.Fun
 import com.ursolgleb.controlparental.utils.Launcher
 import com.ursolgleb.controlparental.utils.Logger
 import com.ursolgleb.controlparental.utils.StatusApp
@@ -29,9 +24,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.util.Calendar
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 

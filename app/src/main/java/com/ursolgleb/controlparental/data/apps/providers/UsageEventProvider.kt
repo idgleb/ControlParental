@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental.data.apps
+package com.ursolgleb.controlparental.data.apps.providers
 
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager

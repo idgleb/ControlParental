@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental.data.apps
+package com.ursolgleb.controlparental.data.apps.providers
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
@@ -9,7 +9,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.first
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.reactivecircus.cache4k.Cache
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.DurationUnit
