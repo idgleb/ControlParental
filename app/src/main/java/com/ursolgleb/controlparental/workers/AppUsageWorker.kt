@@ -19,7 +19,7 @@ class AppUsageWorker(
 
     override suspend fun doWork(): Result {
         Log.e("MioParametro", "Ejecutando doWork()...")
-        //  Recuperar `AppDataRepository` manualmente usando `EntryPoints`
+        
         val appDataRepository = EntryPointAccessors
             .fromApplication(applicationContext, AppUsageWorkerEntryPoint::class.java)
             .getAppDataRepository()
