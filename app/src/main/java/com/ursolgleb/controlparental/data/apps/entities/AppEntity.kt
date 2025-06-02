@@ -15,7 +15,5 @@ data class AppEntity(
     var usageTimeToday: Long,
     var timeStempUsageTimeToday: Long,
     var appStatus: String,
-
     var dailyUsageLimitMinutes: Int,
-
     )
