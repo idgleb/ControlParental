@@ -6,7 +6,6 @@ import com.ursolgleb.controlparental.data.apps.AppDatabase
 import com.ursolgleb.controlparental.data.apps.dao.AppDao
 import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
 import com.ursolgleb.controlparental.data.apps.dao.UsageEventDao
-import com.ursolgleb.controlparental.data.apps.dao.UsageLimitDao
 import com.ursolgleb.controlparental.data.apps.dao.UsageStatsDao
 import dagger.Module
 import dagger.Provides
@@ -48,8 +47,4 @@ object DatabaseModule {
     fun provideUsageStatsDao(db: AppDatabase): UsageStatsDao =
         db.usageStatsDao()
 
-    @Singleton
-    @Provides
-    fun provideUsageLimitDao(db: AppDatabase): UsageLimitDao =
-        db.usageLimitDao()
 }
