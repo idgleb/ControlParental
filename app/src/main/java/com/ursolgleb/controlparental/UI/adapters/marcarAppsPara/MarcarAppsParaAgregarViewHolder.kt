@@ -67,8 +67,8 @@ class MarcarAppsParaAgregarViewHolder(private val binding: ItemAppGrandeBinding)
                         null
                     )
                 val params = binding.viewStatusApp.layoutParams
-                params.width = Fun.dpToPx(33, binding.viewStatusApp)
-                params.height = Fun.dpToPx(70, binding.viewStatusApp)
+                params.width = Fun.dpToPx(20, binding.viewStatusApp)
+                params.height = Fun.dpToPx(20, binding.viewStatusApp)
                 binding.viewStatusApp.layoutParams = params
             }
 
