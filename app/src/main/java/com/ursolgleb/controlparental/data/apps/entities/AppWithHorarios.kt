@@ -12,7 +12,11 @@ data class AppWithHorarios(
     @Relation(
         parentColumn = "packageName",
         entityColumn = "id",
-        associateBy = Junction(AppHorarioCrossRef::class)
+        associateBy = Junction(
+            value = AppHorarioCrossRef::class,
+            parentColumn = "packageName",
+            entityColumn = "horarioId"
+        )
     )
     val horarios: List<HorarioEntity>
 )
