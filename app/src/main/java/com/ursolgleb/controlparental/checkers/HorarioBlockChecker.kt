@@ -1,11 +1,8 @@
 package com.ursolgleb.controlparental.checkers
 
 import android.util.Log
-import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.utils.Fun
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,6 +18,7 @@ class HorarioBlockChecker @Inject constructor(
         val currentTime = Fun.getHoraActual()
         val currentDay = Fun.getDiaDeLaSemana() // 1 = lunes, ..., 7 = domingo
         Log.w("HorarioBlockChecker", "currentDay $currentDay")
+        Log.w("HorarioBlockChecker", "currentTime $currentTime")
 
         // 3. Obtener todos los horarios y verificar si alguno está activo y coincide
         val horariodDeApp = appDataRepository.getHorariosPorPkg(packageName)
