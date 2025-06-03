@@ -23,12 +23,11 @@ class HorarioBlockChecker @Inject constructor(
         Log.w("HorarioBlockChecker", "currentDay $currentDay")
 
         // 3. Obtener todos los horarios y verificar si alguno está activo y coincide
-        val horarios = appDataRepository.horariosFlow.value
-
         val horariodDeApp = appDataRepository.getHorariosPorPkg(packageName)
 
+        Log.w("HorarioBlockChecker", "$horariodDeApp")
 
-        return horarios.any { horario ->
+        return horariodDeApp.any { horario ->
             horario.isActive && // Solo considerar horarios activos
                     currentDay in horario.diasDeSemana &&
                     Fun.estaDentroDelHorario(currentTime, horario.horaInicio, horario.horaFin)

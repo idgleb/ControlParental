@@ -442,14 +442,12 @@ class AppDataRepository @Inject constructor(
     }
 
     fun getHorariosPorPkg(packageName: String): List<HorarioEntity> {
-        var harorios: List<HorarioEntity> = listOf()
         return try {
-
-
-            harorios = getHorariosForAppFlow.horarios
-
-            Logger.info(context, "AppDataRepository", "Horarios por pkg $packageName: $harorios")
-            harorios
+            val horarios = appWithHorariosFlow.value
+                .firstOrNull { it.app.packageName == packageName }
+                ?.horarios ?: emptyList()
+            Logger.info(context, "AppDataRepository", "Horarios por pkg $packageName: $horarios")
+            horarios
         } catch (e: Exception) {
             Logger.error(
                 context,
@@ -457,7 +455,7 @@ class AppDataRepository @Inject constructor(
                 "Error getHorariosPorPkg $packageName: ${e.message}",
                 e
             )
-            harorios
+            emptyList()
         }
     }
 

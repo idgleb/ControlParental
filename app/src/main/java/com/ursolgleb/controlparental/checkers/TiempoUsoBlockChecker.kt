@@ -11,7 +11,11 @@ class TiempoUsoBlockChecker @Inject constructor(
 ) {
     fun shouldBlock(packageName: String): Boolean = runBlocking {
 
-        val app = appDataRepository.todosAppsFlow.value.firstOrNull { it.packageName == packageName } ?: return@runBlocking false
+        val app =
+            appDataRepository.todosAppsFlow.value.firstOrNull { it.packageName == packageName }
+                ?: return@runBlocking false
+
+        if (app.dailyUsageLimitMinutes == 0) return@runBlocking false
 
         val usadoMinutos = app.usageTimeToday / 60000
         return@runBlocking usadoMinutos >= app.dailyUsageLimitMinutes
