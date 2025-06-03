@@ -133,12 +133,15 @@ class AppDataRepository @Inject constructor(
                 .combine(horarioDao.getAllHorarios()) { apps, horarios ->
                     apps to horarios
                 }
-                .collect { (apps, horarios) ->
+                .combine(appHorarioDao.getAllAppsWithHorariosFlow()) { (apps, horarios), appWithHorarios ->
+                    Triple(apps, horarios, appWithHorarios)
+                }
+                .collect { (apps, horarios, appWithHorarios) ->
                     actualizarFlows(apps, horarios, appWithHorarios)
                     Logger.info(
                         context,
                         "AppDataRepository",
-                        "Flows actualizados en background: apps=${apps.size}, horarios=${horarios.size}"
+                        "Flows actualizados en background: apps=${apps.size}, horarios=${horarios.size}, appWithHorarios=${appWithHorarios.size}"
                     )
                 }
         }
@@ -441,10 +444,10 @@ class AppDataRepository @Inject constructor(
     fun getHorariosPorPkg(packageName: String): List<HorarioEntity> {
         var harorios: List<HorarioEntity> = listOf()
         return try {
-            val appWithHorarios: AppWithHorarios? = appHorarioDao.getHorariosForApp(packageName)
-            if (appWithHorarios != null) {
-                harorios = appWithHorarios.horarios
-            }
+
+
+            harorios = getHorariosForAppFlow.horarios
+
             Logger.info(context, "AppDataRepository", "Horarios por pkg $packageName: $harorios")
             harorios
         } catch (e: Exception) {
