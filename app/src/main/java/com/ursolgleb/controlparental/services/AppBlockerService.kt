@@ -31,6 +31,7 @@ class AppBlockerService : AccessibilityService() {
                 coroutineScope.launch {
                     delay(500)
                     performGlobalAction(GLOBAL_ACTION_HOME)
+                    showAuthenticationDialog()
                 }
             } else {
                 appBlockHandler.log("🟢 En launcher, reseteando bloqueo", appDataRepository.currentPkg!!)
@@ -39,6 +40,11 @@ class AppBlockerService : AccessibilityService() {
             }
         }
 
+    }
+
+    private fun showAuthenticationDialog() {
+        // Aquí debes implementar el diálogo de autenticación (PIN, biometría, etc)
+        // Solo permite que continúe si la autenticación es correcta
     }
 
     override fun onDestroy() {
