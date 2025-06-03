@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 interface HorarioDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertHorario(horario: HorarioEntity)
+    suspend fun insertHorario(horario: HorarioEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHorarios(horarios: List<HorarioEntity>)

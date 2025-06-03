@@ -27,6 +27,9 @@ import kotlinx.coroutines.sync.withLock
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.ursolgleb.controlparental.data.apps.dao.AppHorarioDao
+import com.ursolgleb.controlparental.data.apps.entities.AppHorarioCrossRef
+
 
 @Singleton
 class AppDataRepository @Inject constructor(
@@ -41,10 +44,11 @@ class AppDataRepository @Inject constructor(
 
     val defLauncher = Launcher.getDefaultLauncherPackageName(context)
 
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val appDao: AppDao = appDatabase.appDao()
     private val horarioDao: HorarioDao = appDatabase.horarioDao()
+    private val appHorarioDao: AppHorarioDao = appDatabase.appHorarioDao()
 
     private var isInicieDeLecturaTermina = false
 
@@ -250,6 +254,10 @@ class AppDataRepository @Inject constructor(
                         "AppDataRepository",
                         "addAppsASiempreBloqueadasBD agregando a BD..."
                     )
+
+                    val pkgs = appsBloqueadas.map { it.packageName }
+                    if (pkgs.isNotEmpty()) appHorarioDao.deleteCrossRefsByPackage(pkgs)
+
                     appDao.insertListaApps(appsBloqueadas)
                     mostrarBottomSheetActualizadaFlow.value = true
                 }
@@ -287,6 +295,10 @@ class AppDataRepository @Inject constructor(
                         "AppDataRepository",
                         "addAppsASiempreDisponiblesBD agregando a BD..."
                     )
+
+                    val pkgs = appsDispon.map { it.packageName }
+                    if (pkgs.isNotEmpty()) appHorarioDao.deleteCrossRefsByPackage(pkgs)
+
                     appDao.insertListaApps(appsDispon)
                     mostrarBottomSheetActualizadaFlow.value = true
                 }
@@ -321,6 +333,18 @@ class AppDataRepository @Inject constructor(
                 dbLock.withLock {
                     Logger.info(context, "AppDataRepository", "addAppsAHorarioBD agregando a BD...")
                     appDao.insertListaApps(appsHorario)
+
+                    val horariosExistentes = horarioDao.getAllHorarios().first()
+                    if (horariosExistentes.isNotEmpty()) {
+                        val refs = mutableListOf<AppHorarioCrossRef>()
+                        appsHorario.forEach { app ->
+                            horariosExistentes.forEach { horario ->
+                                refs.add(AppHorarioCrossRef(app.packageName, horario.id))
+                            }
+                        }
+                        if (refs.isNotEmpty()) appHorarioDao.insertCrossRefs(refs)
+                    }
+
                     mostrarBottomSheetActualizadaFlow.value = true
                 }
             } catch (e: Exception) {
@@ -350,16 +374,40 @@ class AppDataRepository @Inject constructor(
         return appDao.countByPackage(pkg) == 0
     }
 
-    fun addHorarioBD(horario: HorarioEntity) {
-        scope.launch {
+    suspend fun addHorarioBD(horario: HorarioEntity): Long {
+        return try {
+            val id = horarioDao.insertHorario(horario)
+            Logger.info(
+                context,
+                "AppDataRepository",
+                "Horario insertado en BD: $horario con ID: $id"
+            )
+            id
+        } catch (e: Exception) {
+            Logger.error(
+                context,
+                "AppDataRepository",
+                "Error al insertar horario en la BD: ${e.message}",
+                e
+            )
+            -1L // valor que indique error
+        }
+    }
+
+    suspend fun asignarHorarioApps(idHorario: Long, apps: List<AppEntity>) {
+        if (idHorario != -1L) {
+            val refs = mutableListOf<AppHorarioCrossRef>()
+            apps.forEach { app ->
+                refs.add(AppHorarioCrossRef(app.packageName, idHorario))
+            }
             try {
-                horarioDao.insertHorario(horario)
-                Logger.info(context, "AppDataRepository", "Horario insertado en BD: $horario")
+                appHorarioDao.insertCrossRefs(refs)
+                Logger.info(context, "AppDataRepository", "Horario $idHorario asignado...")
             } catch (e: Exception) {
                 Logger.error(
                     context,
                     "AppDataRepository",
-                    "Error al insertar horario en la BD: ${e.message}",
+                    "Error al asignado horario $idHorario...: ${e.message}",
                     e
                 )
             }
@@ -381,7 +429,6 @@ class AppDataRepository @Inject constructor(
             }
         }
     }
-
 
 
     fun updateTiempoDeUsoUnaApp(pkgName: String) = scope.launch {

@@ -6,6 +6,7 @@ import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
 import com.ursolgleb.controlparental.databinding.ItemHorarioEditBinding
 import androidx.navigation.findNavController
+import kotlinx.coroutines.launch
 
 class HorarioEditViewHolder(
     private val binding: ItemHorarioEditBinding,
@@ -37,7 +38,14 @@ class HorarioEditViewHolder(
 
         binding.switchHorario.setOnCheckedChangeListener { _, isChecked ->
             horario.isActive = isChecked
-            appDataRepository.addHorarioBD(horario)
+
+            appDataRepository.scope.launch {
+                val idHorario = appDataRepository.addHorarioBD(horario)
+                appDataRepository.horarioAppsFlow.collect { appList ->
+                    appDataRepository.asignarHorarioApps(idHorario, appList)
+                }
+            }
+
         }
 
         binding.itemHorarioEdit.setOnClickListener {

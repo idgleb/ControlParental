@@ -12,7 +12,7 @@ import java.time.LocalTime
 @Entity(tableName = "horarios")
 @TypeConverters(Converters::class)
 data class HorarioEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
     var nombreDeHorario: String,
     var diasDeSemana: List<Int>, // 1 = Lunes, ..., 7 = Domingo
     var horaInicio: LocalTime,   // Ej: LocalTime.of(8, 0) para 08:00

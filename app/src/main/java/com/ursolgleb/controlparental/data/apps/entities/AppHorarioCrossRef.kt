@@ -23,5 +23,5 @@ import androidx.room.ForeignKey
 )
 data class AppHorarioCrossRef(
     val packageName: String,
-    val horarioId: Int
+    val horarioId: Long
 )

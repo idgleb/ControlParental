@@ -8,9 +8,14 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.chip.Chip
+import com.ursolgleb.controlparental.data.apps.entities.AppEntity
 import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
 import com.ursolgleb.controlparental.databinding.FragmentHorarioCrearBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.util.Locale
 import javax.inject.Inject
@@ -18,7 +23,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class HorarioCrearFragment : Fragment() {
 
-    private val args: HorarioCrearFragmentArgs by navArgs()   // import androidx.navigation.fragment.navArgs
+    private val args: HorarioCrearFragmentArgs by navArgs()
     private lateinit var horario: HorarioEntity
 
     private var _binding: FragmentHorarioCrearBinding? = null
@@ -47,7 +52,7 @@ class HorarioCrearFragment : Fragment() {
 
     private fun initUI() {
 
-        if (horario.id != 0) {
+        if (horario.id != 0L) {
             binding.tvTituloDeFragment.text = "Editar horario de bloqueo"
             binding.btnEliminarHorario.visibility = View.VISIBLE
         }
@@ -107,7 +112,6 @@ class HorarioCrearFragment : Fragment() {
                     binding.chipGroupDias.indexOfChild(chipView) + 1
                 }.sorted()
 
-
             if (nombreHorario.isEmpty() || horaInicioStr.isEmpty() || horaFinStr.isEmpty() || diasDeSemana.isEmpty()) {
                 return@setOnClickListener
             }
@@ -127,10 +131,16 @@ class HorarioCrearFragment : Fragment() {
                     diasDeSemana = diasDeSemana,
                     horaInicio = horaInicio,
                     horaFin = horaFin,
-                    isActive = horario.isActive // Por defecto el horario está activo
+                    isActive = horario.isActive
                 )
 
-                appDataRepository.addHorarioBD(horario)
+                appDataRepository.scope.launch {
+                    val idHorario = appDataRepository.addHorarioBD(horario)
+                    appDataRepository.horarioAppsFlow.collect { appList ->
+                        appDataRepository.asignarHorarioApps(idHorario, appList)
+                    }
+                }
+
                 findNavController().popBackStack()
             } catch (e: Exception) {
                 // Manejar error de formato de hora

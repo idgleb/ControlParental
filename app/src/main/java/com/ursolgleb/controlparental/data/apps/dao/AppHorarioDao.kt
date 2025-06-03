@@ -14,11 +14,19 @@ import com.ursolgleb.controlparental.data.apps.entities.HorarioWithApps
 
 @Dao
 interface AppHorarioDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertCrossRef(ref: AppHorarioCrossRef)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertCrossRefs(refs: List<AppHorarioCrossRef>)
+
 
     @Delete
     suspend fun deleteCrossRef(ref: AppHorarioCrossRef)
+
+    @Query("DELETE FROM app_horario_cross_ref WHERE packageName IN (:packageNames)")
+    suspend fun deleteCrossRefsByPackage(packageNames: List<String>)
+
 
     @Transaction
     @Query("SELECT * FROM apps WHERE packageName = :packageName")

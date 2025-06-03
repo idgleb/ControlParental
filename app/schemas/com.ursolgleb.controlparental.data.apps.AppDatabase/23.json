@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 21,
-    "identityHash": "5e5d95a99ce9aa68437be3f4b5e3cc84",
+    "version": 23,
+    "identityHash": "bfe7bc5e0fcf8cc0bd9780579b856d11",
     "entities": [
       {
         "tableName": "apps",
@@ -130,7 +130,7 @@
       },
       {
         "tableName": "app_horario_cross_ref",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`packageName` TEXT NOT NULL, `horarioId` INTEGER NOT NULL, PRIMARY KEY(`packageName`, `horarioId`), FOREIGN KEY(`packageName`) REFERENCES `apps`(`packageName`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`horarioId`) REFERENCES `horarios`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`packageName` TEXT NOT NULL, `horarioId` INTEGER NOT NULL, PRIMARY KEY(`packageName`, `horarioId`), FOREIGN KEY(`packageName`) REFERENCES `apps`(`packageName`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`horarioId`) REFERENCES `horarios`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "packageName",
@@ -167,7 +167,7 @@
           },
           {
             "table": "horarios",
-            "onDelete": "NO ACTION",
+            "onDelete": "SET NULL",
             "onUpdate": "NO ACTION",
             "columns": [
               "horarioId"
@@ -258,7 +258,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5e5d95a99ce9aa68437be3f4b5e3cc84')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bfe7bc5e0fcf8cc0bd9780579b856d11')"
     ]
   }
 }
