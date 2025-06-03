@@ -5,6 +5,7 @@ import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.utils.Fun
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,10 +24,14 @@ class HorarioBlockChecker @Inject constructor(
 
         // 3. Obtener todos los horarios y verificar si alguno está activo y coincide
         val horarios = appDataRepository.horariosFlow.value
+
+        val horariodDeApp = appDataRepository.getHorariosPorPkg(packageName)
+
+
         return horarios.any { horario ->
             horario.isActive && // Solo considerar horarios activos
-            currentDay in horario.diasDeSemana && 
-            Fun.estaDentroDelHorario(currentTime, horario.horaInicio, horario.horaFin)
+                    currentDay in horario.diasDeSemana &&
+                    Fun.estaDentroDelHorario(currentTime, horario.horaInicio, horario.horaFin)
         }
     }
 }

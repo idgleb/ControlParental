@@ -11,6 +11,7 @@ import com.ursolgleb.controlparental.data.apps.entities.AppHorarioCrossRef
 import com.ursolgleb.controlparental.data.apps.entities.AppWithHorarios
 import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
 import com.ursolgleb.controlparental.data.apps.entities.HorarioWithApps
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AppHorarioDao {
@@ -20,7 +21,6 @@ interface AppHorarioDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertCrossRefs(refs: List<AppHorarioCrossRef>)
 
-
     @Delete
     suspend fun deleteCrossRef(ref: AppHorarioCrossRef)
 
@@ -28,11 +28,23 @@ interface AppHorarioDao {
     suspend fun deleteCrossRefsByPackage(packageNames: List<String>)
 
 
+
     @Transaction
     @Query("SELECT * FROM apps WHERE packageName = :packageName")
-    suspend fun getHorariosForApp(packageName: String): AppWithHorarios?
+    fun getHorariosForAppFlow(packageName: String): Flow<AppWithHorarios?>
 
     @Transaction
     @Query("SELECT * FROM horarios WHERE id = :horarioId")
-    suspend fun getAppsForHorario(horarioId: Int): HorarioWithApps?
+    fun getAppsForHorarioFlow(horarioId: Int): Flow<HorarioWithApps?>
+
+
+    // Función para obtener todos los apps con sus horarios
+    @Transaction
+    @Query("SELECT * FROM apps")
+    fun getAllAppsWithHorariosFlow(): Flow<List<AppWithHorarios>>
+
+    // Función para obtener todos los horarios con sus apps
+    @Transaction
+    @Query("SELECT * FROM horarios")
+    fun getAllHorariosWithAppsFlow(): Flow<List<HorarioWithApps>>
 }
