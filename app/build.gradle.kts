@@ -103,7 +103,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.fragment.ktx)
-    implementation (libs.androidx.work.runtime.ktx)
 
 
 
@@ -145,6 +144,14 @@ dependencies {
 
     implementation (libs.sqlDelightAndroidDriver)
     implementation (libs.sqlDelightCoroutines)
+
+    implementation("androidx.biometric:biometric:1.1.0")
+
+
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+
+
 
 
 }

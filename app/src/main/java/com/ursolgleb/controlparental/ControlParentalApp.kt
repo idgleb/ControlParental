@@ -10,6 +10,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.validadors.PinValidator
 import com.ursolgleb.controlparental.workers.AppUsageWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +20,8 @@ import kotlinx.coroutines.cancel
 @HiltAndroidApp
 class ControlParentalApp : Application(), Configuration.Provider {
     // proba Gleb
+
+    @Inject lateinit var pinValidator: PinValidator
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
@@ -39,6 +42,10 @@ class ControlParentalApp : Application(), Configuration.Provider {
         appDataRepository.inicieDelecturaDeBD()
         appDataRepository.updateBDApps()
         startWorker(this)
+
+        pinValidator.savePin("1234")   // ejecuta al confirmar el PIN
+
+
     }
 
     fun startWorker(context: Context) {

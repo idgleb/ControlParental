@@ -1,4 +1,5 @@
 [versions]
+securityCrypto = "1.1.0-beta01"
 sqlDelight = "1.5.5"
 agp = "8.9.1"
 appcompatV7 = "28.0.0"
@@ -38,6 +39,7 @@ workRuntimeKtxVersion = "2.8.1"
 hiltWork = "1.2.0"
 
 [libraries]
+androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
 sqlDelightGradle = { module = "com.squareup.sqldelight:gradle-plugin", version.ref = "sqlDelight" }
 sqlDelightAndroidDriver = { module = "com.squareup.sqldelight:android-driver", version.ref = "sqlDelight" }
 sqlDelightCoroutines = { module = "com.squareup.sqldelight:coroutines-extensions", version.ref = "sqlDelight" }

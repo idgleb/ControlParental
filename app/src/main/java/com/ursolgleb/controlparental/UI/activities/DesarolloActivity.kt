@@ -50,10 +50,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import androidx.core.net.toUri
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ursolgleb.controlparental.utils.Fun
+import com.ursolgleb.controlparental.validadors.PinValidator
 
 @AndroidEntryPoint
 class DesarolloActivity : AppCompatActivity() {
+
+    @Inject lateinit var pinValidator: PinValidator
 
     @Inject
     lateinit var logDataRepository: LogDataRepository
@@ -88,6 +92,16 @@ class DesarolloActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
+        if (!pinValidator.isPinCorrect("dummy")) {   // devuelve false si no hay hash
+            MaterialAlertDialogBuilder(this)
+                .setMessage("Aún no has establecido un PIN de acceso. Hazlo ahora.")
+                .setPositiveButton("Entendido") { _, _ -> /* el usuario verá la pantalla y lo guardará */ }
+                .setCancelable(false)
+                .show()
+        }
+
+
         fileWatcher.startWatching()
         registrarRecivirUpdateApssBloqueadas()
         Log.w("MainActivityListaApps", "registerReceiver de onResume")
