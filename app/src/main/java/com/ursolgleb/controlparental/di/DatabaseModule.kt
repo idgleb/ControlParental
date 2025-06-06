@@ -1,6 +1,9 @@
 package com.ursolgleb.controlparental.di
 
 import android.content.Context
+import android.os.Build
+import android.os.UserManager
+import androidx.core.content.ContextCompat
 import androidx.room.Room
 import com.ursolgleb.controlparental.data.apps.AppDatabase
 import com.ursolgleb.controlparental.data.apps.dao.AppDao
@@ -21,8 +24,19 @@ object DatabaseModule {
     @Singleton
     @Provides
     fun provideAppDatabase(@ApplicationContext appContext: Context): AppDatabase {
+        var contextForDb = appContext
+        val userManager = appContext.getSystemService(UserManager::class.java)
+        if (userManager != null && !userManager.isUserUnlocked && !appContext.isDeviceProtectedStorage) {
+            val deviceContext = appContext.createDeviceProtectedStorageContext()
+            deviceContext.getDatabasePath("app_database.db").parentFile?.mkdirs()
+            ContextCompat.moveDatabaseFrom(appContext, deviceContext, "app_database.db")
+            contextForDb = deviceContext
+        }
+
+        // Use a device protected context when the user is locked so the service can access
+        // the database at boot time.
         return Room.databaseBuilder(
-            appContext,
+            contextForDb,
             AppDatabase::class.java,
             "app_database.db"
         ).fallbackToDestructiveMigration().build()
