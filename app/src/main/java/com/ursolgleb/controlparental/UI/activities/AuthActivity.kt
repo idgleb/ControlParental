@@ -60,6 +60,7 @@ class AuthActivity : AppCompatActivity() {
     private fun showPinFallback() {
 
         if (pinDialog?.isShowing == true) return   // ya hay un diálogo activo
+        if (isFinishing || isDestroyed) return     // evita BadTokenException
 
 
         val input = EditText(this).apply {
