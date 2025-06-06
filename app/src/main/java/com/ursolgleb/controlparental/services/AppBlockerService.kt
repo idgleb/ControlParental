@@ -28,9 +28,12 @@ class AppBlockerService : AccessibilityService() {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    private var isAuthShowing = false
+
     // 1. declarar
     private val authReceiver = object : BroadcastReceiver() {
         override fun onReceive(c: Context?, i: Intent?) {
+            isAuthShowing = false
             if (i?.getBooleanExtra("ok", false) == true) {
                 appBlockHandler.resetBlockFlag()   // desbloquea
             }
@@ -73,11 +76,15 @@ class AppBlockerService : AccessibilityService() {
     }
 
     private fun showAuthenticationDialog() {
+        if (isAuthShowing) return
+        isAuthShowing = true
         Handler(Looper.getMainLooper()).post {
             startActivity(
                 Intent(this, AuthActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
-                            Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    )
                 }
             )
         }
@@ -88,6 +95,7 @@ class AppBlockerService : AccessibilityService() {
         LocalBroadcastManager.getInstance(this)
             .unregisterReceiver(authReceiver)
         coroutineScope.cancel()
+        isAuthShowing = false
         super.onDestroy()
     }
 
