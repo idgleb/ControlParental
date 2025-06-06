@@ -117,6 +117,20 @@ Otra base de datos solo para logs:
   <img src="https://github.com/user-attachments/assets/03c43144-2d6d-4c7f-addc-19994982c2a2" style="width: 50%;" />
 </div>
 
+## 🔑 Configuración de la firma
+
+Para compilar la aplicación con firma de lanzamiento necesitás un archivo de
+keystore ubicado en `app/keyControl.jks` que **no está incluido en el repositorio**.
+Las contraseñas se obtienen desde variables de entorno o desde tu archivo
+`gradle.properties` local:
+
+```properties
+STORE_PASSWORD=tuStorePassword
+KEY_PASSWORD=tuKeyPassword
+```
+
+También podés exportar `STORE_PASSWORD` y `KEY_PASSWORD` antes de ejecutar
+`./gradlew assembleRelease`.
 
 ---
 
