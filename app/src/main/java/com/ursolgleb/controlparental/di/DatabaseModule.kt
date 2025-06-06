@@ -29,7 +29,7 @@ object DatabaseModule {
         if (userManager != null && !userManager.isUserUnlocked && !appContext.isDeviceProtectedStorage) {
             val deviceContext = appContext.createDeviceProtectedStorageContext()
             deviceContext.getDatabasePath("app_database.db").parentFile?.mkdirs()
-            ContextCompat.moveDatabaseFrom(appContext, deviceContext, "app_database.db")
+            deviceContext.moveDatabaseFrom(appContext, "app_database.db")
             contextForDb = deviceContext
         }
 
