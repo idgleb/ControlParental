@@ -76,8 +76,8 @@ class AuthActivity : AppCompatActivity() {
                 if (pinValidator.isPinCorrect(input.text.toString())) {
                     sendResultAndFinish(true)
                 } else {
-                    Toast.makeText(this, "PIN incorrecto", Toast.LENGTH_SHORT).show()
-                    showPinFallback()                 // vuelve a mostrarlo
+                    //Toast.makeText(this, "PIN incorrecto", Toast.LENGTH_SHORT).show()
+                    //showPinFallback()                 // vuelve a mostrarlo
                 }
             }
             .setNegativeButton("Cancelar") { _, _ ->

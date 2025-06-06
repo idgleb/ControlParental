@@ -23,17 +23,16 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class AppBlockerService : AccessibilityService() {
 
-    @Inject lateinit var appBlockHandler: AppBlockHandler
-    @Inject lateinit var appDataRepository: AppDataRepository
+    @Inject
+    lateinit var appBlockHandler: AppBlockHandler
+    @Inject
+    lateinit var appDataRepository: AppDataRepository
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    private var isAuthShowing = false
 
     // 1. declarar
     private val authReceiver = object : BroadcastReceiver() {
         override fun onReceive(c: Context?, i: Intent?) {
-            isAuthShowing = false
             if (i?.getBooleanExtra("ok", false) == true) {
                 appBlockHandler.resetBlockFlag()   // desbloquea
             }
@@ -59,25 +58,40 @@ class AppBlockerService : AccessibilityService() {
 
         if (appBlockHandler.isBlocking) {
             if (appDataRepository.currentPkg != appDataRepository.defLauncher) {
-                appBlockHandler.log("🔴 Ejecutando GLOBAL_ACTION_HOME (x2)", appDataRepository.currentPkg!!)
-                //performGlobalAction(GLOBAL_ACTION_HOME)
+                appBlockHandler.log(
+                    "🔴 Ejecutando GLOBAL_ACTION_HOME (x2)",
+                    appDataRepository.currentPkg!!
+                )
+                performGlobalAction(GLOBAL_ACTION_HOME)
+
                 coroutineScope.launch {
                     delay(500)
-                    //performGlobalAction(GLOBAL_ACTION_HOME)
+                    if (appDataRepository.currentPkg != appDataRepository.defLauncher) {
+                        performGlobalAction(GLOBAL_ACTION_HOME)
+                    }
+                }
+
+            } else {
+                appBlockHandler.log(
+                    "🟢 En launcher, reseteando bloqueo",
+                    appDataRepository.currentPkg!!
+                )
+                //performGlobalAction(GLOBAL_ACTION_HOME)
+                appBlockHandler.resetBlockFlag()
+                coroutineScope.launch {
+                    delay(500)
+                    appBlockHandler.log(
+                        "🏁 showAuthenticationDialog",
+                        appDataRepository.currentPkg!!
+                    )
                     showAuthenticationDialog()
                 }
-            } else {
-                appBlockHandler.log("🟢 En launcher, reseteando bloqueo", appDataRepository.currentPkg!!)
-                performGlobalAction(GLOBAL_ACTION_HOME)
-                appBlockHandler.resetBlockFlag()
             }
         }
 
     }
 
     private fun showAuthenticationDialog() {
-        if (isAuthShowing) return
-        isAuthShowing = true
         Handler(Looper.getMainLooper()).post {
             startActivity(
                 Intent(this, AuthActivity::class.java).apply {
@@ -95,11 +109,13 @@ class AppBlockerService : AccessibilityService() {
         LocalBroadcastManager.getInstance(this)
             .unregisterReceiver(authReceiver)
         coroutineScope.cancel()
-        isAuthShowing = false
         super.onDestroy()
     }
 
     override fun onInterrupt() {
-        appBlockHandler.log("Servicio de accesibilidad interrumpido", appDataRepository.currentPkg ?: "")
+        appBlockHandler.log(
+            "Servicio de accesibilidad interrumpido",
+            appDataRepository.currentPkg ?: ""
+        )
     }
 }

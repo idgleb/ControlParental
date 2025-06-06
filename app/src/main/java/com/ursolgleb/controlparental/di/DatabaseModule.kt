@@ -32,7 +32,6 @@ object DatabaseModule {
             deviceContext.moveDatabaseFrom(appContext, "app_database.db")
             contextForDb = deviceContext
         }
-
         // Use a device protected context when the user is locked so the service can access
         // the database at boot time.
         return Room.databaseBuilder(
