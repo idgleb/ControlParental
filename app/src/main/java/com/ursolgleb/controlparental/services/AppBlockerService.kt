@@ -31,10 +31,9 @@ class AppBlockerService : AccessibilityService() {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
 
-        Log.d("AppBlockerService333", "onAccessibilityEvent: ${event?.eventType}, ${event?.packageName}")
+        Log.d("AppBlockerService333", "onAccessibilityEvent: ${event?.eventType}, ${event?.text}")
 
         if (session.isSessionActive()) return
 
@@ -43,9 +42,9 @@ class AppBlockerService : AccessibilityService() {
         appDataRepository.currentPkg = event.packageName?.toString() ?: return
 
         // 1. NO bloquees si estás dentro de tu AuthActivity
-        if (appDataRepository.currentPkg == this.packageName) return
+        //if (appDataRepository.currentPkg == this.packageName) return
 
-        appBlockHandler.handle(event, appDataRepository.currentPkg ?: return)
+        appBlockHandler.handle(event)
 
         if (appBlockHandler.isBlocking) {
             appBlockHandler.log(

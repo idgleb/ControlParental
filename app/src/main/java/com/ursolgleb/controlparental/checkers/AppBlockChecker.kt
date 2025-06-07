@@ -1,5 +1,6 @@
 package com.ursolgleb.controlparental.checkers
 
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.utils.AppsFun
@@ -22,6 +23,7 @@ class AppBlockChecker @Inject constructor(
 
     fun shouldBlockByText(event: AccessibilityEvent, palabrasBloqueadas: List<String>): Boolean {
         val text = event.text.joinToString(", ")
+        Log.w("shouldBlockByText", text)
         return palabrasBloqueadas.any { palabra -> text.contains(palabra, ignoreCase = true) }
     }
 }

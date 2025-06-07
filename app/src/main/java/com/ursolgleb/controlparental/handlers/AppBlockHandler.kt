@@ -1,11 +1,13 @@
 package com.ursolgleb.controlparental.handlers
 
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.data.log.LogDataRepository
 import com.ursolgleb.controlparental.checkers.AppBlockChecker
 import com.ursolgleb.controlparental.checkers.HorarioBlockChecker
 import com.ursolgleb.controlparental.checkers.TiempoUsoBlockChecker
+import com.ursolgleb.controlparental.detectors.PropioAppDetector
 import com.ursolgleb.controlparental.detectors.SettingsClickDetector
 import com.ursolgleb.controlparental.detectors.SubSettingsDetector
 import com.ursolgleb.controlparental.utils.Logger
@@ -25,7 +27,8 @@ class AppBlockHandler @Inject constructor(
     private val horarioBlockChecker: HorarioBlockChecker,
     private val tiempoUsoBlockChecker: TiempoUsoBlockChecker,
     private val settingsClickDetector: SettingsClickDetector,
-    private val subSettingsDetector: SubSettingsDetector
+    private val subSettingsDetector: SubSettingsDetector,
+    private val propioAppDetector: PropioAppDetector
 ) {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -34,6 +37,7 @@ class AppBlockHandler @Inject constructor(
     private val lastEventTime = mutableMapOf<String, Long>()
 
     private var isBlockerEnabled = false
+
     val isBlocking: Boolean
         get() = isBlockerEnabled
 
@@ -41,19 +45,23 @@ class AppBlockHandler @Inject constructor(
         isBlockerEnabled = false
     }
 
-    fun handle(event: AccessibilityEvent, packageName: String) {
+    fun handle(event: AccessibilityEvent) {
 
-        if (packageName != appDataRepository.defLauncher) {
-            handleAppBlockedDetection(packageName)
-            launchJobBlockNuevaApp(event, packageName)
-            handleClickEvents(event, packageName)
+        //if (event.packageName != appDataRepository.defLauncher)
+        if (true) {
+            handleAppBlockedDetection(event)
+            launchJobBlockNuevaApp(event)
+            handleClickEvents(event)
             handleSubSettingsDetection(event)
+            handlePropioAppDetection(event)
+
         }
 
-        launchJobRenovarTiempo(packageName, event)
+        launchJobRenovarTiempo(event)
     }
 
-    private fun handleAppBlockedDetection(pkg: String) {
+    private fun handleAppBlockedDetection(event: AccessibilityEvent) {
+        val pkg = event.packageName?.toString() ?: return
         try {
             val app = appDataRepository.todosAppsFlow.value.firstOrNull { it.packageName == pkg }
             if (app == null) return
@@ -77,7 +85,8 @@ class AppBlockHandler @Inject constructor(
         }
     }
 
-    private fun handleClickEvents(event: AccessibilityEvent, pkg: String) {
+    private fun handleClickEvents(event: AccessibilityEvent) {
+        val pkg = event.packageName?.toString() ?: return
         if (!isBlockerEnabled && settingsClickDetector.shouldBlock(event, pkg)) {
             isBlockerEnabled = true
             logBlocked("❌ Bloqueada por texto (settings)", pkg)
@@ -92,7 +101,18 @@ class AppBlockHandler @Inject constructor(
         }
     }
 
-    private fun launchJobRenovarTiempo(pkg: String, event: AccessibilityEvent) {
+    private fun handlePropioAppDetection(event: AccessibilityEvent) {
+        val pkg = event.packageName?.toString() ?: return
+        if (!isBlockerEnabled && propioAppDetector.shouldBlock(event)) {
+
+            isBlockerEnabled = true
+            logBlocked("❌ Bloqueada por texto (PropioApp)", pkg)
+        }
+    }
+
+
+    private fun launchJobRenovarTiempo(event: AccessibilityEvent) {
+        val pkg = event.packageName?.toString() ?: return
         if (isBlockerEnabled || event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
 
         val now = System.currentTimeMillis()
@@ -113,7 +133,8 @@ class AppBlockHandler @Inject constructor(
         }
     }
 
-    private fun launchJobBlockNuevaApp(event: AccessibilityEvent, pkg: String) {
+    private fun launchJobBlockNuevaApp(event: AccessibilityEvent) {
+        val pkg = event.packageName?.toString() ?: return
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
 
         coroutineScope.launch {

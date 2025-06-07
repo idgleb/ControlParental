@@ -23,6 +23,8 @@ class AuthActivity : AppCompatActivity() {
 
     @Inject lateinit var pinValidator: PinValidator
 
+    @Inject lateinit var appDataRepository: AppDataRepository
+
     @Inject lateinit var session: Session
 
     private var pinDialog: AlertDialog? = null      // ahora coincide con el builder
