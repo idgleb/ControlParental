@@ -9,10 +9,11 @@ import javax.inject.Singleton
 class SubSettingsDetector @Inject constructor(
     private val appBlockChecker: AppBlockChecker
 ) {
-    private val blockedWords = listOf("app")
+    private val blockedWords = listOf("app", "aplicac", ?nombre de esta app? )
 
     fun shouldBlock(event: AccessibilityEvent): Boolean {
-        return event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+        return (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
+                event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) &&
                 event.className?.toString() == "com.android.settings.SubSettings" &&
                 appBlockChecker.shouldBlockByText(event, blockedWords)
     }

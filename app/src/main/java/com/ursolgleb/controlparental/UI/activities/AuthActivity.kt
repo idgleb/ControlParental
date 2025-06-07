@@ -12,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.utils.Session
 import com.ursolgleb.controlparental.validadors.PinValidator
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -21,39 +23,14 @@ class AuthActivity : AppCompatActivity() {
 
     @Inject lateinit var pinValidator: PinValidator
 
+    @Inject lateinit var session: Session
+
     private var pinDialog: AlertDialog? = null      // ahora coincide con el builder
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setFinishOnTouchOutside(false)          // evita cerrar tocando fuera
-        launchBiometricPrompt()
-    }
-
-    /** ---------- BIOMETRÍA ---------- **/
-    private fun launchBiometricPrompt() {
-        val executor = ContextCompat.getMainExecutor(this)
-        val prompt = BiometricPrompt(this, executor,
-            object : BiometricPrompt.AuthenticationCallback() {
-
-                override fun onAuthenticationSucceeded(r: BiometricPrompt.AuthenticationResult) {
-                    sendResultAndFinish(true)
-                }
-
-                override fun onAuthenticationError(code: Int, msg: CharSequence) {
-                    // -10 cancel, -13 no enrolado → fallback a PIN
-                    showPinFallback()
-                }
-            })
-
-        val info = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Control parental")
-            .setSubtitle("Identifícate para continuar")
-            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
-            .setNegativeButtonText("Usar PIN")          // <- NUEVO
-            .build()
-
-
-        prompt.authenticate(info)
+        showPinFallback()
     }
 
     /* ---------- PIN fallback ---------- */
@@ -69,31 +46,26 @@ class AuthActivity : AppCompatActivity() {
         }
 
         pinDialog = MaterialAlertDialogBuilder(this)
-            .setTitle("Introduce tu PIN")
+            .setTitle("PIN")
             .setCancelable(false)
             .setView(input)
             .setPositiveButton("Aceptar") { _, _ ->
                 if (pinValidator.isPinCorrect(input.text.toString())) {
-                    sendResultAndFinish(true)
+                    session.iniciarSesion()
+                    finish()
                 } else {
-                    //Toast.makeText(this, "PIN incorrecto", Toast.LENGTH_SHORT).show()
-                    //showPinFallback()                 // vuelve a mostrarlo
+                    Toast.makeText(this, "PIN incorrecto", Toast.LENGTH_SHORT).show()
+                    session.cerrarSesion()
+                    finish()
                 }
             }
             .setNegativeButton("Cancelar") { _, _ ->
-                sendResultAndFinish(false)
+                session.cerrarSesion()
+                finish()
             }
             .show()
     }
 
-    /* ---------- Devuelve el resultado ---------- */
-    private fun sendResultAndFinish(ok: Boolean) {
-        // cierra diálogo si sigue abierto antes de terminar
-        pinDialog?.dismiss()
-        LocalBroadcastManager.getInstance(this)
-            .sendBroadcast(Intent("AUTH_RESULT").putExtra("ok", ok))
-        finish()
-    }
 
     /* ---------- Limpieza ---------- */
     override fun onDestroy() {

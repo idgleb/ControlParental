@@ -42,7 +42,6 @@ class AppBlockHandler @Inject constructor(
     }
 
     fun handle(event: AccessibilityEvent, packageName: String) {
-        if (packageName == "com.ursolgleb.controlparental") return
 
         if (packageName != appDataRepository.defLauncher) {
             handleAppBlockedDetection(packageName)
