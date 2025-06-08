@@ -30,13 +30,11 @@ class SyncWorker(
         val localRepo = entryPoint.getAppDataRepository()
         val remoteRepo = entryPoint.getRemoteDataRepository()
 
-        return try {
+        try {
             val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
             remoteRepo.pushApps(apps)
-
             val horarios = localRepo.horariosFlow.value.map { it.toDto() }
             remoteRepo.pushHorarios(horarios)
-
             val remoteApps = remoteRepo.fetchApps()
             if (remoteApps.isNotEmpty()) {
                 val icon = localRepo.todosAppsFlow.value.firstOrNull()?.appIcon
@@ -44,17 +42,14 @@ class SyncWorker(
                 val entities = remoteApps.map { it.toEntity(icon) }
                 localRepo.insertAppsEntidades(entities)
             }
-
             val remoteHorarios = remoteRepo.fetchHorarios()
             if (remoteHorarios.isNotEmpty()) {
                 remoteHorarios.map { it.toEntity() }.forEach { horario ->
                     localRepo.addHorarioBD(horario)
                 }
             }
-            Result.success()
         } catch (e: Exception) {
             Log.e("SyncWorker", "Error $e")
-            Result.retry()
         }
 
         //  Reprogramar el worker
