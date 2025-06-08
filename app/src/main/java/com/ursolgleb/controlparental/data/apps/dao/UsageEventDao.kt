@@ -5,6 +5,8 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.ursolgleb.controlparental.data.apps.entities.UsageEventEntity
+import com.ursolgleb.controlparental.data.apps.entities.AppWithUsageEvents
+import androidx.room.Transaction
 
 @Dao
 interface UsageEventDao {
@@ -27,5 +29,14 @@ interface UsageEventDao {
 
     @Query("SELECT MAX(timestamp) FROM usage_events")
     suspend fun getLastTimestamp(): Long?
+
+    @Transaction
+    @Query("SELECT * FROM apps WHERE packageName = :packageName")
+    suspend fun getAppWithEvents(packageName: String): AppWithUsageEvents?
+
+    @Transaction
+    @Query("SELECT * FROM apps")
+    suspend fun getAllAppsWithEvents(): List<AppWithUsageEvents>
+
 
 }

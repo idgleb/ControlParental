@@ -22,7 +22,7 @@ import com.ursolgleb.controlparental.utils.Converters
         AppHorarioCrossRef::class,
         UsageEventEntity::class,
         UsageStatsEntity::class],
-    version = 25,
+    version = 26,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
