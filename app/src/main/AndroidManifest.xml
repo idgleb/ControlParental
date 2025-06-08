@@ -3,9 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools" >
     <!-- Permisos -->
 
-    <!-- Permiso biométrico (opcional ≥ API 29, requerido ≤ 28) -->
-    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
-
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
@@ -84,6 +81,16 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <!-- Service used by WorkManager when utilizing the GCM scheduler.
+          This needs to be exported so that Google Play services can
+          bind to it. The permission restricts access to the service. -->
+        <service
+            android:name="androidx.work.impl.background.gcm.WorkManagerGcmService"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="com.google.android.gms.permission.BIND_NETWORK_TASK_SERVICE" />
+
     </application>
 
 </manifest>
