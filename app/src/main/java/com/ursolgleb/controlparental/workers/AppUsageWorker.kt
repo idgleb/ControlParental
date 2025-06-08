@@ -41,7 +41,7 @@ class AppUsageWorker(
 
         WorkManager.getInstance(context).enqueueUniqueWork(
             "AppUsageWorker",
-            ExistingWorkPolicy.KEEP,
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
             workRequest
         )
     }
@@ -53,7 +53,7 @@ class AppUsageWorker(
 
             WorkManager.getInstance(context).enqueueUniqueWork(
                 "AppUsageWorker",
-                ExistingWorkPolicy.KEEP,
+                ExistingWorkPolicy.APPEND_OR_REPLACE,
                 workRequest
             )
         }

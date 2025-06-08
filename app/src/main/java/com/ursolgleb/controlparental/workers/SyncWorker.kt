@@ -53,6 +53,7 @@ class SyncWorker(
             }
             Result.success()
         } catch (e: Exception) {
+            Log.e("SyncWorker", "Error $e")
             Result.retry()
         }
 
@@ -65,12 +66,12 @@ class SyncWorker(
 
     private fun scheduleNextWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setInitialDelay(30, TimeUnit.SECONDS)
+            .setInitialDelay(80, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(
             "SyncWorker",
-            ExistingWorkPolicy.KEEP,
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
             workRequest
         )
     }
@@ -82,7 +83,7 @@ class SyncWorker(
 
             WorkManager.getInstance(context).enqueueUniqueWork(
                 "SyncWorker",
-                ExistingWorkPolicy.KEEP,
+                ExistingWorkPolicy.APPEND_OR_REPLACE,
                 workRequest
             )
         }

@@ -43,7 +43,7 @@ class ControlParentalApp : Application(), Configuration.Provider {
         appDataRepository.inicieDelecturaDeBD()
         appDataRepository.updateBDApps()
         //startWorker(this)
-        //AppUsageWorker.startWorker(this)
+        AppUsageWorker.startWorker(this)
         SyncWorker.schedule(this)
 
         pinValidator.savePin("1234")   // ejecuta al confirmar el PIN
