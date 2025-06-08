@@ -89,7 +89,8 @@
             android:name="androidx.work.impl.background.gcm.WorkManagerGcmService"
             android:enabled="true"
             android:exported="true"
-            android:permission="com.google.android.gms.permission.BIND_NETWORK_TASK_SERVICE" />
+            android:permission="com.google.android.gms.permission.BIND_NETWORK_TASK_SERVICE"
+            tools:replace="android:exported" />
 
     </application>
 

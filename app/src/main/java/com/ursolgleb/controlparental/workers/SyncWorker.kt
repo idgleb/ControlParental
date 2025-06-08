@@ -1,8 +1,11 @@
 package com.ursolgleb.controlparental.workers
 
 import android.content.Context
+import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -18,10 +21,12 @@ class SyncWorker(
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
-        val entryPoint = EntryPointAccessors.fromApplication(
-            applicationContext,
-            SyncWorkerEntryPoint::class.java
-        )
+
+        Log.e("MioParametro", "Ejecutando SyncWorker doWork()...")
+
+        val entryPoint = EntryPointAccessors
+            .fromApplication(applicationContext,
+            SyncWorkerEntryPoint::class.java)
         val localRepo = entryPoint.getAppDataRepository()
         val remoteRepo = entryPoint.getRemoteDataRepository()
 
@@ -50,17 +55,37 @@ class SyncWorker(
         } catch (e: Exception) {
             Result.retry()
         }
+
+        //  Reprogramar el worker
+        scheduleNextWork(applicationContext)
+
+        return Result.success()
+
+    }
+
+    private fun scheduleNextWork(context: Context) {
+        val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+            .setInitialDelay(30, TimeUnit.SECONDS)
+            .build()
+
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            "SyncWorker",
+            ExistingWorkPolicy.KEEP,
+            workRequest
+        )
     }
 
     companion object {
         fun schedule(context: Context) {
-            val request = PeriodicWorkRequestBuilder<SyncWorker>(6, TimeUnit.HOURS)
+            val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
                 .build()
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+
+            WorkManager.getInstance(context).enqueueUniqueWork(
                 "SyncWorker",
-                ExistingPeriodicWorkPolicy.KEEP,
-                request
+                ExistingWorkPolicy.KEEP,
+                workRequest
             )
         }
     }
+
 }

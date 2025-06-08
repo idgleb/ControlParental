@@ -18,10 +18,12 @@ class AppUsageWorker(
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
+
         Log.e("MioParametro", "Ejecutando doWork()...")
-        
+
         val appDataRepository = EntryPointAccessors
-            .fromApplication(applicationContext, AppUsageWorkerEntryPoint::class.java)
+            .fromApplication(applicationContext,
+            AppUsageWorkerEntryPoint::class.java)
             .getAppDataRepository()
 
         appDataRepository.updateTiempoUsoAppsHoy()
@@ -39,8 +41,22 @@ class AppUsageWorker(
 
         WorkManager.getInstance(context).enqueueUniqueWork(
             "AppUsageWorker",
-            ExistingWorkPolicy.APPEND_OR_REPLACE,
+            ExistingWorkPolicy.KEEP,
             workRequest
         )
     }
+
+    companion object {
+        fun startWorker(context: Context) {
+            val workRequest = OneTimeWorkRequestBuilder<AppUsageWorker>()
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                "AppUsageWorker",
+                ExistingWorkPolicy.KEEP,
+                workRequest
+            )
+        }
+    }
+
 }
