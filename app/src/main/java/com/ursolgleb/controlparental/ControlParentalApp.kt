@@ -15,6 +15,7 @@ import com.ursolgleb.controlparental.workers.AppUsageWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import com.ursolgleb.controlparental.workers.SyncWorker
 
 
 @HiltAndroidApp
@@ -42,6 +43,7 @@ class ControlParentalApp : Application(), Configuration.Provider {
         appDataRepository.inicieDelecturaDeBD()
         appDataRepository.updateBDApps()
         startWorker(this)
+        SyncWorker.schedule(this)
 
         pinValidator.savePin("1234")   // ejecuta al confirmar el PIN
 

@@ -6,11 +6,11 @@ plugins {
     id("dagger.hilt.android.plugin")
     id("com.google.dagger.hilt.android") // 👈 Plugin de Hilt
 
-    id ("androidx.navigation.safeargs.kotlin")
+    id("androidx.navigation.safeargs.kotlin")
 
-    id ("com.squareup.sqldelight")
+    id("com.squareup.sqldelight")
 
-    id ("kotlin-parcelize")
+    id("kotlin-parcelize")
 
 }
 
@@ -94,11 +94,11 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    implementation (libs.androidx.room.runtime)
-    kapt (libs.androidx.room.compiler)
-    implementation (libs.androidx.room.ktx)
-    implementation (libs.jsoup)
-    implementation (libs.json)  // Lo mismo aquí
+    implementation(libs.androidx.room.runtime)
+    kapt(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.jsoup)
+    implementation(libs.json)  // Lo mismo aquí
     implementation(libs.okhttp)
     implementation(libs.glide) // Última versión de Glide
     kapt(libs.compiler) // Para generación de código
@@ -107,16 +107,14 @@ dependencies {
     implementation(libs.androidx.fragment.ktx)
 
 
-
-
     // WorkManager con Hilt (opcional si usas WorkManager)
     implementation("androidx.hilt:hilt-work:1.0.0")
     kapt("androidx.hilt:hilt-compiler:1.0.0")
 
 
 
-    implementation ("com.google.dagger:hilt-android:2.49")
-    kapt ("com.google.dagger:hilt-compiler:2.49")
+    implementation("com.google.dagger:hilt-android:2.49")
+    kapt("com.google.dagger:hilt-compiler:2.49")
 
     val work_version = "2.9.1"
 
@@ -140,12 +138,12 @@ dependencies {
 
     implementation(libs.gson)
 
-    implementation (libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.core)
 
     implementation(libs.cache4k)
 
-    implementation (libs.sqlDelightAndroidDriver)
-    implementation (libs.sqlDelightCoroutines)
+    implementation(libs.sqlDelightAndroidDriver)
+    implementation(libs.sqlDelightCoroutines)
 
     implementation("androidx.biometric:biometric:1.1.0")
 
@@ -153,7 +151,8 @@ dependencies {
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
 
-
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
 
 
 }

@@ -539,6 +539,23 @@ class AppDataRepository @Inject constructor(
         }
     }
 
+    suspend fun insertAppsEntidades(apps: List<AppEntity>) {
+        if (apps.isEmpty()) return
+        try {
+            dbLock.withLock {
+                appDao.insertListaApps(apps)
+            }
+        } catch (e: Exception) {
+            Logger.error(
+                context,
+                "AppDataRepository",
+                "Error insertAppsEntidades: ${e.message}",
+                e
+            )
+        }
+    }
+
+
     fun cancelarCorrutinas() {
         scope.cancel()
     }
