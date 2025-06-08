@@ -17,7 +17,9 @@ class UsageEventProvider @Inject constructor(
     private val usageEventDao: UsageEventDao
 ) {
 
-    suspend fun saveUsEventsUltimoMesToDatabase() {
+    suspend fun saveUsEventsUltimoMesToDatabase(
+        packagesFilter: List<String>? = null
+    ) {
         Logger.info(context, "UsageEventProvider", "saveUsEventsUltimoMesToDatabase Start...")
         val lastSaved = usageEventDao.getLastTimestamp() ?: 0L
         val cutoff = Fun.getTimeAtras(30)
@@ -33,19 +35,21 @@ class UsageEventProvider @Inject constructor(
         val event = UsageEvents.Event()
         while (usageEvents.hasNextEvent()) {
             usageEvents.getNextEvent(event)
-            when (event.eventType) {
-                UsageEvents.Event.DEVICE_SHUTDOWN,
-                UsageEvents.Event.DEVICE_STARTUP,
-                UsageEvents.Event.ACTIVITY_RESUMED,
-                UsageEvents.Event.ACTIVITY_PAUSED,
-                UsageEvents.Event.ACTIVITY_STOPPED -> {
-                    list.add(
-                        UsageEventEntity(
-                            packageName = event.packageName,
-                            eventType = event.eventType,
-                            timestamp = event.timeStamp
+            if (packagesFilter == null || packagesFilter.contains(event.packageName)) {
+                when (event.eventType) {
+                    UsageEvents.Event.DEVICE_SHUTDOWN,
+                    UsageEvents.Event.DEVICE_STARTUP,
+                    UsageEvents.Event.ACTIVITY_RESUMED,
+                    UsageEvents.Event.ACTIVITY_PAUSED,
+                    UsageEvents.Event.ACTIVITY_STOPPED -> {
+                        list.add(
+                            UsageEventEntity(
+                                packageName = event.packageName,
+                                eventType = event.eventType,
+                                timestamp = event.timeStamp
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
@@ -57,17 +61,12 @@ class UsageEventProvider @Inject constructor(
         )
     }
 
-    suspend fun getEventsFromDatabase(startTime: Long, endTime: Long): List<UsageEventEntity> {
-        saveUsEventsUltimoMesToDatabase()
-        return usageEventDao.getEvents(startTime, endTime)
-    }
-
     suspend fun getEventsFromDatabase(
         startTime: Long,
         endTime: Long,
         listaApps: List<String>
     ): List<UsageEventEntity> {
-        saveUsEventsUltimoMesToDatabase()
+        saveUsEventsUltimoMesToDatabase(listaApps)
         return usageEventDao.getEvents(startTime, endTime, listaApps)
     }
 
