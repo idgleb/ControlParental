@@ -42,7 +42,7 @@ class ControlParentalApp : Application(), Configuration.Provider {
         super.onCreate()
         appDataRepository.inicieDelecturaDeBD()
         appDataRepository.updateBDApps()
-        //startWorker(this)
+
         AppUsageWorker.startWorker(this)
         SyncWorker.schedule(this)
 
@@ -50,18 +50,6 @@ class ControlParentalApp : Application(), Configuration.Provider {
 
 
     }
-
-    fun startWorker(context: Context) {
-        val workRequest = OneTimeWorkRequestBuilder<AppUsageWorker>()
-            .build()
-
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            "AppUsageWorker",
-            ExistingWorkPolicy.APPEND_OR_REPLACE, // 🔹 NO cancela el anterior, lo agrega en cola
-            workRequest
-        )
-    }
-
 
     override fun onTerminate() {
         super.onTerminate()
