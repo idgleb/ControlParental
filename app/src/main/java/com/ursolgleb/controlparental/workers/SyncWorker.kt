@@ -32,10 +32,7 @@ class SyncWorker(
 
         localRepo.updateTiempoUsoAppsHoy()
 
-        Log.e("SyncWorker", "Ejecutando doWork() updateTiempoUsoAppsHoy...")
-
         try {
-            Log.e("SyncWorker", "Ejecutando doWork() try Start...")
             val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
             remoteRepo.pushApps(apps)
             val horarios = localRepo.horariosFlow.value.map { it.toDto() }
@@ -55,9 +52,7 @@ class SyncWorker(
                     localRepo.addHorarioBD(horario)
                 }
             }
-            Log.e("SyncWorker", "Ejecutando doWork() try End...")
         } catch (e: Exception) {
-            Log.e("SyncWorker", "Ejecutando doWork() catch...")
             Log.e("SyncWorker", "Error $e")
         }
 
