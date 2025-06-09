@@ -30,7 +30,7 @@ class SyncWorker(
 
         Log.e("SyncWorker", "Ejecutando doWork() entryPoint...")
 
-        localRepo.updateTiempoUsoAppsHoy()
+        //localRepo.updateTiempoUsoAppsHoy()
 
         try {
 /*            val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
