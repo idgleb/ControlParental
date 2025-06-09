@@ -13,14 +13,14 @@ import com.ursolgleb.controlparental.di.SyncWorkerEntryPoint
 import java.util.concurrent.TimeUnit
 import dagger.hilt.android.EntryPointAccessors
 
-class AppUsageWorker(
+class SyncWorker(
     context: Context,
     workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
 
-        Log.e("MioParametro", "Ejecutando doWork() vercion 2...")
+        Log.e("SyncWorker", "Ejecutando doWork() vercion 2...")
 
         val entryPoint = EntryPointAccessors
             .fromApplication(applicationContext,
@@ -28,9 +28,14 @@ class AppUsageWorker(
         val localRepo = entryPoint.getAppDataRepository()
         val remoteRepo = entryPoint.getRemoteDataRepository()
 
+        Log.e("SyncWorker", "Ejecutando doWork() entryPoint...")
+
         localRepo.updateTiempoUsoAppsHoy()
 
+        Log.e("SyncWorker", "Ejecutando doWork() updateTiempoUsoAppsHoy...")
+
         try {
+            Log.e("SyncWorker", "Ejecutando doWork() try Start...")
             val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
             remoteRepo.pushApps(apps)
             val horarios = localRepo.horariosFlow.value.map { it.toDto() }
@@ -50,23 +55,27 @@ class AppUsageWorker(
                     localRepo.addHorarioBD(horario)
                 }
             }
+            Log.e("SyncWorker", "Ejecutando doWork() try End...")
         } catch (e: Exception) {
+            Log.e("SyncWorker", "Ejecutando doWork() catch...")
             Log.e("SyncWorker", "Error $e")
         }
 
         //  Reprogramar el worker
         scheduleNextWork(applicationContext)
 
+        Log.e("SyncWorker", "Ejecutando doWork() scheduleNextWork...")
+
         return Result.success()
     }
 
     private fun scheduleNextWork(context: Context) {
-        val workRequest = OneTimeWorkRequestBuilder<AppUsageWorker>()
+        val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
             .setInitialDelay(30, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(
-            "AppUsageWorker",
+            "SyncWorker",
             ExistingWorkPolicy.APPEND_OR_REPLACE,
             workRequest
         )
@@ -74,11 +83,11 @@ class AppUsageWorker(
 
     companion object {
         fun startWorker(context: Context) {
-            val workRequest = OneTimeWorkRequestBuilder<AppUsageWorker>()
+            val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
                 .build()
 
             WorkManager.getInstance(context).enqueueUniqueWork(
-                "AppUsageWorker",
+                "SyncWorker",
                 ExistingWorkPolicy.APPEND_OR_REPLACE,
                 workRequest
             )
