@@ -13,7 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import androidx.emoji2.text.EmojiCompat
-import androidx.emoji2.text.BundledEmojiCompatConfig
+
 
 
 @HiltAndroidApp
