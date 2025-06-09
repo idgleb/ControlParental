@@ -33,25 +33,37 @@ class SyncWorker(
         localRepo.updateTiempoUsoAppsHoy()
 
         try {
-            val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
+/*            val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
             remoteRepo.pushApps(apps)
             val horarios = localRepo.horariosFlow.value.map { it.toDto() }
-            remoteRepo.pushHorarios(horarios)
+            remoteRepo.pushHorarios(horarios)*/
+
+
             val remoteApps = remoteRepo.fetchApps()
+
             if (remoteApps.isNotEmpty()) {
                 val icon = localRepo.todosAppsFlow.value.firstOrNull()?.appIcon
                     ?: return Result.success()
+                Log.e("SyncWorker", "Ejecutando doWork() icon End...")
                 val entities = remoteApps.mapNotNull { it.toEntity(icon) }
+                Log.e("SyncWorker", "Ejecutando doWork() remoteApps.mapNotNull { it.toEntity(icon) } End...")
                 if (entities.isNotEmpty()) {
+                    Log.e("SyncWorker", "Ejecutando doWork() if (entities.isNotEmpty())...")
+                    Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades Start...")
                     localRepo.insertAppsEntidades(entities)
+                    Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades End...")
                 }
             }
+
             val remoteHorarios = remoteRepo.fetchHorarios()
             if (remoteHorarios.isNotEmpty()) {
                 remoteHorarios.map { it.toEntity() }.forEach { horario ->
+                    Log.e("SyncWorker", "Ejecutando doWork() addHorarioBD Start...")
                     localRepo.addHorarioBD(horario)
+                    Log.e("SyncWorker", "Ejecutando doWork() addHorarioBD End...")
                 }
             }
+
         } catch (e: Exception) {
             Log.e("SyncWorker", "Error $e")
         }
@@ -66,7 +78,7 @@ class SyncWorker(
 
     private fun scheduleNextWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setInitialDelay(30, TimeUnit.SECONDS)
+            .setInitialDelay(10, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(
