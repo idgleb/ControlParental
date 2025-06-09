@@ -23,8 +23,10 @@ class SyncWorker(
         Log.e("SyncWorker", "Ejecutando doWork() vercion 2...")
 
         val entryPoint = EntryPointAccessors
-            .fromApplication(applicationContext,
-                SyncWorkerEntryPoint::class.java)
+            .fromApplication(
+                applicationContext,
+                SyncWorkerEntryPoint::class.java
+            )
         val localRepo = entryPoint.getAppDataRepository()
         val remoteRepo = entryPoint.getRemoteDataRepository()
 
@@ -33,10 +35,10 @@ class SyncWorker(
         //localRepo.updateTiempoUsoAppsHoy()
 
         try {
-/*            val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
-            remoteRepo.pushApps(apps)
-            val horarios = localRepo.horariosFlow.value.map { it.toDto() }
-            remoteRepo.pushHorarios(horarios)*/
+            /*            val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
+                        remoteRepo.pushApps(apps)
+                        val horarios = localRepo.horariosFlow.value.map { it.toDto() }
+                        remoteRepo.pushHorarios(horarios)*/
 
 
             val remoteApps = remoteRepo.fetchApps()
@@ -46,7 +48,10 @@ class SyncWorker(
                     ?: return Result.success()
                 Log.e("SyncWorker", "Ejecutando doWork() icon End...")
                 val entities = remoteApps.mapNotNull { it.toEntity(icon) }
-                Log.e("SyncWorker", "Ejecutando doWork() remoteApps.mapNotNull { it.toEntity(icon) } End...")
+                Log.e(
+                    "SyncWorker",
+                    "Ejecutando doWork() remoteApps.mapNotNull { it.toEntity(icon) } End..."
+                )
                 if (entities.isNotEmpty()) {
                     Log.e("SyncWorker", "Ejecutando doWork() if (entities.isNotEmpty())...")
                     Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades Start...")
@@ -57,7 +62,7 @@ class SyncWorker(
 
             val remoteHorarios = remoteRepo.fetchHorarios()
             if (remoteHorarios.isNotEmpty()) {
-                remoteHorarios.map { it.toEntity() }.forEach { horario ->
+                remoteHorarios.mapNotNull { it.toEntity() }.forEach { horario ->
                     Log.e("SyncWorker", "Ejecutando doWork() addHorarioBD Start...")
                     localRepo.addHorarioBD(horario)
                     Log.e("SyncWorker", "Ejecutando doWork() addHorarioBD End...")

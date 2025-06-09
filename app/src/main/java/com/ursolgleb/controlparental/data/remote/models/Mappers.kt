@@ -39,11 +39,15 @@ fun HorarioEntity.toDto() = HorarioDto(
     isActive = isActive
 )
 
-fun HorarioDto.toEntity() = HorarioEntity(
-    id = id,
-    nombreDeHorario = nombreDeHorario,
-    diasDeSemana = diasDeSemana,
-    horaInicio = java.time.LocalTime.parse(horaInicio),
-    horaFin = java.time.LocalTime.parse(horaFin),
-    isActive = isActive
-)
+fun HorarioDto.toEntity(): HorarioEntity? {
+    val inicio = horaInicio?.let { java.time.LocalTime.parse(it) } ?: return null
+    val fin = horaFin?.let { java.time.LocalTime.parse(it) } ?: return null
+    return HorarioEntity(
+        id = id,
+        nombreDeHorario = nombreDeHorario,
+        diasDeSemana = diasDeSemana,
+        horaInicio = inicio,
+        horaFin = fin,
+        isActive = isActive
+    )
+}

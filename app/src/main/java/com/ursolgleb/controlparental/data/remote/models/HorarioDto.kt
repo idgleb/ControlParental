@@ -7,7 +7,7 @@ data class HorarioDto(
     val id: Long,
     val nombreDeHorario: String,
     val diasDeSemana: List<Int>,
-    val horaInicio: String,
-    val horaFin: String,
+    val horaInicio: String?,
+    val horaFin: String?,
     val isActive: Boolean
 )
