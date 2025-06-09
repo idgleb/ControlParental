@@ -7,10 +7,11 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.ursolgleb.controlparental.di.AppUsageWorkerEntryPoint
+import com.ursolgleb.controlparental.data.remote.models.toDto
+import com.ursolgleb.controlparental.data.remote.models.toEntity
+import com.ursolgleb.controlparental.di.SyncWorkerEntryPoint
 import java.util.concurrent.TimeUnit
 import dagger.hilt.android.EntryPointAccessors
-
 
 class AppUsageWorker(
     context: Context,
@@ -19,14 +20,39 @@ class AppUsageWorker(
 
     override suspend fun doWork(): Result {
 
-        Log.e("MioParametro", "Ejecutando doWork()...")
+        Log.e("MioParametro", "Ejecutando doWork() vercion 2...")
 
-        val appDataRepository = EntryPointAccessors
+        val entryPoint = EntryPointAccessors
             .fromApplication(applicationContext,
-            AppUsageWorkerEntryPoint::class.java)
-            .getAppDataRepository()
+                SyncWorkerEntryPoint::class.java)
+        val localRepo = entryPoint.getAppDataRepository()
+        val remoteRepo = entryPoint.getRemoteDataRepository()
 
-        appDataRepository.updateTiempoUsoAppsHoy()
+        localRepo.updateTiempoUsoAppsHoy()
+
+        try {
+            val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
+            remoteRepo.pushApps(apps)
+            val horarios = localRepo.horariosFlow.value.map { it.toDto() }
+            remoteRepo.pushHorarios(horarios)
+            val remoteApps = remoteRepo.fetchApps()
+            if (remoteApps.isNotEmpty()) {
+                val icon = localRepo.todosAppsFlow.value.firstOrNull()?.appIcon
+                    ?: return Result.success()
+                val entities = remoteApps.mapNotNull { it.toEntity(icon) }
+                if (entities.isNotEmpty()) {
+                    localRepo.insertAppsEntidades(entities)
+                }
+            }
+            val remoteHorarios = remoteRepo.fetchHorarios()
+            if (remoteHorarios.isNotEmpty()) {
+                remoteHorarios.map { it.toEntity() }.forEach { horario ->
+                    localRepo.addHorarioBD(horario)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("SyncWorker", "Error $e")
+        }
 
         //  Reprogramar el worker
         scheduleNextWork(applicationContext)
@@ -36,7 +62,7 @@ class AppUsageWorker(
 
     private fun scheduleNextWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<AppUsageWorker>()
-            .setInitialDelay(60, TimeUnit.SECONDS)
+            .setInitialDelay(30, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(
