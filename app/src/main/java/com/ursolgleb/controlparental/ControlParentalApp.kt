@@ -1,6 +1,7 @@
 package com.ursolgleb.controlparental
 
 import android.app.Application
+import androidx.emoji2.bundled.BundledEmojiCompatConfig
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 import androidx.hilt.work.HiltWorkerFactory
@@ -11,6 +12,8 @@ import com.ursolgleb.controlparental.workers.SyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import androidx.emoji2.text.EmojiCompat
+import androidx.emoji2.text.BundledEmojiCompatConfig
 
 
 @HiltAndroidApp
@@ -35,6 +38,7 @@ class ControlParentalApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        EmojiCompat.init(BundledEmojiCompatConfig(this))
         appDataRepository.inicieDelecturaDeBD()
         appDataRepository.updateBDApps()
 
