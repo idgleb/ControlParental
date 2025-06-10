@@ -6,7 +6,7 @@ import android.os.DeadObjectException
 import android.util.Log
 import android.os.Build
 import android.os.BatteryManager
-import android.provider.Settings
+
 import com.ursolgleb.controlparental.data.apps.dao.AppDao
 import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
 import com.ursolgleb.controlparental.data.apps.dao.DeviceDao
@@ -20,6 +20,7 @@ import com.ursolgleb.controlparental.utils.AppsFun
 import com.ursolgleb.controlparental.utils.Launcher
 import com.ursolgleb.controlparental.utils.Logger
 import com.ursolgleb.controlparental.utils.StatusApp
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,6 +37,7 @@ import javax.inject.Singleton
 import com.ursolgleb.controlparental.data.apps.dao.AppHorarioDao
 import com.ursolgleb.controlparental.data.apps.entities.AppHorarioCrossRef
 import com.ursolgleb.controlparental.data.apps.entities.AppWithHorarios
+import androidx.core.content.edit
 
 
 @Singleton
@@ -80,6 +82,18 @@ class AppDataRepository @Inject constructor(
 
     val mutexUpdateBDAppsStateFlow = MutableStateFlow(false)
     val mostrarBottomSheetActualizadaFlow = MutableStateFlow(false)
+
+    private fun getOrCreateDeviceId(): String {
+        val prefs = context.getSharedPreferences("device_prefs", Context.MODE_PRIVATE)
+        val existing = prefs.getString("device_id", null)
+        return if (existing != null) {
+            existing
+        } else {
+            val newId = UUID.randomUUID().toString()
+            prefs.edit() { putString("device_id", newId) }
+            newId
+        }
+    }
 
     private fun actualizarFlows(
         apps: List<AppEntity>,
@@ -566,10 +580,7 @@ class AppDataRepository @Inject constructor(
     fun saveDeviceInfo() {
         scope.launch {
             try {
-                val deviceId = Settings.Secure.getString(
-                    context.contentResolver,
-                    Settings.Secure.ANDROID_ID
-                )
+                val deviceId = getOrCreateDeviceId()
                 val model = "${Build.MANUFACTURER} ${Build.MODEL}"
                 val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
                 val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
