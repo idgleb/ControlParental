@@ -28,11 +28,11 @@ fun AppDto.toEntity(): AppEntity? {
         packageName = pkg,
         appName = appName ?: pkg,
         appIcon = Converters.toBitmap(iconBytes),
-        appCategory = "remote",
-        contentRating = "?",
-        isSystemApp = false,
+        appCategory = appCategory,
+        contentRating = contentRating,
+        isSystemApp = isSystemApp,
         usageTimeToday = usageTimeToday ?: 0L,
-        timeStempUsageTimeToday = System.currentTimeMillis(),
+        timeStempUsageTimeToday = timeStempUsageTimeToday,
         appStatus = appStatus ?: StatusApp.DEFAULT.desc,
         dailyUsageLimitMinutes = dailyUsageLimitMinutes ?: 0
     )
