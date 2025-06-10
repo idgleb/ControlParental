@@ -4,10 +4,15 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.DeadObjectException
 import android.util.Log
+import android.os.Build
+import android.os.BatteryManager
+import android.provider.Settings
 import com.ursolgleb.controlparental.data.apps.dao.AppDao
 import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
+import com.ursolgleb.controlparental.data.apps.dao.DeviceDao
 import com.ursolgleb.controlparental.data.apps.entities.AppEntity
 import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
+import com.ursolgleb.controlparental.data.apps.entities.DeviceEntity
 import com.ursolgleb.controlparental.data.apps.providers.NewAppsProvider
 import com.ursolgleb.controlparental.data.apps.providers.UsageStatsProvider
 import com.ursolgleb.controlparental.data.apps.providers.UsageTimeProvider
@@ -51,6 +56,7 @@ class AppDataRepository @Inject constructor(
     private val appDao: AppDao = appDatabase.appDao()
     private val horarioDao: HorarioDao = appDatabase.horarioDao()
     private val appHorarioDao: AppHorarioDao = appDatabase.appHorarioDao()
+    private val deviceDao: DeviceDao = appDatabase.deviceDao()
 
     private var isInicieDeLecturaTermina = false
 
@@ -553,6 +559,26 @@ class AppDataRepository @Inject constructor(
                 "Error insertAppsEntidades: ${e.message}",
                 e
             )
+        }
+    }
+
+
+    fun saveDeviceInfo() {
+        scope.launch {
+            try {
+                val deviceId = Settings.Secure.getString(
+                    context.contentResolver,
+                    Settings.Secure.ANDROID_ID
+                )
+                val model = "${Build.MANUFACTURER} ${Build.MODEL}"
+                val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+                val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+                val entity = DeviceEntity(deviceId = deviceId, model = model, batteryLevel = battery)
+                deviceDao.insert(entity)
+                Logger.info(context, "AppDataRepository", "Device info guardada: $entity")
+            } catch (e: Exception) {
+                Logger.error(context, "AppDataRepository", "Error guardando device info: ${e.message}", e)
+            }
         }
     }
 

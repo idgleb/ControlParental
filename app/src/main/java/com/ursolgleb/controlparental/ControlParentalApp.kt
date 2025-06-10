@@ -46,6 +46,8 @@ class ControlParentalApp : Application(), Configuration.Provider {
 
         pinValidator.savePin("1234")   // ejecuta al confirmar el PIN
 
+        appDataRepository.saveDeviceInfo()
+
 
     }
 
