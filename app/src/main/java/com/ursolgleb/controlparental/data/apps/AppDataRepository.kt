@@ -3,6 +3,7 @@ package com.ursolgleb.controlparental.data.apps
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.DeadObjectException
+import android.util.Log
 import com.ursolgleb.controlparental.data.apps.dao.AppDao
 import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
 import com.ursolgleb.controlparental.data.apps.entities.AppEntity
@@ -386,6 +387,7 @@ class AppDataRepository @Inject constructor(
     }
 
     suspend fun addHorarioBD(horario: HorarioEntity): Long {
+        Log.e("SyncWorker", "Ejecutando doWork() suspend fun addHorarioBD...")
         return try {
             val id = horarioDao.insertHorario(horario)
             Logger.info(
