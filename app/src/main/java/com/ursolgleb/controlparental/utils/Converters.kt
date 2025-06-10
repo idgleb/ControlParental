@@ -6,7 +6,7 @@ import androidx.room.TypeConverter
 import java.io.ByteArrayOutputStream
 import java.time.LocalTime
 
-class Converters {
+object  Converters {
     @TypeConverter
     fun fromBitmap(bitmap: Bitmap): ByteArray {
         val stream = ByteArrayOutputStream()

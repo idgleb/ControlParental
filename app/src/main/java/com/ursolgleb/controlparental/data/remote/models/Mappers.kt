@@ -1,25 +1,33 @@
 package com.ursolgleb.controlparental.data.remote.models
 
+import android.graphics.Bitmap
 import com.ursolgleb.controlparental.data.apps.entities.AppEntity
 import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
 import com.ursolgleb.controlparental.utils.StatusApp
+import com.ursolgleb.controlparental.utils.Converters
 
 /** Conversiones de entidades locales a DTOs y viceversa */
 
 fun AppEntity.toDto() = AppDto(
     packageName = packageName,
     appName = appName,
+    appIcon = Converters.fromBitmap(appIcon),
+    appCategory = appCategory,
+    contentRating = contentRating,
+    isSystemApp = isSystemApp,
+    usageTimeToday = usageTimeToday,
+    timeStempUsageTimeToday = timeStempUsageTimeToday,
     appStatus = appStatus,
-    dailyUsageLimitMinutes = dailyUsageLimitMinutes,
-    usageTimeToday = usageTimeToday
+    dailyUsageLimitMinutes = dailyUsageLimitMinutes
 )
 
-fun AppDto.toEntity(iconPlaceholder: android.graphics.Bitmap): AppEntity? {
+fun AppDto.toEntity(): AppEntity? {
     val pkg = packageName ?: return null
+    val iconBytes = appIcon ?: return null
     return AppEntity(
         packageName = pkg,
         appName = appName ?: pkg,
-        appIcon = iconPlaceholder,
+        appIcon = Converters.toBitmap(iconBytes),
         appCategory = "remote",
         contentRating = "?",
         isSystemApp = false,
