@@ -37,15 +37,21 @@ class SyncWorker(
 
         try {
 
-            val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
-            remoteRepo.pushApps(apps)
-            val horarios = localRepo.horariosFlow.value.map { it.toDto() }
-            remoteRepo.pushHorarios(horarios)
-
             val device = localRepo.getDeviceInfoOnce()?.toDto()
             if (device != null) {
                 remoteRepo.pushDevice(device)
+                Log.e("SyncWorker", "Ejecutando doWork() pushDevice End...")
             }
+
+            val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
+            Log.e("SyncWorker", "Ejecutando doWork() apps=$apps")
+            remoteRepo.pushApps(apps)
+
+/*
+            val horarios = localRepo.horariosFlow.value.map { it.toDto() }
+            remoteRepo.pushHorarios(horarios)
+
+            */
 
 
             /*            val remoteApps = remoteRepo.fetchApps()
