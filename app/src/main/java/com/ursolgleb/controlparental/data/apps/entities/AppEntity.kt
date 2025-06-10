@@ -3,10 +3,23 @@ package com.ursolgleb.controlparental.data.apps.entities
 import android.graphics.Bitmap
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.ForeignKey
 
-@Entity(tableName = "apps")
+@Entity(
+    tableName = "apps",
+    primaryKeys = ["packageName", "deviceId"],
+    foreignKeys = [
+        ForeignKey(
+            entity = DeviceEntity::class,
+            parentColumns = ["deviceId"],
+            childColumns = ["deviceId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ]
+)
 data class AppEntity(
-    @PrimaryKey val packageName: String,
+    val packageName: String,
+    val deviceId: String,
     var appName: String,
     var appIcon: Bitmap,
     var appCategory: String,

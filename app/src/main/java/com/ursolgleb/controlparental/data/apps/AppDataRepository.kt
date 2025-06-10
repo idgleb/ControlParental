@@ -214,6 +214,7 @@ class AppDataRepository @Inject constructor(
         Logger.info(context, "AppDataRepository", "Finish crear getTiempoDeUsoSeconds.")
 
         Logger.info(context, "AppDataRepository", "Start crear nuevasEntidades...")
+        val deviceId = getOrCreateDeviceId()
         val nuevasEntidades = appsNuevas.map { app ->
             val drawable = app.loadIcon(pm)
             val bitmap = AppsFun.drawableToBitmap(drawable)
@@ -227,6 +228,7 @@ class AppDataRepository @Inject constructor(
             val timestampActual = System.currentTimeMillis()
             AppEntity(
                 packageName = app.packageName,
+                deviceId = deviceId,
                 appName = app.loadLabel(pm).toString(),
                 appIcon = bitmap,
                 appCategory = app.category.toString(),
@@ -371,7 +373,7 @@ class AppDataRepository @Inject constructor(
                         val refs = mutableListOf<AppHorarioCrossRef>()
                         appsHorario.forEach { app ->
                             horariosExistentes.forEach { horario ->
-                                refs.add(AppHorarioCrossRef(app.packageName, horario.id))
+                                refs.add(AppHorarioCrossRef(app.packageName, app.deviceId, horario.id))
                             }
                         }
                         if (refs.isNotEmpty()) appHorarioDao.insertCrossRefs(refs)
@@ -430,7 +432,7 @@ class AppDataRepository @Inject constructor(
         if (idHorario != -1L) {
             val refs = mutableListOf<AppHorarioCrossRef>()
             apps.forEach { app ->
-                refs.add(AppHorarioCrossRef(app.packageName, idHorario))
+                refs.add(AppHorarioCrossRef(app.packageName, app.deviceId, idHorario))
             }
             try {
                 appHorarioDao.insertCrossRefs(refs)

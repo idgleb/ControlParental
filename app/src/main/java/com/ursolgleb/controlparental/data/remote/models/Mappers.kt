@@ -10,6 +10,7 @@ import com.ursolgleb.controlparental.utils.Converters
 
 fun AppEntity.toDto() = AppDto(
     packageName = packageName,
+    deviceId = deviceId,
     appName = appName,
     appIcon = Converters.fromBitmap(appIcon),
     appCategory = appCategory,
@@ -23,9 +24,11 @@ fun AppEntity.toDto() = AppDto(
 
 fun AppDto.toEntity(): AppEntity? {
     val pkg = packageName ?: return null
+    val devId = deviceId ?: return null
     val iconBytes = appIcon ?: return null
     return AppEntity(
         packageName = pkg,
+        deviceId = devId,
         appName = appName ?: pkg,
         appIcon = Converters.toBitmap(iconBytes),
         appCategory = appCategory,

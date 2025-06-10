@@ -4,13 +4,13 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 
 @Entity(
-    primaryKeys = ["packageName", "horarioId"],
+    primaryKeys = ["packageName", "deviceId", "horarioId"],
     tableName = "app_horario_cross_ref",
     foreignKeys = [
         ForeignKey(
             entity = AppEntity::class,
-            parentColumns = ["packageName"],
-            childColumns = ["packageName"],
+            parentColumns = ["packageName", "deviceId"],
+            childColumns = ["packageName", "deviceId"],
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
@@ -23,5 +23,6 @@ import androidx.room.ForeignKey
 )
 data class AppHorarioCrossRef(
     val packageName: String,
+    val deviceId: String,
     val horarioId: Long
 )

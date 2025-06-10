@@ -7,6 +7,7 @@ import android.graphics.Bitmap
  */
 data class AppDto(
     val packageName: String?,
+    val deviceId: String?,
     val appName: String?,
     val appIcon: ByteArray?,
     var appCategory: String,
