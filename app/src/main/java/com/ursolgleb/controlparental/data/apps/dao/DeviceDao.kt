@@ -14,4 +14,12 @@ interface DeviceDao {
 
     @Query("SELECT * FROM devices LIMIT 1")
     fun getDevice(): Flow<DeviceEntity?>
+
+    @Query("SELECT * FROM devices LIMIT 1")
+    suspend fun getDeviceOnce(): DeviceEntity?
+
+    @Query("DELETE FROM devices")
+    suspend fun deleteAll()
+
+
 }
