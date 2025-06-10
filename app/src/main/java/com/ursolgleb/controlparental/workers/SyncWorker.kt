@@ -43,21 +43,11 @@ class SyncWorker(
 
 
             val remoteApps = remoteRepo.fetchApps()
-            Log.e(
-                "SyncWorker",
-                "Ejecutando doWork() remoteApps=$remoteApps"
-            )
             if (remoteApps.isNotEmpty()) {
                 val icon = localRepo.todosAppsFlow.value.firstOrNull()?.appIcon
                     ?: return Result.success()
-                Log.e("SyncWorker", "Ejecutando doWork() icon End...")
                 val entities = remoteApps.mapNotNull { it.toEntity(icon) }
-                Log.e(
-                    "SyncWorker",
-                    "Ejecutando doWork() entities=$entities"
-                )
                 if (entities.isNotEmpty()) {
-                    Log.e("SyncWorker", "Ejecutando doWork() if (entities.isNotEmpty())...")
                     Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades Start...")
                     localRepo.insertAppsEntidades(entities)
                     Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades End...")
