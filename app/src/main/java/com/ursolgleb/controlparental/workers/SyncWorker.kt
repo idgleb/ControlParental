@@ -33,7 +33,7 @@ class SyncWorker(
 
         Log.e("SyncWorker", "Ejecutando doWork() entryPoint...")
 
-        //localRepo.updateTiempoUsoAppsHoy()
+        localRepo.updateTiempoUsoAppsHoy()
 
         try {
 
