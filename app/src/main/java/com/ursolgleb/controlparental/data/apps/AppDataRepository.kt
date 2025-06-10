@@ -387,7 +387,6 @@ class AppDataRepository @Inject constructor(
     }
 
     suspend fun addHorarioBD(horario: HorarioEntity): Long {
-        Log.e("SyncWorker", "Ejecutando doWork() suspend fun addHorarioBD...")
         return try {
             val id = horarioDao.insertHorario(horario)
             Logger.info(
