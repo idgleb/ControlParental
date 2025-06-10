@@ -594,6 +594,15 @@ class AppDataRepository @Inject constructor(
         }
     }
 
+    suspend fun getDeviceInfoOnce(): DeviceEntity? {
+        return try {
+            deviceDao.getDeviceOnce()
+        } catch (e: Exception) {
+            Logger.error(context, "AppDataRepository", "Error obteniendo device info: ${e.message}", e)
+            null
+        }
+    }
+
 
     fun cancelarCorrutinas() {
         scope.cancel()

@@ -42,6 +42,11 @@ class SyncWorker(
             val horarios = localRepo.horariosFlow.value.map { it.toDto() }
             remoteRepo.pushHorarios(horarios)
 
+            val device = localRepo.getDeviceInfoOnce()?.toDto()
+            if (device != null) {
+                remoteRepo.pushDevice(device)
+            }
+
 
             /*            val remoteApps = remoteRepo.fetchApps()
                         if (remoteApps.isNotEmpty()) {

@@ -2,6 +2,7 @@ package com.ursolgleb.controlparental.data.remote.api
 
 import com.ursolgleb.controlparental.data.remote.models.AppDto
 import com.ursolgleb.controlparental.data.remote.models.HorarioDto
+import com.ursolgleb.controlparental.data.remote.models.DeviceDto
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -23,4 +24,11 @@ interface LaravelApi {
 
     @POST("sync/horarios")
     suspend fun postHorarios(@Body horarios: List<HorarioDto>)
+
+    @GET("sync/device")
+    suspend fun getDevice(): DeviceDto
+
+    @POST("sync/device")
+    suspend fun postDevice(@Body device: DeviceDto)
+
 }

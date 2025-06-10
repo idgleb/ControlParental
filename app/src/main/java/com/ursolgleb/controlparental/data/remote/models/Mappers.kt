@@ -1,8 +1,8 @@
 package com.ursolgleb.controlparental.data.remote.models
 
-import android.graphics.Bitmap
 import com.ursolgleb.controlparental.data.apps.entities.AppEntity
 import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
+import com.ursolgleb.controlparental.data.apps.entities.DeviceEntity
 import com.ursolgleb.controlparental.utils.StatusApp
 import com.ursolgleb.controlparental.utils.Converters
 
@@ -59,3 +59,21 @@ fun HorarioDto.toEntity(): HorarioEntity? {
         isActive = isActive
     )
 }
+
+fun DeviceEntity.toDto() = DeviceDto(
+    deviceId = deviceId,
+    model = model,
+    batteryLevel = batteryLevel
+)
+
+fun DeviceDto.toEntity(): DeviceEntity? {
+    val id = deviceId ?: return null
+    val m = model ?: return null
+    val level = batteryLevel ?: return null
+    return DeviceEntity(
+        deviceId = id,
+        model = m,
+        batteryLevel = level
+    )
+}
+
