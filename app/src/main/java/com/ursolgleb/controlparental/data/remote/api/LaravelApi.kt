@@ -25,10 +25,10 @@ interface LaravelApi {
     @POST("sync/horarios")
     suspend fun postHorarios(@Body horarios: List<HorarioDto>)
 
-    @GET("sync/device")
+    @GET("sync/devices")
     suspend fun getDevice(): DeviceDto
 
-    @POST("sync/device")
+    @POST("sync/devices")
     suspend fun postDevice(@Body device: DeviceDto)
 
 }

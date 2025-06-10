@@ -71,10 +71,10 @@ class SyncWorker(
 
         } catch (e: HttpException) {
             val body = e.response()?.errorBody()?.string()
-            Log.e("SyncWorker", "HTTP error ${'$'}{e.code()} body: ${'$'}body")
+            Log.e("SyncWorker", "HTTP error ${e.code()} body: $body")
             return Result.retry()
         } catch (e: Exception) {
-            Log.e("SyncWorker", "Error ${'$'}e")
+            Log.e("SyncWorker", "Error $e")
             return Result.retry()
         }
 
