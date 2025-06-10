@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.ursolgleb.controlparental.data.apps.entities.DeviceEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -21,5 +22,10 @@ interface DeviceDao {
     @Query("DELETE FROM devices")
     suspend fun deleteAll()
 
+    @Transaction
+    suspend fun replace(device: DeviceEntity) {
+        deleteAll()
+        insert(device)
+    }
 
 }

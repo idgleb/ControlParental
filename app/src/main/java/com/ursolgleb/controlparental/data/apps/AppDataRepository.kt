@@ -585,7 +585,8 @@ class AppDataRepository @Inject constructor(
                 val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
                 val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
                 val entity = DeviceEntity(deviceId = deviceId, model = model, batteryLevel = battery)
-                deviceDao.insert(entity)
+                deviceDao.replace(entity)
+                //f85d8cc0-5637-430d-a109-b96da8c2718c
                 Logger.info(context, "AppDataRepository", "Device info guardada: $entity")
             } catch (e: Exception) {
                 Logger.error(context, "AppDataRepository", "Error guardando device info: ${e.message}", e)
