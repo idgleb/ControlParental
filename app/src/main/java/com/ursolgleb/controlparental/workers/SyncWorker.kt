@@ -20,7 +20,7 @@ class SyncWorker(
 
     override suspend fun doWork(): Result {
 
-        Log.e("SyncWorker", "Ejecutando doWork() vercion 2...")
+        Log.e("SyncWorker", "Ejecutando doWork() vercion 3...")
 
         val entryPoint = EntryPointAccessors
             .fromApplication(
