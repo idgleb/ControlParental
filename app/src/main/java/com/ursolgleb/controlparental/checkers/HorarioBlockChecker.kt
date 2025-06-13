@@ -21,7 +21,8 @@ class HorarioBlockChecker @Inject constructor(
         Log.w("HorarioBlockChecker", "currentTime $currentTime")
 
         // 3. Obtener todos los horarios y verificar si alguno está activo y coincide
-        val horariodDeApp = appDataRepository.getHorariosPorPkg(packageName)
+        //val horariodDeApp = appDataRepository.getHorariosPorPkg(packageName)
+        val horariodDeApp = appDataRepository.horariosFlow.value
 
         Log.w("HorarioBlockChecker", "$horariodDeApp")
 
