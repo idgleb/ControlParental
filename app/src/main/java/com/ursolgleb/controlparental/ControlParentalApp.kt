@@ -39,6 +39,7 @@ class ControlParentalApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         EmojiCompat.init(BundledEmojiCompatConfig(this))
+
         appDataRepository.inicieDelecturaDeBD()
         appDataRepository.updateBDApps()
 

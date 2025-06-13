@@ -46,12 +46,11 @@ class SyncWorker(
             val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
             Log.e("SyncWorker", "Ejecutando doWork() apps=$apps")
             remoteRepo.pushApps(apps)
+            Log.e("SyncWorker", "Ejecutando doWork() pushApps End...")
 
-/*
+
             val horarios = localRepo.horariosFlow.value.map { it.toDto() }
             remoteRepo.pushHorarios(horarios)
-
-            */
 
 
             /*            val remoteApps = remoteRepo.fetchApps()
@@ -89,7 +88,7 @@ class SyncWorker(
 
     private fun scheduleNextWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setInitialDelay(30, TimeUnit.SECONDS)
+            .setInitialDelay(5, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(

@@ -18,7 +18,7 @@ class UsageTimeProvider @Inject constructor(
 ) {
 
     private val cache = Cache.Builder()
-        .expireAfterWrite(15.toDuration(DurationUnit.SECONDS))
+        .expireAfterWrite(4.toDuration(DurationUnit.SECONDS))
         .maximumCacheSize(50)
         .build<List<String>, Map<String, Long>>()
 

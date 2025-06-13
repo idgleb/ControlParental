@@ -21,8 +21,8 @@ class NewAppsProvider @Inject constructor(
 ) {
 
     private val cache = Cache.Builder()
-        .expireAfterWrite(1.toDuration(DurationUnit.MINUTES))
-        .maximumCacheSize(1)
+        .expireAfterWrite(4.toDuration(DurationUnit.SECONDS))
+        .maximumCacheSize(50)
         .build<String, List<ApplicationInfo>>()
 
     suspend fun getNuevasAppsEnSistema(): List<ApplicationInfo> = cache.get("nuevas") {
