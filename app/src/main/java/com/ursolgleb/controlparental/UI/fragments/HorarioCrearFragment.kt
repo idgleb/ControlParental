@@ -135,10 +135,7 @@ class HorarioCrearFragment : Fragment() {
                 )
 
                 appDataRepository.scope.launch {
-                    val idHorario = appDataRepository.addHorarioBD(horario)
-                    appDataRepository.horarioAppsFlow.collect { appList ->
-                        appDataRepository.asignarHorarioApps(idHorario, appList)
-                    }
+                    appDataRepository.addHorarioBD(horario)
                 }
 
                 findNavController().popBackStack()

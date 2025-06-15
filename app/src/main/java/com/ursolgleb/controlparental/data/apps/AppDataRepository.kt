@@ -34,9 +34,6 @@ import kotlinx.coroutines.sync.withLock
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.ursolgleb.controlparental.data.apps.dao.AppHorarioDao
-import com.ursolgleb.controlparental.data.apps.entities.AppHorarioCrossRef
-import com.ursolgleb.controlparental.data.apps.entities.AppWithHorarios
 import androidx.core.content.edit
 
 
@@ -57,7 +54,6 @@ class AppDataRepository @Inject constructor(
 
     private val appDao: AppDao = appDatabase.appDao()
     private val horarioDao: HorarioDao = appDatabase.horarioDao()
-    private val appHorarioDao: AppHorarioDao = appDatabase.appHorarioDao()
     private val deviceDao: DeviceDao = appDatabase.deviceDao()
 
     private var isInicieDeLecturaTermina = false
@@ -74,7 +70,6 @@ class AppDataRepository @Inject constructor(
     val horarioAppsFlow = MutableStateFlow<List<AppEntity>>(emptyList())
     val disponAppsFlow = MutableStateFlow<List<AppEntity>>(emptyList())
     val horariosFlow = MutableStateFlow<List<HorarioEntity>>(emptyList())
-    val appWithHorariosFlow = MutableStateFlow<List<AppWithHorarios>>(emptyList())
 
     val todosAppsMenosBloqueadosFlow = MutableStateFlow<List<AppEntity>>(emptyList())
     var todosAppsMenosHorarioFlow = MutableStateFlow<List<AppEntity>>(emptyList())
@@ -98,7 +93,6 @@ class AppDataRepository @Inject constructor(
     private fun actualizarFlows(
         apps: List<AppEntity>,
         horarios: List<HorarioEntity>,
-        appWithHorarios: List<AppWithHorarios>
     ) {
         todosAppsFlow.value = apps
         blockedAppsFlow.value = apps.filter { it.appStatus == StatusApp.BLOQUEADA.desc }
@@ -109,7 +103,6 @@ class AppDataRepository @Inject constructor(
         todosAppsMenosHorarioFlow.value = apps.filter { it.appStatus != StatusApp.HORARIO.desc }
         todosAppsMenosDisponFlow.value = apps.filter { it.appStatus != StatusApp.DISPONIBLE.desc }
         horariosFlow.value = horarios
-        appWithHorariosFlow.value = appWithHorarios
     }
 
     fun inicieDelecturaDeBD() {
@@ -125,8 +118,7 @@ class AppDataRepository @Inject constructor(
                     Logger.info(context, "AppDataRepository", "Iniciando inicieDelecturaDeBD")
                     val apps = appDao.getAllApps().first()
                     val horarios = horarioDao.getAllHorarios().first()
-                    val appWithHorarios = appHorarioDao.getAllAppsWithHorariosFlow().first()
-                    actualizarFlows(apps, horarios, appWithHorarios)
+                    actualizarFlows(apps, horarios)
                     Logger.info(context, "AppDataRepository", "Apps y horarios cargados")
                 }
             } catch (e: DeadObjectException) {
@@ -150,21 +142,18 @@ class AppDataRepository @Inject constructor(
 
     private fun cargarAppsEnBackgroundDesdeBD() {
         scope.launch {
-            appDao.getAllApps()
-                .combine(horarioDao.getAllHorarios()) { apps, horarios ->
-                    apps to horarios
-                }
-                .combine(appHorarioDao.getAllAppsWithHorariosFlow()) { (apps, horarios), appWithHorarios ->
-                    Triple(apps, horarios, appWithHorarios)
-                }
-                .collect { (apps, horarios, appWithHorarios) ->
-                    actualizarFlows(apps, horarios, appWithHorarios)
-                    Logger.info(
-                        context,
-                        "AppDataRepository",
-                        "Flows actualizados en background: apps=${apps.size}, horarios=${horarios.size}, appWithHorarios=${appWithHorarios.size}"
-                    )
-                }
+                appDao.getAllApps()
+                    .combine(horarioDao.getAllHorarios()) { apps, horarios ->
+                        apps to horarios
+                    }
+                    .collect { (apps, horarios) ->
+                        actualizarFlows(apps, horarios)
+                        Logger.info(
+                            context,
+                            "AppDataRepository",
+                            "Flows actualizados en background: apps=${apps.size}, horarios=${horarios.size}"
+                        )
+                    }
         }
     }
 
@@ -288,10 +277,6 @@ class AppDataRepository @Inject constructor(
                         "AppDataRepository",
                         "addAppsASiempreBloqueadasBD agregando a BD..."
                     )
-
-                    val pkgs = appsBloqueadas.map { it.packageName }
-                    if (pkgs.isNotEmpty()) appHorarioDao.deleteCrossRefsByPackage(pkgs)
-
                     appDao.insertListaApps(appsBloqueadas)
                     mostrarBottomSheetActualizadaFlow.value = true
                 }
@@ -329,10 +314,6 @@ class AppDataRepository @Inject constructor(
                         "AppDataRepository",
                         "addAppsASiempreDisponiblesBD agregando a BD..."
                     )
-
-                    val pkgs = appsDispon.map { it.packageName }
-                    if (pkgs.isNotEmpty()) appHorarioDao.deleteCrossRefsByPackage(pkgs)
-
                     appDao.insertListaApps(appsDispon)
                     mostrarBottomSheetActualizadaFlow.value = true
                 }
@@ -367,18 +348,6 @@ class AppDataRepository @Inject constructor(
                 dbLock.withLock {
                     Logger.info(context, "AppDataRepository", "addAppsAHorarioBD agregando a BD...")
                     appDao.insertListaApps(appsHorario)
-
-                    val horariosExistentes = horarioDao.getAllHorarios().first()
-                    if (horariosExistentes.isNotEmpty()) {
-                        val refs = mutableListOf<AppHorarioCrossRef>()
-                        appsHorario.forEach { app ->
-                            horariosExistentes.forEach { horario ->
-                                refs.add(AppHorarioCrossRef(app.packageName, app.deviceId, horario.id))
-                            }
-                        }
-                        if (refs.isNotEmpty()) appHorarioDao.insertCrossRefs(refs)
-                    }
-
                     mostrarBottomSheetActualizadaFlow.value = true
                 }
             } catch (e: Exception) {
@@ -428,26 +397,6 @@ class AppDataRepository @Inject constructor(
         }
     }
 
-    suspend fun asignarHorarioApps(idHorario: Long, apps: List<AppEntity>) {
-        if (idHorario != -1L) {
-            val refs = mutableListOf<AppHorarioCrossRef>()
-            apps.forEach { app ->
-                refs.add(AppHorarioCrossRef(app.packageName, app.deviceId, idHorario))
-            }
-            try {
-                appHorarioDao.insertCrossRefs(refs)
-                Logger.info(context, "AppDataRepository", "Horario $idHorario asignado...")
-            } catch (e: Exception) {
-                Logger.error(
-                    context,
-                    "AppDataRepository",
-                    "Error al asignado horario $idHorario...: ${e.message}",
-                    e
-                )
-            }
-        }
-    }
-
     fun deleteHorarioBD(horario: HorarioEntity) {
         scope.launch {
             try {
@@ -463,25 +412,6 @@ class AppDataRepository @Inject constructor(
             }
         }
     }
-
-    fun getHorariosPorPkg(packageName: String): List<HorarioEntity> {
-        return try {
-            val horarios = appWithHorariosFlow.value
-                .firstOrNull { it.app.packageName == packageName }
-                ?.horarios ?: emptyList()
-            Logger.info(context, "AppDataRepository", "Horarios por pkg $packageName: $horarios")
-            horarios
-        } catch (e: Exception) {
-            Logger.error(
-                context,
-                "AppDataRepository",
-                "Error getHorariosPorPkg $packageName: ${e.message}",
-                e
-            )
-            emptyList()
-        }
-    }
-
 
     fun updateTiempoDeUsoUnaApp(pkgName: String) = scope.launch {
         val locked = lockUpdateTiempoDeUsoUnaApp.tryLock()

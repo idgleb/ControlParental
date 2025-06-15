@@ -8,7 +8,6 @@ import androidx.room.Room
 import com.ursolgleb.controlparental.data.apps.AppDatabase
 import com.ursolgleb.controlparental.data.apps.dao.AppDao
 import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
-import com.ursolgleb.controlparental.data.apps.dao.AppHorarioDao
 import com.ursolgleb.controlparental.data.apps.dao.UsageEventDao
 import com.ursolgleb.controlparental.data.apps.dao.UsageStatsDao
 import com.ursolgleb.controlparental.data.apps.dao.DeviceDao

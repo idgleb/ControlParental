@@ -40,10 +40,7 @@ class HorarioEditViewHolder(
             horario.isActive = isChecked
 
             appDataRepository.scope.launch {
-                val idHorario = appDataRepository.addHorarioBD(horario)
-                appDataRepository.horarioAppsFlow.collect { appList ->
-                    appDataRepository.asignarHorarioApps(idHorario, appList)
-                }
+                appDataRepository.addHorarioBD(horario)
             }
 
         }
