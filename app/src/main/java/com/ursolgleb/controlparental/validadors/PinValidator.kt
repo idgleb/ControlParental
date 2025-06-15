@@ -34,6 +34,9 @@ class PinValidator @Inject constructor(@ApplicationContext context: Context) {
         putString("hash", hash(pin))
     }
 
+    /** Devuelve true si ya se ha guardado un PIN previamente */
+    fun isPinSet(): Boolean = prefs.contains("hash")
+
     /** Comprueba que el PIN introducido coincide con el hash */
     fun isPinCorrect(pin: String): Boolean =
         hash(pin) == prefs.getString("hash", null)

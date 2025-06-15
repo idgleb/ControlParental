@@ -93,7 +93,8 @@ class DesarolloActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        if (!pinValidator.isPinCorrect("dummy")) {   // devuelve false si no hay hash
+        // Mostrar aviso si todavía no se configuró un PIN de acceso
+        if (!pinValidator.isPinSet()) {
             MaterialAlertDialogBuilder(this)
                 .setMessage("Aún no has establecido un PIN de acceso. Hazlo ahora.")
                 .setPositiveButton("Entendido") { _, _ -> /* el usuario verá la pantalla y lo guardará */ }
