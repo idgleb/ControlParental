@@ -51,7 +51,7 @@ class AppBlockerService : AccessibilityService() {
                 "🔴 Ejecutando GLOBAL_ACTION_BACK o GLOBAL_ACTION_HOME",
                 appDataRepository.currentPkg!!
             )
-            performGlobalAction(GLOBAL_ACTION_BACK)
+            //performGlobalAction(GLOBAL_ACTION_BACK)
             appBlockHandler.log(
                 "🏁 showAuthenticationDialog",
                 appDataRepository.currentPkg!!
