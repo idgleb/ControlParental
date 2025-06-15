@@ -51,11 +51,6 @@ object DatabaseModule {
     fun provideHorarioDao(db: AppDatabase): HorarioDao =
         db.horarioDao()
 
-    @Singleton
-    @Provides
-    fun provideAppHorarioDao(db: AppDatabase): AppHorarioDao =
-        db.appHorarioDao()
-
 
     @Singleton
     @Provides
