@@ -38,7 +38,7 @@ object DatabaseModule {
         // the database at boot time.
 
         // Objeto de migración
-        val CLEAN_MIGRATION = object : Migration(35, 36) {
+        val CLEAN_MIGRATION = object : Migration(36, 37) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.query("SELECT name FROM sqlite_master WHERE type='table'").use { cursor ->
                     while (cursor.moveToNext()) {
@@ -54,7 +54,7 @@ object DatabaseModule {
                 }
             }
         }
-
+        
 
         // Al crear la base de datos
         return Room.databaseBuilder(
