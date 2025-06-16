@@ -45,7 +45,8 @@
             android:exported="false"
             android:theme="@style/Theme.ControlParental"
             android:excludeFromRecents="true"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait"
+            android:resizeableActivity="false"/>
         <!-- Actividad principal -->
         <activity
             android:name=".UI.activities.ContainerActivity"
