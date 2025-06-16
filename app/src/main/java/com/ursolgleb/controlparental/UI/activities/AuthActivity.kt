@@ -1,77 +1,74 @@
 package com.ursolgleb.controlparental.UI.activities
 
-import androidx.appcompat.app.AlertDialog
-import android.content.Intent
-import androidx.biometric.BiometricManager
-import androidx.biometric.BiometricPrompt
 import android.os.Bundle
-import android.text.InputType
-import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import android.widget.Button
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.utils.Session
 import com.ursolgleb.controlparental.validadors.PinValidator
+import com.ursolgleb.controlparental.databinding.ActivityAuthBinding
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class AuthActivity : AppCompatActivity() {
 
-    @Inject lateinit var pinValidator: PinValidator
+    @Inject
+    lateinit var pinValidator: PinValidator
 
-    @Inject lateinit var appDataRepository: AppDataRepository
+    @Inject
+    lateinit var appDataRepository: AppDataRepository
 
-    @Inject lateinit var session: Session
+    @Inject
+    lateinit var session: Session
 
-    private var pinDialog: AlertDialog? = null      // ahora coincide con el builder
+    private lateinit var binding: ActivityAuthBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setFinishOnTouchOutside(false)          // evita cerrar tocando fuera
-        showPinFallback()
+        binding = ActivityAuthBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        initListeners()
     }
 
-    /* ---------- PIN fallback ---------- */
-    private fun showPinFallback() {
-
-        if (pinDialog?.isShowing == true) return   // ya hay un diálogo activo
-        if (isFinishing || isDestroyed) return     // evita BadTokenException
-
-
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or
-                    InputType.TYPE_NUMBER_VARIATION_PASSWORD
+    private fun initListeners() {
+        val digitButtons: List<Pair<Button, String>> = listOf(
+            binding.btnNum0 to "0",
+            binding.btnNum1 to "1",
+            binding.btnNum2 to "2",
+            binding.btnNum3 to "3",
+            binding.btnNum4 to "4",
+            binding.btnNum5 to "5",
+            binding.btnNum6 to "6",
+            binding.btnNum7 to "7",
+            binding.btnNum8 to "8",
+            binding.btnNum9 to "9",
+        )
+        digitButtons.forEach { (button, digit) ->
+            button.setOnClickListener { appendDigit(digit) }
         }
+        binding.btnAceptar.setOnClickListener { validarPin() }
+        binding.btnCancelar.setOnClickListener {
+            session.cerrarSesion()
+            finish()
+        }
+    }
 
-        pinDialog = MaterialAlertDialogBuilder(this)
-            .setTitle("PIN")
-            .setCancelable(false)
-            .setView(input)
-            .setPositiveButton("Aceptar") { _, _ ->
-                if (pinValidator.isPinCorrect(input.text.toString())) {
-                    session.iniciarSesion()
-                    finish()
-                } else {
-                    Toast.makeText(this, "PIN incorrecto", Toast.LENGTH_SHORT).show()
-                    session.cerrarSesion()
-                    finish()
-                }
-            }
-            .setNegativeButton("Cancelar") { _, _ ->
-                session.cerrarSesion()
-                finish()
-            }
-            .show()
+    private fun appendDigit(digit: String) {
+        binding.etPin.append(digit)
     }
 
 
-    /* ---------- Limpieza ---------- */
-    override fun onDestroy() {
-        pinDialog?.dismiss()       // <-- evita WindowLeaked
-        super.onDestroy()
+    private fun validarPin() {
+        val pin = binding.etPin.text.toString()
+        if (pinValidator.isPinCorrect(pin)) {
+            session.iniciarSesion()
+            finish()
+        } else {
+            Toast.makeText(this, "PIN incorrecto", Toast.LENGTH_SHORT).show()
+            session.cerrarSesion()
+            binding.etPin.text?.clear()
+        }
     }
 }
