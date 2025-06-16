@@ -93,6 +93,12 @@
             android:permission="com.google.android.gms.permission.BIND_NETWORK_TASK_SERVICE"
             tools:replace="android:exported" />
 
+        <!-- Disable default WorkManager initializer -->
+        <meta-data
+            android:name="androidx.work.WorkManagerInitializer"
+            tools:node="remove" />
+
+
     </application>
 
 </manifest>
