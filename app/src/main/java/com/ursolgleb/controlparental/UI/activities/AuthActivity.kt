@@ -32,6 +32,16 @@ class AuthActivity : AppCompatActivity() {
         initListeners()
     }
 
+    override fun onResume() {
+        super.onResume()
+        pinValidator.setAuthActivitiAbierta(true)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        pinValidator.setAuthActivitiAbierta(false)
+    }
+
     private fun initListeners() {
         val digitButtons: List<Pair<Button, String>> = listOf(
             binding.btnNum0 to "0",

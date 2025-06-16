@@ -14,6 +14,8 @@ import androidx.core.content.edit
 @Singleton
 class PinValidator @Inject constructor(@ApplicationContext context: Context) {
 
+    private var isAuthActivitiAbierta = false
+
     private val prefs: SharedPreferences by lazy {
         val masterKey = MasterKey.Builder(context)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -27,6 +29,15 @@ class PinValidator @Inject constructor(@ApplicationContext context: Context) {
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
     }
+
+    fun isAuthActivitiAbierta(): Boolean {
+        return isAuthActivitiAbierta
+    }
+
+    fun setAuthActivitiAbierta(abierta: Boolean) {
+        isAuthActivitiAbierta = abierta
+    }
+
 
 
     /** Guarda hash del PIN (llámalo durante el onboarding del padre) */

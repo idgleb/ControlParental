@@ -13,6 +13,7 @@ import com.ursolgleb.controlparental.detectors.SettingsClickDetector
 import com.ursolgleb.controlparental.detectors.SubSettingsDetector
 import com.ursolgleb.controlparental.utils.Logger
 import com.ursolgleb.controlparental.utils.PerPackageJobManager
+import com.ursolgleb.controlparental.validadors.PinValidator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,7 +30,8 @@ class AppBlockHandler @Inject constructor(
     private val tiempoUsoBlockChecker: TiempoUsoBlockChecker,
     private val settingsClickDetector: SettingsClickDetector,
     private val subSettingsDetector: SubSettingsDetector,
-    private val propioAppDetector: PropioAppDetector
+    private val propioAppDetector: PropioAppDetector,
+    private val pinValidator: PinValidator
 ) {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -63,9 +65,7 @@ class AppBlockHandler @Inject constructor(
 
     private fun handleAppBlockedDetection(event: AccessibilityEvent) {
         val pkg = event.packageName?.toString() ?: return
-        Log.w("AppBlockerService", "handleAppBlockedDetection pkg: $pkg")
         if (pkg == appDataRepository.context.packageName) return
-        Log.w("AppBlockerService", "handleAppBlockedDetection packageName: ${appDataRepository.context.packageName}")
         try {
             val app = appDataRepository.todosAppsFlow.value.firstOrNull { it.packageName == pkg }
             if (app == null) return
@@ -114,8 +114,8 @@ class AppBlockHandler @Inject constructor(
 
     private fun handlePropioAppDetection(event: AccessibilityEvent) {
         val pkg = event.packageName?.toString() ?: return
+        if (pinValidator.isAuthActivitiAbierta()) return
         if (!isBlockerEnabled && propioAppDetector.shouldBlock(event)) {
-
             isBlockerEnabled = true
             logBlocked("❌ Bloqueada por texto (PropioApp)", pkg)
         }
