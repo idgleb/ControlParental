@@ -38,12 +38,16 @@ object DatabaseModule {
         // the database at boot time.
 
         // Objeto de migración
-        val CLEAN_MIGRATION = object : Migration(34, 35) {
+        val CLEAN_MIGRATION = object : Migration(35, 36) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.query("SELECT name FROM sqlite_master WHERE type='table'").use { cursor ->
                     while (cursor.moveToNext()) {
                         val name = cursor.getString(0)
-                        if (name != "android_metadata" && name != "room_master_table") {
+                        if (
+                            name != "android_metadata" &&
+                            name != "room_master_table" &&
+                            name != "sqlite_sequence"
+                        ) {
                             db.execSQL("DROP TABLE IF EXISTS `$name`")
                         }
                     }
