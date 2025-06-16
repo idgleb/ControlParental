@@ -3,6 +3,7 @@ package com.ursolgleb.controlparental.di
 import android.content.Context
 import android.os.Build
 import android.os.UserManager
+import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.room.Room
 import androidx.room.migration.Migration
@@ -38,11 +39,13 @@ object DatabaseModule {
         // the database at boot time.
 
         // Objeto de migración
-        val CLEAN_MIGRATION = object : Migration(36, 37) {
+        val CLEAN_MIGRATION = object : Migration(38, 39) {
             override fun migrate(db: SupportSQLiteDatabase) {
+                Log.e("AppDatabase", "fun migrate START")
                 db.query("SELECT name FROM sqlite_master WHERE type='table'").use { cursor ->
                     while (cursor.moveToNext()) {
                         val name = cursor.getString(0)
+                        Log.e("AppDatabase", "Table name: $name")
                         if (
                             name != "android_metadata" &&
                             name != "room_master_table" &&
@@ -54,7 +57,7 @@ object DatabaseModule {
                 }
             }
         }
-        
+
 
         // Al crear la base de datos
         return Room.databaseBuilder(
