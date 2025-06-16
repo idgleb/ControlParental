@@ -39,7 +39,7 @@ object DatabaseModule {
         // the database at boot time.
 
         // Objeto de migración
-        val CLEAN_MIGRATION = object : Migration(38, 39) {
+        /*val CLEAN_MIGRATION = object : Migration(38, 39) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 Log.e("AppDatabase", "fun migrate START")
                 db.query("SELECT name FROM sqlite_master WHERE type='table'").use { cursor ->
@@ -56,7 +56,7 @@ object DatabaseModule {
                     }
                 }
             }
-        }
+        }*/
 
 
         // Al crear la base de datos
