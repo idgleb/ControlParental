@@ -65,9 +65,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "app_database.db"
         )
-            .addMigrations(CLEAN_MIGRATION) // Registrar la migración
-            .fallbackToDestructiveMigration()
-            .build()
+            .fallbackToDestructiveMigration().build()
     }
 
     @Singleton
