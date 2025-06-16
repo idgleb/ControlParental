@@ -50,6 +50,8 @@ class AppBlockHandler @Inject constructor(
 
     fun handle(event: AccessibilityEvent) {
 
+        if (pinValidator.isAuthActivitiAbierta()) return
+
         //if (event.packageName != appDataRepository.defLauncher)
         if (true) {
             handleAppBlockedDetection(event)
@@ -114,7 +116,6 @@ class AppBlockHandler @Inject constructor(
 
     private fun handlePropioAppDetection(event: AccessibilityEvent) {
         val pkg = event.packageName?.toString() ?: return
-        if (pinValidator.isAuthActivitiAbierta()) return
         if (!isBlockerEnabled && propioAppDetector.shouldBlock(event)) {
             isBlockerEnabled = true
             logBlocked("❌ Bloqueada por texto (PropioApp)", pkg)
