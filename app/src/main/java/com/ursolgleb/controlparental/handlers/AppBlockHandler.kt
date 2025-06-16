@@ -64,8 +64,8 @@ class AppBlockHandler @Inject constructor(
     private fun handleAppBlockedDetection(event: AccessibilityEvent) {
         val pkg = event.packageName?.toString() ?: return
         Log.w("AppBlockerService", "handleAppBlockedDetection pkg: $pkg")
-        if (pkg == appDataRepository.context.getString(R.string.app_name)) return
-        Log.w("AppBlockerService", "handleAppBlockedDetection app_name: ${appDataRepository.context.getString(R.string.app_name)}")
+        if (pkg == appDataRepository.context.packageName) return
+        Log.w("AppBlockerService", "handleAppBlockedDetection packageName: ${appDataRepository.context.packageName}")
         try {
             val app = appDataRepository.todosAppsFlow.value.firstOrNull { it.packageName == pkg }
             if (app == null) return
