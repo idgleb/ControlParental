@@ -41,11 +41,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("keyControl.jks") // Ruta a tu keystore
-            storePassword = project.findProperty("STORE_PASSWORD") as String?
-                ?: System.getenv("STORE_PASSWORD")
+            storePassword = "646807"
             keyAlias = "keyControlParental"
-            keyPassword = project.findProperty("KEY_PASSWORD") as String?
-                ?: System.getenv("KEY_PASSWORD")
+            keyPassword = "646807"
         }
     }
 
