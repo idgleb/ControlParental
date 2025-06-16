@@ -1,6 +1,8 @@
 package com.ursolgleb.controlparental.UI.activities
 
 import android.os.Bundle
+import android.os.Build
+import androidx.annotation.RequiresApi
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
@@ -40,6 +42,17 @@ class AuthActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         pinValidator.setAuthActivitiAbierta(false)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        pinValidator.setAuthActivitiAbierta(hasFocus)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    override fun onTopResumedActivityChanged(isTopResumed: Boolean) {
+        super.onTopResumedActivityChanged(isTopResumed)
+        pinValidator.setAuthActivitiAbierta(isTopResumed)
     }
 
     private fun initListeners() {
