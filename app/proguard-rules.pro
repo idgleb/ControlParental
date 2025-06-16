@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Navigation arguments are loaded using reflection. Prevent obfuscation of
+# HorarioEntity so the Navigation component can find the class at runtime.
+-keep class com.ursolgleb.controlparental.data.apps.entities.HorarioEntity { *; }
