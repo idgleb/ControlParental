@@ -2,6 +2,7 @@ package com.ursolgleb.controlparental.handlers
 
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.data.log.LogDataRepository
 import com.ursolgleb.controlparental.checkers.AppBlockChecker
@@ -62,6 +63,7 @@ class AppBlockHandler @Inject constructor(
 
     private fun handleAppBlockedDetection(event: AccessibilityEvent) {
         val pkg = event.packageName?.toString() ?: return
+        if (pkg == appDataRepository.context.getString(R.string.app_name)) return
         try {
             val app = appDataRepository.todosAppsFlow.value.firstOrNull { it.packageName == pkg }
             if (app == null) return
@@ -71,17 +73,24 @@ class AppBlockHandler @Inject constructor(
                     isBlockerEnabled = true
                     logBlocked("❌ Bloqueada por lista de apps", pkg)
                 }
+
                 horarioBlockChecker.shouldBlock(pkg) -> {
                     isBlockerEnabled = true
                     logBlocked("⏰ Bloqueada por horario activo", pkg)
                 }
+
                 tiempoUsoBlockChecker.shouldBlock(pkg) -> {
                     isBlockerEnabled = true
                     logBlocked("🕒 Bloqueada por límite de tiempo diario", pkg)
                 }
             }
         } catch (e: Exception) {
-            Logger.error(appDataRepository.context, "AppBlockHandler", "Error en bloqueos: ${e.message}", e)
+            Logger.error(
+                appDataRepository.context,
+                "AppBlockHandler",
+                "Error en bloqueos: ${e.message}",
+                e
+            )
         }
     }
 
@@ -127,7 +136,12 @@ class AppBlockHandler @Inject constructor(
                         appDataRepository.updateTiempoDeUsoUnaApp(pkg)
                     }
                 } catch (e: Exception) {
-                    Logger.error(appDataRepository.context, "AppBlockHandler", "Error en renovarTiempoUsoAppHoy: ${e.message}", e)
+                    Logger.error(
+                        appDataRepository.context,
+                        "AppBlockHandler",
+                        "Error en renovarTiempoUsoAppHoy: ${e.message}",
+                        e
+                    )
                 }
             }
         }
@@ -146,7 +160,12 @@ class AppBlockHandler @Inject constructor(
                         appDataRepository.addNuevoPkgBD(pkg)
                     }
                 } catch (e: Exception) {
-                    Logger.error(appDataRepository.context, "AppBlockHandler", "Error en isNewAppWithUi o addNuevoPkgBD: ${e.message}", e)
+                    Logger.error(
+                        appDataRepository.context,
+                        "AppBlockHandler",
+                        "Error en isNewAppWithUi o addNuevoPkgBD: ${e.message}",
+                        e
+                    )
                 }
             }
         }

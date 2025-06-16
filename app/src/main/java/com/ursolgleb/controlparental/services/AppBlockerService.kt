@@ -56,9 +56,11 @@ class AppBlockerService : AccessibilityService() {
                 "🏁 showAuthenticationDialog",
                 appDataRepository.currentPkg!!
             )
+            Log.d("AppBlockerService333", "currentPkg=${appDataRepository.currentPkg}")
             Log.d("AppBlockerService333", "showAuthenticationDialog")
             appBlockHandler.resetBlockFlag()
             showAuthenticationDialog()
+            Log.d("AppBlockerService333", "currentPkg2=${appDataRepository.currentPkg}")
         }
 
     }
