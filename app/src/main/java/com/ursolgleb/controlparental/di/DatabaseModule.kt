@@ -5,6 +5,8 @@ import android.os.Build
 import android.os.UserManager
 import androidx.core.content.ContextCompat
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ursolgleb.controlparental.data.apps.AppDatabase
 import com.ursolgleb.controlparental.data.apps.dao.AppDao
 import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
@@ -34,11 +36,31 @@ object DatabaseModule {
         }
         // Use a device protected context when the user is locked so the service can access
         // the database at boot time.
+
+        // Objeto de migración
+        val CLEAN_MIGRATION = object : Migration(34, 35) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.query("SELECT name FROM sqlite_master WHERE type='table'").use { cursor ->
+                    while (cursor.moveToNext()) {
+                        val name = cursor.getString(0)
+                        if (name != "android_metadata" && name != "room_master_table") {
+                            db.execSQL("DROP TABLE IF EXISTS `$name`")
+                        }
+                    }
+                }
+            }
+        }
+
+
+        // Al crear la base de datos
         return Room.databaseBuilder(
             contextForDb,
             AppDatabase::class.java,
             "app_database.db"
-        ).fallbackToDestructiveMigration().build()
+        )
+            .addMigrations(CLEAN_MIGRATION) // Registrar la migración
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Singleton
