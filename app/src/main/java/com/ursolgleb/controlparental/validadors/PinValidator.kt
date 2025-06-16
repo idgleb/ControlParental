@@ -12,22 +12,37 @@ import javax.inject.Singleton
 import androidx.core.content.edit
 
 @Singleton
-class PinValidator @Inject constructor(@ApplicationContext context: Context) {
+class PinValidator @Inject constructor(@ApplicationContext private val context: Context) {
 
     private var isAuthActivitiAbierta = false
 
     private val prefs: SharedPreferences by lazy {
+        try {
+            createEncryptedPrefs()
+        } catch (_: Exception) {
+            // If the preferences cannot be decrypted (e.g., after reinstalling
+            // the app) clear the stored file and recreate it with a new key
+            context.deleteSharedPreferences(PREF_NAME)
+            createEncryptedPrefs()
+        }
+    }
+
+    private fun createEncryptedPrefs(): SharedPreferences {
         val masterKey = MasterKey.Builder(context)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
 
-        EncryptedSharedPreferences.create(
+        return EncryptedSharedPreferences.create(
             context,                       // 1º  → Context
-            "parent_prefs",                // 2º  → fileName
+            PREF_NAME,                     // 2º  → fileName
             masterKey,                     // 3º  → MasterKey
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
+    }
+
+    companion object {
+        private const val PREF_NAME = "parent_prefs"
     }
 
     fun isAuthActivitiAbierta(): Boolean {
@@ -37,7 +52,6 @@ class PinValidator @Inject constructor(@ApplicationContext context: Context) {
     fun setAuthActivitiAbierta(abierta: Boolean) {
         isAuthActivitiAbierta = abierta
     }
-
 
 
     /** Guarda hash del PIN (llámalo durante el onboarding del padre) */
