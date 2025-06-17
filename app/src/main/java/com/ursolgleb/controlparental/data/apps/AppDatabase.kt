@@ -22,7 +22,7 @@ import com.ursolgleb.controlparental.utils.Converters
         UsageEventEntity::class,
         UsageStatsEntity::class,
         DeviceEntity::class],
-    version = 43,
+    version = 44,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

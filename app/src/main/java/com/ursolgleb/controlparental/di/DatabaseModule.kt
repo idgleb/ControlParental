@@ -38,27 +38,6 @@ object DatabaseModule {
         // Use a device protected context when the user is locked so the service can access
         // the database at boot time.
 
-        // Objeto de migración
-        /*val CLEAN_MIGRATION = object : Migration(38, 39) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                Log.e("AppDatabase", "fun migrate START")
-                db.query("SELECT name FROM sqlite_master WHERE type='table'").use { cursor ->
-                    while (cursor.moveToNext()) {
-                        val name = cursor.getString(0)
-                        Log.e("AppDatabase", "Table name: $name")
-                        if (
-                            name != "android_metadata" &&
-                            name != "room_master_table" &&
-                            name != "sqlite_sequence"
-                        ) {
-                            db.execSQL("DROP TABLE IF EXISTS `$name`")
-                        }
-                    }
-                }
-            }
-        }*/
-
-
         // Al crear la base de datos
         return Room.databaseBuilder(
             contextForDb,
@@ -77,7 +56,6 @@ object DatabaseModule {
     @Provides
     fun provideHorarioDao(db: AppDatabase): HorarioDao =
         db.horarioDao()
-
 
     @Singleton
     @Provides
