@@ -16,6 +16,7 @@ import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.activities.DesarolloActivity
 import com.ursolgleb.controlparental.databinding.FragmentMainAdminBinding
 import com.ursolgleb.controlparental.utils.Permisos
+import com.ursolgleb.controlparental.utils.Session
 import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -26,6 +27,9 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
 
     @Inject
     lateinit var appDataRepository: AppDataRepository
+
+    @Inject
+    lateinit var session: Session
 
     private var _binding: FragmentMainAdminBinding? = null
     private val binding get() = _binding!!
@@ -86,6 +90,10 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
         binding.ayudaBoton.setOnClickListener {
             val intent = Intent(requireContext(), DesarolloActivity::class.java)
             startActivity(intent)
+        }
+        binding.btnSalir.setOnClickListener {
+            session.cerrarSesion()
+            requireActivity().finish()
         }
     }
 
