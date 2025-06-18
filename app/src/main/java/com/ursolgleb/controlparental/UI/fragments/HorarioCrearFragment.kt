@@ -127,6 +127,7 @@ class HorarioCrearFragment : Fragment() {
 
                 horario = HorarioEntity(
                     id = horario.id,
+                    deviceId = appDataRepository.getOrCreateDeviceId(),
                     nombreDeHorario = nombreHorario,
                     diasDeSemana = diasDeSemana,
                     horaInicio = horaInicio,

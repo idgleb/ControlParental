@@ -5,6 +5,7 @@ package com.ursolgleb.controlparental.data.remote.models
  */
 data class HorarioDto(
     val id: Long,
+    val deviceId: String?,
     val nombreDeHorario: String,
     val diasDeSemana: List<Int>,
     val horaInicio: String?,

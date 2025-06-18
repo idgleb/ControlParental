@@ -53,21 +53,21 @@ class SyncWorker(
             remoteRepo.pushHorarios(horarios)
 
 
-            /*            val remoteApps = remoteRepo.fetchApps()
-                        if (remoteApps.isNotEmpty()) {
-                            val entities = remoteApps.mapNotNull { it.toEntity() }
-                            if (entities.isNotEmpty()) {
-                                Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades Start...")
-                                localRepo.insertAppsEntidades(entities)
-                                Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades End...")
-                            }
-                        }
-                        val remoteHorarios = remoteRepo.fetchHorarios()
-                        if (remoteHorarios.isNotEmpty()) {
-                            remoteHorarios.mapNotNull { it.toEntity() }.forEach { horario ->
-                                localRepo.addHorarioBD(horario)
-                            }
-                        }*/
+            /*     val remoteApps = remoteRepo.fetchApps(device?.deviceId)
+                 if (remoteApps.isNotEmpty()) {
+                     val entities = remoteApps.mapNotNull { it.toEntity() }
+                     if (entities.isNotEmpty()) {
+                         Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades Start...")
+                         localRepo.insertAppsEntidades(entities)
+                         Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades End...")
+                     }
+                 }
+                 val remoteHorarios = remoteRepo.fetchHorarios(device?.deviceId)
+                 if (remoteHorarios.isNotEmpty()) {
+                     remoteHorarios.mapNotNull { it.toEntity() }.forEach { horario ->
+                         localRepo.addHorarioBD(horario)
+                     }
+                 }*/
 
             //  Reprogramar el worker
             scheduleNextWork(applicationContext)

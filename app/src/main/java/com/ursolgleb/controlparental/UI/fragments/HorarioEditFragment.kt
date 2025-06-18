@@ -60,6 +60,7 @@ class HorarioEditFragment : Fragment(R.layout.fragment_horario_edit) {
 
         binding.aggregarHorariosABoton.setOnClickListener {
             val horario = HorarioEntity(
+                deviceId = appDataRepository.getOrCreateDeviceId(),
                 nombreDeHorario = "",
                 diasDeSemana = listOf(),
                 horaInicio = LocalTime.of(0, 0),

@@ -78,7 +78,7 @@ class AppDataRepository @Inject constructor(
     val mutexUpdateBDAppsStateFlow = MutableStateFlow(false)
     val mostrarBottomSheetActualizadaFlow = MutableStateFlow(false)
 
-    private fun getOrCreateDeviceId(): String {
+    fun getOrCreateDeviceId(): String {
         val prefs = context.getSharedPreferences("device_prefs", Context.MODE_PRIVATE)
         val existing = prefs.getString("device_id", null)
         return if (existing != null) {
@@ -142,18 +142,18 @@ class AppDataRepository @Inject constructor(
 
     private fun cargarAppsEnBackgroundDesdeBD() {
         scope.launch {
-                appDao.getAllApps()
-                    .combine(horarioDao.getAllHorarios()) { apps, horarios ->
-                        apps to horarios
-                    }
-                    .collect { (apps, horarios) ->
-                        actualizarFlows(apps, horarios)
-                        Logger.info(
-                            context,
-                            "AppDataRepository",
-                            "Flows actualizados en background: apps=${apps.size}, horarios=${horarios.size}"
-                        )
-                    }
+            appDao.getAllApps()
+                .combine(horarioDao.getAllHorarios()) { apps, horarios ->
+                    apps to horarios
+                }
+                .collect { (apps, horarios) ->
+                    actualizarFlows(apps, horarios)
+                    Logger.info(
+                        context,
+                        "AppDataRepository",
+                        "Flows actualizados en background: apps=${apps.size}, horarios=${horarios.size}"
+                    )
+                }
         }
     }
 
@@ -516,12 +516,18 @@ class AppDataRepository @Inject constructor(
                 val model = "${Build.MANUFACTURER} ${Build.MODEL}"
                 val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
                 val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-                val entity = DeviceEntity(deviceId = deviceId, model = model, batteryLevel = battery)
+                val entity =
+                    DeviceEntity(deviceId = deviceId, model = model, batteryLevel = battery)
                 deviceDao.replace(entity)
                 //f85d8cc0-5637-430d-a109-b96da8c2718c
                 Logger.info(context, "AppDataRepository", "Device info guardada: $entity")
             } catch (e: Exception) {
-                Logger.error(context, "AppDataRepository", "Error guardando device info: ${e.message}", e)
+                Logger.error(
+                    context,
+                    "AppDataRepository",
+                    "Error guardando device info: ${e.message}",
+                    e
+                )
             }
         }
     }
@@ -530,7 +536,12 @@ class AppDataRepository @Inject constructor(
         return try {
             deviceDao.getDeviceOnce()
         } catch (e: Exception) {
-            Logger.error(context, "AppDataRepository", "Error obteniendo device info: ${e.message}", e)
+            Logger.error(
+                context,
+                "AppDataRepository",
+                "Error obteniendo device info: ${e.message}",
+                e
+            )
             null
         }
     }

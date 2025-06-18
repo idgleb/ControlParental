@@ -43,6 +43,7 @@ fun AppDto.toEntity(): AppEntity? {
 
 fun HorarioEntity.toDto() = HorarioDto(
     id = id,
+    deviceId = deviceId,
     nombreDeHorario = nombreDeHorario,
     diasDeSemana = diasDeSemana,
     horaInicio = horaInicio.toString(),
@@ -53,8 +54,10 @@ fun HorarioEntity.toDto() = HorarioDto(
 fun HorarioDto.toEntity(): HorarioEntity? {
     val inicio = horaInicio?.let { java.time.LocalTime.parse(it) } ?: return null
     val fin = horaFin?.let { java.time.LocalTime.parse(it) } ?: return null
+    val devId = deviceId ?: return null
     return HorarioEntity(
         id = id,
+        deviceId = devId,
         nombreDeHorario = nombreDeHorario,
         diasDeSemana = diasDeSemana,
         horaInicio = inicio,

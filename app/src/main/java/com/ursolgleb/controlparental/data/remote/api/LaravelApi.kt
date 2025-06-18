@@ -6,6 +6,7 @@ import com.ursolgleb.controlparental.data.remote.models.DeviceDto
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Query
 
 /**
  * Definición básica de la API remota en Laravel.
@@ -14,13 +15,13 @@ import retrofit2.http.POST
 interface LaravelApi {
 
     @GET("sync/apps")
-    suspend fun getApps(): List<AppDto>
+    suspend fun getApps(@Query("deviceId") deviceId: String?): List<AppDto>
 
     @POST("sync/apps")
     suspend fun postApps(@Body apps: List<AppDto>)
 
     @GET("sync/horarios")
-    suspend fun getHorarios(): List<HorarioDto>
+    suspend fun getHorarios(@Query("deviceId") deviceId: String?): List<HorarioDto>
 
     @POST("sync/horarios")
     suspend fun postHorarios(@Body horarios: List<HorarioDto>)

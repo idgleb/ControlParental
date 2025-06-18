@@ -1,6 +1,7 @@
 package com.ursolgleb.controlparental
 
 import android.app.Application
+import android.util.Log
 import androidx.emoji2.bundled.BundledEmojiCompatConfig
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -44,6 +45,7 @@ class ControlParentalApp : Application(), Configuration.Provider {
         appDataRepository.updateBDApps()
 
         SyncWorker.startWorker(this)
+        Log.e("SyncWorker", "SyncWorker.startWorker(this)")
 
         pinValidator.savePin("1234")   // ejecuta al confirmar el PIN
 

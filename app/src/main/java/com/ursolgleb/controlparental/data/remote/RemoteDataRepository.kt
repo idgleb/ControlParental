@@ -13,11 +13,15 @@ class RemoteDataRepository @Inject constructor(
     private val api: LaravelApi
 ) {
 
-    suspend fun fetchApps(): List<AppDto> = api.getApps()
+    suspend fun fetchApps(deviceId: String? = null): List<AppDto> {
+        return api.getApps(deviceId)
+    }
 
     suspend fun pushApps(apps: List<AppDto>) = api.postApps(apps)
 
-    suspend fun fetchHorarios(): List<HorarioDto> = api.getHorarios()
+    suspend fun fetchHorarios(deviceId: String? = null): List<HorarioDto> {
+        return api.getHorarios(deviceId)
+    }
 
     suspend fun pushHorarios(horarios: List<HorarioDto>) = api.postHorarios(horarios)
 
