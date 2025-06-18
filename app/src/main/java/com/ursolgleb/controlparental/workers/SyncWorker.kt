@@ -43,14 +43,20 @@ class SyncWorker(
                 Log.e("SyncWorker", "Ejecutando doWork() pushDevice End...")
             }
 
-            val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
-            Log.e("SyncWorker", "Ejecutando doWork() apps=$apps")
-            remoteRepo.pushApps(apps)
-            Log.e("SyncWorker", "Ejecutando doWork() pushApps End...")
+            if (localRepo.todosAppsFlow.value.isNotEmpty()) {
+                val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
+                remoteRepo.pushApps(apps)
+            } else {
+                remoteRepo.deleteApps(listOf(device?.deviceId.toString()))
+            }
 
 
-            val horarios = localRepo.horariosFlow.value.map { it.toDto() }
-            remoteRepo.pushHorarios(horarios)
+            if (localRepo.horariosFlow.value.isNotEmpty()) {
+                val horarios = localRepo.horariosFlow.value.map { it.toDto() }
+                remoteRepo.pushHorarios(horarios)
+            } else {
+                remoteRepo.deleteHorarios(listOf(device?.deviceId.toString()))
+            }
 
 
             /*     val remoteApps = remoteRepo.fetchApps(device?.deviceId)
@@ -88,7 +94,7 @@ class SyncWorker(
 
     private fun scheduleNextWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setInitialDelay(5, TimeUnit.SECONDS)
+            .setInitialDelay(10, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(

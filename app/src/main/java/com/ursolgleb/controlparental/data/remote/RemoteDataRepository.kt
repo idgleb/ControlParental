@@ -19,11 +19,15 @@ class RemoteDataRepository @Inject constructor(
 
     suspend fun pushApps(apps: List<AppDto>) = api.postApps(apps)
 
+    suspend fun deleteApps(deviceIds: List<String>) = api.deleteApps(deviceIds)
+
     suspend fun fetchHorarios(deviceId: String? = null): List<HorarioDto> {
         return api.getHorarios(deviceId)
     }
 
     suspend fun pushHorarios(horarios: List<HorarioDto>) = api.postHorarios(horarios)
+
+    suspend fun deleteHorarios(deviceIds: List<String>) = api.deleteHorarios(deviceIds)
 
     suspend fun fetchDevice(): DeviceDto = api.getDevice()
 

@@ -4,6 +4,7 @@ import com.ursolgleb.controlparental.data.remote.models.AppDto
 import com.ursolgleb.controlparental.data.remote.models.HorarioDto
 import com.ursolgleb.controlparental.data.remote.models.DeviceDto
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
@@ -20,11 +21,17 @@ interface LaravelApi {
     @POST("sync/apps")
     suspend fun postApps(@Body apps: List<AppDto>)
 
+    @DELETE("sync/apps")
+    suspend fun deleteApps(@Query("deviceId") deviceIds: List<String>)
+
     @GET("sync/horarios")
     suspend fun getHorarios(@Query("deviceId") deviceId: String?): List<HorarioDto>
 
     @POST("sync/horarios")
     suspend fun postHorarios(@Body horarios: List<HorarioDto>)
+
+    @DELETE("sync/horarios")
+    suspend fun deleteHorarios(@Query("deviceId") deviceIds: List<String>)
 
     @GET("sync/devices")
     suspend fun getDevice(): DeviceDto
