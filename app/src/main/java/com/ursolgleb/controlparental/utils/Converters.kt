@@ -2,15 +2,22 @@ package com.ursolgleb.controlparental.utils
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.core.graphics.scale
 import androidx.room.TypeConverter
 import java.io.ByteArrayOutputStream
 import java.time.LocalTime
 
 object  Converters {
     @TypeConverter
+//    fun fromBitmap(bitmap: Bitmap): ByteArray {
+//        val stream = ByteArrayOutputStream()
+//        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+//        return stream.toByteArray()
+//    }
     fun fromBitmap(bitmap: Bitmap): ByteArray {
+        val scaledBitmap = bitmap.scale(35, 35) // Reducir a 100x100
         val stream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        scaledBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream) // Calidad %
         return stream.toByteArray()
     }
 

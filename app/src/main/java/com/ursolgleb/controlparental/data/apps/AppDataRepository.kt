@@ -218,7 +218,7 @@ class AppDataRepository @Inject constructor(
             AppEntity(
                 packageName = app.packageName,
                 deviceId = deviceId,
-                appName = app.loadLabel(pm).toString(),
+                appName = if (app.loadLabel(pm).toString().isEmpty()) app.packageName else app.loadLabel(pm).toString(),
                 appIcon = bitmap,
                 appCategory = app.category.toString(),
                 contentRating = "?",

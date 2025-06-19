@@ -18,7 +18,8 @@ object RemoteModule {
     @Provides
     @Singleton
     fun provideRetrofit(): Retrofit = Retrofit.Builder()
-        .baseUrl("http://10.0.2.2/api/")
+        //.baseUrl("http://10.0.2.2/api/")
+        .baseUrl("https://f5b8-200-117-178-44.ngrok-free.app/api/")
         .client(OkHttpClient.Builder().build())
         .addConverterFactory(GsonConverterFactory.create())
         .build()

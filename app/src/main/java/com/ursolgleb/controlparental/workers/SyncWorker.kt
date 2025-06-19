@@ -36,44 +36,44 @@ class SyncWorker(
         localRepo.updateTiempoUsoAppsHoy()
 
         try {
-
             val device = localRepo.getDeviceInfoOnce()?.toDto()
-            if (device != null) {
-                remoteRepo.pushDevice(device)
-                Log.e("SyncWorker", "Ejecutando doWork() pushDevice End...")
+
+            /*
+               if (device != null) {
+                   remoteRepo.pushDevice(device)
+               }
+
+               if (localRepo.todosAppsFlow.value.isNotEmpty()) {
+                   val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
+                   remoteRepo.pushApps(apps)
+               } else {
+                   remoteRepo.deleteApps(listOf(device?.deviceId.toString()))
+               }
+
+               if (localRepo.horariosFlow.value.isNotEmpty()) {
+                   val horarios = localRepo.horariosFlow.value.map { it.toDto() }
+                   remoteRepo.pushHorarios(horarios)
+               } else {
+                   remoteRepo.deleteHorarios(listOf(device?.deviceId.toString()))
+               }*/
+
+
+/*            val remoteApps = remoteRepo.fetchApps(device?.deviceId)
+            if (remoteApps.isNotEmpty()) {
+                val entities = remoteApps.mapNotNull { it.toEntity() }
+                if (entities.isNotEmpty()) {
+                    Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades Start...")
+                    localRepo.insertAppsEntidades(entities)
+                    Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades End...")
+                }
+            }*/
+            val remoteHorarios = remoteRepo.fetchHorarios(device?.deviceId)
+            Log.e("SyncWorker", "Ejecutando doWork() fetchHorarios... horarios: $remoteHorarios")
+            if (remoteHorarios.isNotEmpty()) {
+                remoteHorarios.mapNotNull { it.toEntity() }.forEach { horario ->
+                    localRepo.addHorarioBD(horario)
+                }
             }
-
-            if (localRepo.todosAppsFlow.value.isNotEmpty()) {
-                val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
-                remoteRepo.pushApps(apps)
-            } else {
-                remoteRepo.deleteApps(listOf(device?.deviceId.toString()))
-            }
-
-
-            if (localRepo.horariosFlow.value.isNotEmpty()) {
-                val horarios = localRepo.horariosFlow.value.map { it.toDto() }
-                remoteRepo.pushHorarios(horarios)
-            } else {
-                remoteRepo.deleteHorarios(listOf(device?.deviceId.toString()))
-            }
-
-
-            /*     val remoteApps = remoteRepo.fetchApps(device?.deviceId)
-                 if (remoteApps.isNotEmpty()) {
-                     val entities = remoteApps.mapNotNull { it.toEntity() }
-                     if (entities.isNotEmpty()) {
-                         Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades Start...")
-                         localRepo.insertAppsEntidades(entities)
-                         Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades End...")
-                     }
-                 }
-                 val remoteHorarios = remoteRepo.fetchHorarios(device?.deviceId)
-                 if (remoteHorarios.isNotEmpty()) {
-                     remoteHorarios.mapNotNull { it.toEntity() }.forEach { horario ->
-                         localRepo.addHorarioBD(horario)
-                     }
-                 }*/
 
             //  Reprogramar el worker
             scheduleNextWork(applicationContext)
