@@ -16,6 +16,9 @@ interface HorarioDao {
     @Query("SELECT * FROM horarios ORDER BY id")
     fun getAllHorarios(): Flow<List<HorarioEntity>>
 
+    @Query("SELECT * FROM horarios ORDER BY id")
+    suspend fun getAllHorariosOnce(): List<HorarioEntity>
+
     @Query("SELECT * FROM horarios WHERE nombreDeHorario = :nombre LIMIT 1")
     suspend fun getHorarioPorNombre(nombre: String): HorarioEntity?
 
@@ -23,7 +26,7 @@ interface HorarioDao {
     suspend fun deleteHorario(horario: HorarioEntity)
 
     @Query("DELETE FROM horarios")
-    suspend fun deleteAll()
+    suspend fun deleteAllHorarios()
 
     @Query("UPDATE horarios SET isActive = :isActive WHERE id = :horarioId")
     suspend fun setHorarioActive(horarioId: Int, isActive: Boolean)

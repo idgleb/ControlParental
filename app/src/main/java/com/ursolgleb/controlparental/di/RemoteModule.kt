@@ -9,6 +9,7 @@ import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
@@ -18,9 +19,14 @@ object RemoteModule {
     @Provides
     @Singleton
     fun provideRetrofit(): Retrofit = Retrofit.Builder()
-        //.baseUrl("http://10.0.2.2/api/")
-        .baseUrl("https://f5b8-200-117-178-44.ngrok-free.app/api/")
-        .client(OkHttpClient.Builder().build())
+        .baseUrl("https://11e3-200-117-178-44.ngrok-free.app/api/")
+        .client(
+            OkHttpClient.Builder()
+                .readTimeout(120, TimeUnit.SECONDS)
+                .connectTimeout(120, TimeUnit.SECONDS)
+                .writeTimeout(120, TimeUnit.SECONDS)
+                .build()
+        )
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 

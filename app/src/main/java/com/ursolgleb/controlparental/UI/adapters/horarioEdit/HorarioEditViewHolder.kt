@@ -6,12 +6,14 @@ import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
 import com.ursolgleb.controlparental.databinding.ItemHorarioEditBinding
 import androidx.navigation.findNavController
+import com.ursolgleb.controlparental.handlers.SyncHandler
 import kotlinx.coroutines.launch
 
 class HorarioEditViewHolder(
     private val binding: ItemHorarioEditBinding,
     private val fragmentManager: androidx.fragment.app.FragmentManager,
     val appDataRepository: AppDataRepository,
+    val syncHendler: SyncHandler
 ) : RecyclerView.ViewHolder(binding.root) {
 
 
@@ -41,6 +43,7 @@ class HorarioEditViewHolder(
 
             appDataRepository.scope.launch {
                 appDataRepository.addHorarioBD(horario)
+                syncHendler.setPushHorarioPendiente(true)
             }
 
         }

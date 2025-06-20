@@ -15,6 +15,7 @@ import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.adapters.marcarAppsPara.HorarioEditAdapter
 import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
 import com.ursolgleb.controlparental.databinding.FragmentHorarioEditBinding
+import com.ursolgleb.controlparental.handlers.SyncHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.LocalTime
@@ -25,6 +26,9 @@ class HorarioEditFragment : Fragment(R.layout.fragment_horario_edit) {
 
     @Inject
     lateinit var appDataRepository: AppDataRepository
+
+    @Inject
+    lateinit var syncHandler: SyncHandler
 
     private var _binding: FragmentHorarioEditBinding? = null
     private val binding get() = _binding!!
@@ -45,7 +49,7 @@ class HorarioEditFragment : Fragment(R.layout.fragment_horario_edit) {
         _binding = FragmentHorarioEditBinding.bind(view)
 
         HorarioEditAdapter =
-            HorarioEditAdapter(mutableListOf(), appDataRepository, childFragmentManager)
+            HorarioEditAdapter(mutableListOf(), appDataRepository, syncHandler, childFragmentManager)
         binding.rvHorariosEdit.adapter = HorarioEditAdapter
         binding.rvHorariosEdit.layoutManager = LinearLayoutManager(requireContext())
         binding.rvHorariosEdit.setRecycledViewPool(RecyclerView.RecycledViewPool())

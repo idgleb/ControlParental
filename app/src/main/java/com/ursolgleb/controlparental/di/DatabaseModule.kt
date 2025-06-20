@@ -14,6 +14,7 @@ import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
 import com.ursolgleb.controlparental.data.apps.dao.UsageEventDao
 import com.ursolgleb.controlparental.data.apps.dao.UsageStatsDao
 import com.ursolgleb.controlparental.data.apps.dao.DeviceDao
+import com.ursolgleb.controlparental.data.apps.dao.SyncDataDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -71,5 +72,10 @@ object DatabaseModule {
     @Provides
     fun provideDeviceDao(db: AppDatabase): DeviceDao =
         db.deviceDao()
+
+    @Singleton
+    @Provides
+    fun provideSyncDataDao(db: AppDatabase): SyncDataDao =
+        db.syncDataDao()
 
 }

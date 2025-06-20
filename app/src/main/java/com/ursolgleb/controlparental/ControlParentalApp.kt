@@ -44,8 +44,8 @@ class ControlParentalApp : Application(), Configuration.Provider {
         appDataRepository.inicieDelecturaDeBD()
         appDataRepository.updateBDApps()
 
-        SyncWorker.startWorker(this)
-        Log.e("SyncWorker", "SyncWorker.startWorker(this)")
+        //SyncWorker.startWorker(this)
+
 
         pinValidator.savePin("1234")   // ejecuta al confirmar el PIN
 

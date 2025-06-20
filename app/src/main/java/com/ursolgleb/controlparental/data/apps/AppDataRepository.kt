@@ -6,7 +6,6 @@ import android.os.DeadObjectException
 import android.util.Log
 import android.os.Build
 import android.os.BatteryManager
-
 import com.ursolgleb.controlparental.data.apps.dao.AppDao
 import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
 import com.ursolgleb.controlparental.data.apps.dao.DeviceDao
@@ -35,6 +34,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import androidx.core.content.edit
+import com.ursolgleb.controlparental.handlers.SyncHandler
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 
 
 @Singleton
@@ -43,7 +46,7 @@ class AppDataRepository @Inject constructor(
     @ApplicationContext val context: Context,
     private val newAppsProvider: NewAppsProvider,
     private val usageTimeProvider: UsageTimeProvider,
-    private val usageStatsProvider: UsageStatsProvider
+    private val usageStatsProvider: UsageStatsProvider,
 ) {
 
     var currentPkg: String? = null
@@ -218,7 +221,9 @@ class AppDataRepository @Inject constructor(
             AppEntity(
                 packageName = app.packageName,
                 deviceId = deviceId,
-                appName = if (app.loadLabel(pm).toString().isEmpty()) app.packageName else app.loadLabel(pm).toString(),
+                appName = if (app.loadLabel(pm).toString()
+                        .isEmpty()
+                ) app.packageName else app.loadLabel(pm).toString(),
                 appIcon = bitmap,
                 appCategory = app.category.toString(),
                 contentRating = "?",
@@ -413,6 +418,19 @@ class AppDataRepository @Inject constructor(
         }
     }
 
+    fun deleteAllHorarios(): Deferred<Unit> = scope.async {
+        try {
+            horarioDao.deleteAllHorarios()
+        } catch (e: Exception) {
+            Logger.error(
+                context,
+                "AppDataRepository",
+                "Error al eliminar todos los horarios en la BD: ${e.message}",
+                e
+            )
+        }
+    }
+
     fun updateTiempoDeUsoUnaApp(pkgName: String) = scope.launch {
         val locked = lockUpdateTiempoDeUsoUnaApp.tryLock()
         if (!locked) {
@@ -450,12 +468,12 @@ class AppDataRepository @Inject constructor(
         }
     }
 
-    fun updateTiempoUsoAppsHoy() = scope.launch {
+    fun updateTiempoUsoAppsHoy(): Deferred<Unit> = scope.async {
         val locked = lockUpdateTiempoDeUso.tryLock()
         if (!locked) {
             mutexUpdateBDAppsStateFlow.value = true
             Logger.warn(context, "AppDataRepository", "updateTiempoUsoAppsHoy ya está en ejecución")
-            return@launch
+            return@async
         }
 
         try {

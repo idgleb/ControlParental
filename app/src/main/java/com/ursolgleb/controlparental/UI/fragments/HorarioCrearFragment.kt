@@ -8,13 +8,10 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.chip.Chip
-import com.ursolgleb.controlparental.data.apps.entities.AppEntity
 import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
 import com.ursolgleb.controlparental.databinding.FragmentHorarioCrearBinding
+import com.ursolgleb.controlparental.handlers.SyncHandler
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.util.Locale
@@ -31,6 +28,9 @@ class HorarioCrearFragment : Fragment() {
 
     @Inject
     lateinit var appDataRepository: com.ursolgleb.controlparental.data.apps.AppDataRepository
+
+    @Inject
+    lateinit var syncHendler: SyncHandler
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -92,6 +92,7 @@ class HorarioCrearFragment : Fragment() {
 
         binding.btnEliminarHorario.setOnClickListener {
             appDataRepository.deleteHorarioBD(horario)
+            syncHendler.setPushHorarioPendiente(true)
             findNavController().popBackStack()
         }
 
@@ -137,6 +138,7 @@ class HorarioCrearFragment : Fragment() {
 
                 appDataRepository.scope.launch {
                     appDataRepository.addHorarioBD(horario)
+                    syncHendler.setPushHorarioPendiente(true)
                 }
 
                 findNavController().popBackStack()
