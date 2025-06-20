@@ -19,7 +19,7 @@ import androidx.emoji2.text.EmojiCompat
 
 @HiltAndroidApp
 class ControlParentalApp : Application(), Configuration.Provider {
-    // proba Gleb 12-06-2025
+    // proba Gleb 20-06-2025
 
     @Inject lateinit var pinValidator: PinValidator
 
@@ -44,7 +44,7 @@ class ControlParentalApp : Application(), Configuration.Provider {
         appDataRepository.inicieDelecturaDeBD()
         appDataRepository.updateBDApps()
 
-        //SyncWorker.startWorker(this)
+        SyncWorker.startWorker(this)
 
 
         pinValidator.savePin("1234")   // ejecuta al confirmar el PIN

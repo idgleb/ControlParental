@@ -45,7 +45,7 @@ class SyncWorker(
             }
 
             // HORARIO--------------------
-/*            if (syncHandler.isPushHorarioPendiente()) {
+            if (syncHandler.isPushHorarioPendiente()) {
                 Log.w("SyncWorker", "PUSH Horario...")
                 val horarios = horarioDao.getAllHorariosOnce()
                 Log.w("SyncWorker", "horarios: $horarios")
@@ -54,7 +54,7 @@ class SyncWorker(
                     Log.e("SyncWorker", "deviceId: ${device?.deviceId} horarios: $horariosDto")
                     remoteRepo.pushHorarios(horariosDto)
                 } else {
-                    //remoteRepo.deleteHorarios(listOf(device?.deviceId.toString()))
+                    remoteRepo.deleteHorarios(listOf(device?.deviceId.toString()))
                     Log.w("SyncWorker", "delete Horarios...")
                 }
                 syncHandler.setPushHorarioPendiente(false)
@@ -68,7 +68,7 @@ class SyncWorker(
                         localRepo.addHorarioBD(horario)
                     }
                 }
-            }*/
+            }
 
 
             /*            val remoteApps = remoteRepo.fetchApps(device?.deviceId)
@@ -115,7 +115,7 @@ class SyncWorker(
 
     private fun scheduleNextWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setInitialDelay(30, TimeUnit.SECONDS)
+            .setInitialDelay(10, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(
