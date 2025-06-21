@@ -40,7 +40,7 @@ class SyncWorker(
 
             if (device != null) {
                 remoteRepo.pushDevice(device)
-                Log.w("SyncWorker", "pushDevice...")
+                Log.w("SyncWorker", "pushDevice...$device")
             }
 
             // HORARIO--------------------
@@ -81,15 +81,16 @@ class SyncWorker(
                 syncHandler.setPushAppsPendiente(false)
             } else {
                 //FETCH APPS
-                Log.w("SyncWorker", "FETCH Apps...")
+          /*      Log.w("SyncWorker", "FETCH Apps...")
                 val remoteApps = remoteRepo.fetchApps(device?.deviceId)
+                Log.e("SyncWorker", "remoteApps: $remoteApps")
                 localRepo.deleteAllApps().await()
                 if (remoteApps.isNotEmpty()) {
                     val appsEntity = remoteApps.mapNotNull { it.toEntity() }
                     if (appsEntity.isNotEmpty()) {
                         localRepo.insertAppsEntidades(appsEntity)
                     }
-                }
+                }*/
             }
 
 

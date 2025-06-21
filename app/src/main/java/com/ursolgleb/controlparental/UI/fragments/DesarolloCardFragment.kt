@@ -9,6 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.data.apps.dao.AppDao
 import com.ursolgleb.controlparental.databinding.FragmentDesarolloCardBinding
+import com.ursolgleb.controlparental.handlers.SyncHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,6 +21,9 @@ class DesarolloCardFragment : Fragment(R.layout.fragment_desarollo_card) {
 
     @Inject
     lateinit var appDataRepository: AppDataRepository
+
+    @Inject
+    lateinit var syncHandler: SyncHandler
 
     lateinit var appDao: AppDao
 
@@ -52,6 +56,7 @@ class DesarolloCardFragment : Fragment(R.layout.fragment_desarollo_card) {
         binding.delitAllAppBoton.setOnClickListener {
             lifecycleScope.launch(Dispatchers.IO) {
                 appDao.deleteAllApps()
+                syncHandler.setPushAppsPendiente(true)
                 withContext(Dispatchers.Main) {
                     Log.e("BlockedAppsFragment", "Todos Apps delited")
                 }
