@@ -15,7 +15,7 @@ interface SyncDataDao {
     suspend fun insert(syncData: SyncDataEntity)
 
     @Query("SELECT * FROM sync_data LIMIT 1")
-    fun getSyncData(): Flow<SyncDataEntity?>
+    fun getSyncDataFlow(): Flow<SyncDataEntity?>
 
     @Query("SELECT * FROM sync_data LIMIT 1")
     suspend fun getSyncDataOnce(): SyncDataEntity?

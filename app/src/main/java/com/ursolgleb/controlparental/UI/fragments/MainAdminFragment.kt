@@ -64,7 +64,7 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
         childFragmentManager.beginTransaction()
             .replace(R.id.fragment_apps_disponibles, CardFragment.newInstance(StatusApp.DISPONIBLE))
             .commit()
-        
+
         childFragmentManager.beginTransaction()
             .replace(R.id.fragment_apps_bloqueadas, CardFragment.newInstance(StatusApp.BLOQUEADA))
             .commit()
@@ -110,6 +110,15 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
                 }
             }
         }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                appDataRepository.syncStatusFlow.collect { syncStatus ->
+                    binding.tvHola.text = syncStatus
+                }
+            }
+        }
+
     }
 
     private fun initHeightDeSvInfo() {

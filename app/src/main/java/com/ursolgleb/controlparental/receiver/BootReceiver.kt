@@ -12,14 +12,15 @@ import androidx.core.app.NotificationCompat
 import android.os.Build
 import com.ursolgleb.controlparental.ControlParentalApp
 import com.ursolgleb.controlparental.R
+import com.ursolgleb.controlparental.workers.SyncWorker
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
-        if (intent?.action == Intent.ACTION_BOOT_COMPLETED) {
-            Log.d("BootReceiver", "Dispositivo reiniciado")
+        if (intent?.action == Intent.ACTION_BOOT_COMPLETED ||
+            intent?.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+            Log.d("BootReceiver", "Dispositivo reiniciado o app actualizada")
 
-            /*val app = context.applicationContext as? ControlParentalApp
-            app?.startWorker(context)*/  // ✅ Inicia el Worker tras reinicio
+            SyncWorker.startWorker(context) // ✅ Inicia el Worker tras reinicio o update
 
             val enabledServices = Settings.Secure.getString(
                 context.contentResolver,

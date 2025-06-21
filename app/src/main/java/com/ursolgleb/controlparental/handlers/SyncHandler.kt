@@ -16,7 +16,7 @@ import javax.inject.Singleton
 class SyncHandler @Inject constructor(
     @ApplicationContext private val context: Context,
     private val appDataRepository: Provider<AppDataRepository>,
-    private val syncDataDao: SyncDataDao,
+    val syncDataDao: SyncDataDao,
 ) {
 
 

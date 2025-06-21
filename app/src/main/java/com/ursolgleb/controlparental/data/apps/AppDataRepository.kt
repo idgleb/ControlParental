@@ -81,6 +81,7 @@ class AppDataRepository @Inject constructor(
 
     val mutexUpdateBDAppsStateFlow = MutableStateFlow(false)
     val mostrarBottomSheetActualizadaFlow = MutableStateFlow(false)
+    val syncStatusFlow = MutableStateFlow("inicio..")
 
     fun getOrCreateDeviceId(): String {
         val prefs = context.getSharedPreferences("device_prefs", Context.MODE_PRIVATE)
@@ -136,10 +137,24 @@ class AppDataRepository @Inject constructor(
                 )
             } finally {
                 cargarAppsEnBackgroundDesdeBD()
+                cargarSyncStatus()
                 isInicieDeLecturaTermina = true
                 Logger.info(context, "AppDataRepository", "inicieDelecturaDeBD finalizada")
                 if (locked) lockInicieDelecturaDeBD.unlock()
                 updateBDApps()
+            }
+        }
+    }
+
+    private fun cargarSyncStatus() {
+        scope.launch {
+            syncHandler.syncDataDao.getSyncDataFlow().collect { syncData ->
+                var syncStatus = "inicio.."
+                syncData?.let {
+                    syncStatus = if (it.isPushHorarioPendiente) " PUSH horarios.." else " FETCH horarios.."
+                    syncStatus += if (it.isPushAppsPendiente) " PUSH apps.." else " FETCH apps.."
+                }
+                syncStatusFlow.value = syncStatus
             }
         }
     }
