@@ -35,7 +35,7 @@ class SyncHandler @Inject constructor(
         syncDataDao.insert(syncData)
     }
 
-    suspend fun setPushAppsPendiente(pendiente: Boolean) {
+    fun setPushAppsPendiente(pendiente: Boolean): Deferred<Unit> = appDataRepository.scope.async {
         val syncData = getSyncDataInfoOnce() ?: SyncDataEntity((appDataRepository.getOrCreateDeviceId()))
         syncData.isPushAppsPendiente = pendiente
         syncDataDao.insert(syncData)

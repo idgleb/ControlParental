@@ -47,6 +47,7 @@ class AppDataRepository @Inject constructor(
     private val newAppsProvider: NewAppsProvider,
     private val usageTimeProvider: UsageTimeProvider,
     private val usageStatsProvider: UsageStatsProvider,
+    private val syncHandler: SyncHandler
 ) {
 
     var currentPkg: String? = null
@@ -244,6 +245,7 @@ class AppDataRepository @Inject constructor(
             )
             appDao.insertListaApps(nuevasEntidades)
             mostrarBottomSheetActualizadaFlow.value = true
+            syncHandler.setPushAppsPendiente(true)
             Logger.info(
                 context,
                 "AppDataRepository",
@@ -284,6 +286,7 @@ class AppDataRepository @Inject constructor(
                     )
                     appDao.insertListaApps(appsBloqueadas)
                     mostrarBottomSheetActualizadaFlow.value = true
+                    syncHandler.setPushAppsPendiente(true)
                 }
             } catch (e: Exception) {
                 Logger.error(
@@ -321,6 +324,7 @@ class AppDataRepository @Inject constructor(
                     )
                     appDao.insertListaApps(appsDispon)
                     mostrarBottomSheetActualizadaFlow.value = true
+                    syncHandler.setPushAppsPendiente(true)
                 }
             } catch (e: Exception) {
                 Logger.error(
@@ -354,6 +358,7 @@ class AppDataRepository @Inject constructor(
                     Logger.info(context, "AppDataRepository", "addAppsAHorarioBD agregando a BD...")
                     appDao.insertListaApps(appsHorario)
                     mostrarBottomSheetActualizadaFlow.value = true
+                    syncHandler.setPushAppsPendiente(true)
                 }
             } catch (e: Exception) {
                 Logger.error(
@@ -380,6 +385,35 @@ class AppDataRepository @Inject constructor(
     suspend fun siEsNuevoPkg(pkg: String): Boolean {
         // 0 ➞ no existe, es nuevo
         return appDao.countByPackage(pkg) == 0
+    }
+
+    fun deleteAllApps(): Deferred<Unit> = scope.async {
+        try {
+            appDao.deleteAllApps()
+        } catch (e: Exception) {
+            Logger.error(
+                context,
+                "AppDataRepository",
+                "Error al eliminar todas las apps en la BD: ${e.message}",
+                e
+            )
+        }
+    }
+
+    suspend fun insertAppsEntidades(apps: List<AppEntity>) {
+        if (apps.isEmpty()) return
+        try {
+            dbLock.withLock {
+                appDao.insertListaApps(apps)
+            }
+        } catch (e: Exception) {
+            Logger.error(
+                context,
+                "AppDataRepository",
+                "Error insertAppsEntidades: ${e.message}",
+                e
+            )
+        }
     }
 
     suspend fun addHorarioBD(horario: HorarioEntity): Long {
@@ -426,6 +460,22 @@ class AppDataRepository @Inject constructor(
                 context,
                 "AppDataRepository",
                 "Error al eliminar todos los horarios en la BD: ${e.message}",
+                e
+            )
+        }
+    }
+
+    suspend fun insertHorariosEntidades(horarios: List<HorarioEntity>) {
+        if (horarios.isEmpty()) return
+        try {
+            dbLock.withLock {
+                horarioDao.insertHorarios(horarios)
+            }
+        } catch (e: Exception) {
+            Logger.error(
+                context,
+                "AppDataRepository",
+                "Error insertHorariosEntidades: ${e.message}",
                 e
             )
         }
@@ -510,21 +560,7 @@ class AppDataRepository @Inject constructor(
         }
     }
 
-    suspend fun insertAppsEntidades(apps: List<AppEntity>) {
-        if (apps.isEmpty()) return
-        try {
-            dbLock.withLock {
-                appDao.insertListaApps(apps)
-            }
-        } catch (e: Exception) {
-            Logger.error(
-                context,
-                "AppDataRepository",
-                "Error insertAppsEntidades: ${e.message}",
-                e
-            )
-        }
-    }
+
 
 
     fun saveDeviceInfo() {

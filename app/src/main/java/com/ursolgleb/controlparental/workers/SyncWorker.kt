@@ -34,7 +34,6 @@ class SyncWorker(
         val localRepo = entryPoint.getAppDataRepository()
         val remoteRepo = entryPoint.getRemoteDataRepository()
         val syncHandler = entryPoint.getSyncHandler()
-        val horarioDao = entryPoint.getHorarioDao()
 
         try {
             val device = localRepo.getDeviceInfoOnce()?.toDto()
@@ -46,50 +45,51 @@ class SyncWorker(
 
             // HORARIO--------------------
             if (syncHandler.isPushHorarioPendiente()) {
+                //PUSH HORARIO
                 Log.w("SyncWorker", "PUSH Horario...")
-                val horarios = horarioDao.getAllHorariosOnce()
-                Log.w("SyncWorker", "horarios: $horarios")
-                if (horarios.isNotEmpty()) {
-                    val horariosDto = horarios.map { it.toDto() }
-                    Log.e("SyncWorker", "deviceId: ${device?.deviceId} horarios: $horariosDto")
+                val horariosDto = localRepo.horariosFlow.first().map { it.toDto() }
+                if (horariosDto.isNotEmpty()) {
                     remoteRepo.pushHorarios(horariosDto)
                 } else {
                     remoteRepo.deleteHorarios(listOf(device?.deviceId.toString()))
-                    Log.w("SyncWorker", "delete Horarios...")
                 }
                 syncHandler.setPushHorarioPendiente(false)
             } else {
+                //FETCH HORARIO
                 Log.w("SyncWorker", "FETCH Horario...")
                 val remoteHorarios = remoteRepo.fetchHorarios(device?.deviceId)
-                Log.e("SyncWorker", "deviceId: ${device?.deviceId} horarios: $remoteHorarios")
                 localRepo.deleteAllHorarios().await()
                 if (remoteHorarios.isNotEmpty()) {
-                    remoteHorarios.mapNotNull { it.toEntity() }.forEach { horario ->
-                        localRepo.addHorarioBD(horario)
+                    val horariosEntity = remoteHorarios.mapNotNull { it.toEntity() }
+                    if (horariosEntity.isNotEmpty()) {
+                        localRepo.insertHorariosEntidades(horariosEntity)
                     }
                 }
             }
 
-
-            /*            val remoteApps = remoteRepo.fetchApps(device?.deviceId)
-                        if (remoteApps.isNotEmpty()) {
-                            val entities = remoteApps.mapNotNull { it.toEntity() }
-                            if (entities.isNotEmpty()) {
-                                Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades Start...")
-                                localRepo.insertAppsEntidades(entities)
-                                Log.e("SyncWorker", "Ejecutando doWork() insertAppsEntidades End...")
-                            }
-                        }*/
-
             localRepo.updateTiempoUsoAppsHoy().await()
-
-
-            // PUSH------------------
-            if (localRepo.todosAppsFlow.value.isNotEmpty()) {
-                val apps = localRepo.todosAppsFlow.value.map { it.toDto() }
-                remoteRepo.pushApps(apps)
+            // APPS------------------
+            if (syncHandler.isPushAppsPendiente()) {
+                //PUSH APPS
+                Log.w("SyncWorker", "PUSH Apps...")
+                val appsDto = localRepo.todosAppsFlow.value.map { it.toDto() }
+                if (appsDto.isNotEmpty()) {
+                    remoteRepo.pushApps(appsDto)
+                } else {
+                    remoteRepo.deleteApps(listOf(device?.deviceId.toString()))
+                }
+                syncHandler.setPushAppsPendiente(false)
             } else {
-                remoteRepo.deleteApps(listOf(device?.deviceId.toString()))
+                //FETCH APPS
+                Log.w("SyncWorker", "FETCH Apps...")
+                val remoteApps = remoteRepo.fetchApps(device?.deviceId)
+                localRepo.deleteAllApps().await()
+                if (remoteApps.isNotEmpty()) {
+                    val appsEntity = remoteApps.mapNotNull { it.toEntity() }
+                    if (appsEntity.isNotEmpty()) {
+                        localRepo.insertAppsEntidades(appsEntity)
+                    }
+                }
             }
 
 
