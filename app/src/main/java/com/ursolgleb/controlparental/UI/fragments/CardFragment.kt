@@ -2,8 +2,6 @@ package com.ursolgleb.controlparental.UI.fragments
 
 import android.os.Bundle
 import android.util.Log
-import android.widget.TextView
-
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
@@ -125,10 +123,13 @@ class CardFragment : Fragment(R.layout.fragment_card){
         }
 
         binding.cvAppsDispon.setOnClickListener {
-            navegarAppsEdit()
+            navegarEdit()
         }
         binding.tvEmptyMessage.setOnClickListener {
-            navegarAppsEdit()
+            navegarEdit()
+        }
+        binding.botonVer.setOnClickListener {
+            navegarEdit()
         }
 
         binding.cambiarHorarioBoton.setOnClickListener {
@@ -152,9 +153,9 @@ class CardFragment : Fragment(R.layout.fragment_card){
 
     }
 
-    private fun navegarAppsEdit() {
+    private fun navegarEdit() {
         val action =
-            MainAdminFragmentDirections.actionGlobalAppsEditFragment(category = categoria.desc)
+            MainAdminFragmentDirections.actionGlobalEditFragment(category = categoria.desc)
         findNavController().navigate(action)
     }
 

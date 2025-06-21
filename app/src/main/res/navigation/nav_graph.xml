@@ -23,8 +23,8 @@
 
     <!-- Fragmento de Edit Apps -->
     <fragment
-        android:id="@+id/appsEditFragment"
-        android:name="com.ursolgleb.controlparental.UI.fragments.AppsEditFragment"
+        android:id="@+id/editFragment"
+        android:name="com.ursolgleb.controlparental.UI.fragments.EditFragment"
         android:label="Blocked Apps" >
         <argument
             android:name="category"
@@ -57,8 +57,8 @@
         android:id="@+id/action_global_addAppsA"
         app:destination="@id/appsAddA" />
     <action
-        android:id="@+id/action_global_AppsEditFragment"
-        app:destination="@id/appsEditFragment" />
+        android:id="@+id/action_global_EditFragment"
+        app:destination="@id/editFragment" />
     <action
         android:id="@+id/action_global_PermisosFragment"
         app:destination="@id/PermisosFragment" />

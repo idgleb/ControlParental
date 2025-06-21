@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.UI.adapters.marcarAppsPara.AppsEditAdapter
-import com.ursolgleb.controlparental.databinding.FragmentAppsEditBinding
+import com.ursolgleb.controlparental.databinding.FragmentEditBinding
 import com.ursolgleb.controlparental.utils.Fun
 import com.ursolgleb.controlparental.utils.StatusApp
 import dagger.hilt.android.AndroidEntryPoint
@@ -23,17 +23,17 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class AppsEditFragment : Fragment(R.layout.fragment_apps_edit) {
+class EditFragment : Fragment(R.layout.fragment_edit) {
 
     @Inject
     lateinit var appDataRepository: AppDataRepository
 
-    private var _binding: FragmentAppsEditBinding? = null
+    private var _binding: FragmentEditBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var appsEditAdapter: AppsEditAdapter
 
-    private val args: AppsEditFragmentArgs by navArgs() // Recibir argumentos
+    private val args: EditFragmentArgs by navArgs() // Recibir argumentos
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -44,7 +44,7 @@ class AppsEditFragment : Fragment(R.layout.fragment_apps_edit) {
     }
 
     private fun initUI(view: View) {
-        _binding = FragmentAppsEditBinding.bind(view)
+        _binding = FragmentEditBinding.bind(view)
 
         appsEditAdapter =
             AppsEditAdapter(mutableListOf(), appDataRepository, childFragmentManager)
@@ -129,7 +129,7 @@ class AppsEditFragment : Fragment(R.layout.fragment_apps_edit) {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 listaDeObservarFlow.collect { newList ->
                     Log.w(
-                        "AppsEditFragment",
+                        "EditFragment",
                         "Lista EDIT de apps ${args.category} actualizada: $newList"
                     )
                     binding.tvCantidadApps.text = newList.size.toString()
