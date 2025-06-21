@@ -38,12 +38,13 @@ class SyncWorker(
         try {
             val device = localRepo.getDeviceInfoOnce()?.toDto()
 
+            // DEVICE--------------------
             if (device != null) {
                 remoteRepo.pushDevice(device)
                 Log.w("SyncWorker", "pushDevice...$device")
             }
 
-        /*    // HORARIO--------------------
+            // HORARIO--------------------
             if (syncHandler.isPushHorarioPendiente()) {
                 //PUSH HORARIO
                 Log.w("SyncWorker", "PUSH Horario...")
@@ -65,9 +66,10 @@ class SyncWorker(
                         localRepo.insertHorariosEntidades(horariosEntity)
                     }
                 }
-            }*/
+            }
 
             localRepo.updateTiempoUsoAppsHoy().await()
+
             // APPS------------------
             if (syncHandler.isPushAppsPendiente()) {
                 //PUSH APPS
