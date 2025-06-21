@@ -43,7 +43,7 @@ class SyncWorker(
                 Log.w("SyncWorker", "pushDevice...$device")
             }
 
-            // HORARIO--------------------
+        /*    // HORARIO--------------------
             if (syncHandler.isPushHorarioPendiente()) {
                 //PUSH HORARIO
                 Log.w("SyncWorker", "PUSH Horario...")
@@ -65,7 +65,7 @@ class SyncWorker(
                         localRepo.insertHorariosEntidades(horariosEntity)
                     }
                 }
-            }
+            }*/
 
             localRepo.updateTiempoUsoAppsHoy().await()
             // APPS------------------
