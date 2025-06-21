@@ -47,6 +47,7 @@ class DesarolloCardFragment : Fragment(R.layout.fragment_desarollo_card) {
         binding.delitBlackedAppBoton.setOnClickListener {
             lifecycleScope.launch(Dispatchers.IO) {
                 appDao.unblockAllApps()
+                syncHandler.setPushAppsPendiente(true)
                 withContext(Dispatchers.Main) {
                     Log.w("BlockedAppsFragment", "Apps delited")
                 }

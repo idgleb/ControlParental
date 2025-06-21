@@ -81,7 +81,7 @@ class SyncWorker(
                 syncHandler.setPushAppsPendiente(false)
             } else {
                 //FETCH APPS
-          /*      Log.w("SyncWorker", "FETCH Apps...")
+                Log.w("SyncWorker", "FETCH Apps...")
                 val remoteApps = remoteRepo.fetchApps(device?.deviceId)
                 Log.e("SyncWorker", "remoteApps: $remoteApps")
                 localRepo.deleteAllApps().await()
@@ -90,7 +90,7 @@ class SyncWorker(
                     if (appsEntity.isNotEmpty()) {
                         localRepo.insertAppsEntidades(appsEntity)
                     }
-                }*/
+                }
             }
 
 
@@ -116,7 +116,7 @@ class SyncWorker(
 
     private fun scheduleNextWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setInitialDelay(10, TimeUnit.SECONDS)
+            .setInitialDelay(15, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(
