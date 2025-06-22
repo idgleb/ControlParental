@@ -151,7 +151,8 @@ class AppDataRepository @Inject constructor(
             syncHandler.syncDataDao.getSyncDataFlow().collect { syncData ->
                 var syncStatus = "inicio.."
                 syncData?.let {
-                    syncStatus = if (it.isPushHorarioPendiente) " PUSH horarios.." else " FETCH horarios.."
+                    syncStatus =
+                        if (it.isPushHorarioPendiente) " PUSH horarios.." else " FETCH horarios.."
                     syncStatus += if (it.isPushAppsPendiente) " PUSH apps.." else " FETCH apps.."
                 }
                 syncStatusFlow.value = syncStatus
@@ -576,28 +577,24 @@ class AppDataRepository @Inject constructor(
     }
 
 
-
-
-    fun saveDeviceInfo() {
-        scope.launch {
-            try {
-                val deviceId = getOrCreateDeviceId()
-                val model = "${Build.MANUFACTURER} ${Build.MODEL}"
-                val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
-                val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-                val entity =
-                    DeviceEntity(deviceId = deviceId, model = model, batteryLevel = battery)
-                deviceDao.replace(entity)
-                //f85d8cc0-5637-430d-a109-b96da8c2718c
-                Logger.info(context, "AppDataRepository", "Device info guardada: $entity")
-            } catch (e: Exception) {
-                Logger.error(
-                    context,
-                    "AppDataRepository",
-                    "Error guardando device info: ${e.message}",
-                    e
-                )
-            }
+    fun saveDeviceInfo(): Deferred<Unit> = scope.async {
+        try {
+            val deviceId = getOrCreateDeviceId()
+            val model = "${Build.MANUFACTURER} ${Build.MODEL}"
+            val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+            val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            val entity =
+                DeviceEntity(deviceId = deviceId, model = model, batteryLevel = battery)
+            deviceDao.replace(entity)
+            //f85d8cc0-5637-430d-a109-b96da8c2718c
+            Logger.info(context, "AppDataRepository", "Device info guardada: $entity")
+        } catch (e: Exception) {
+            Logger.error(
+                context,
+                "AppDataRepository",
+                "Error guardando device info: ${e.message}",
+                e
+            )
         }
     }
 

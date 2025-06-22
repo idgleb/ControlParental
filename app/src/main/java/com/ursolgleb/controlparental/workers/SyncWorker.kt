@@ -36,6 +36,7 @@ class SyncWorker(
         val syncHandler = entryPoint.getSyncHandler()
 
         try {
+            localRepo.saveDeviceInfo().await()
             val device = localRepo.getDeviceInfoOnce()?.toDto()
 
             // DEVICE--------------------
@@ -96,21 +97,22 @@ class SyncWorker(
             }
 
 
-            //  Reprogramar el worker
-            scheduleNextWork(applicationContext)
-            Log.e("SyncWorker", "Ejecutando doWork() scheduleNextWork...")
             return Result.success()
 
         } catch (e: HttpException) {
             val body = e.response()?.errorBody()?.string()
             Log.e("SyncWorker", "HTTP error ${e.code()} body: $body")
-            return Result.retry()
+            return Result.success()
         } catch (e: Exception) {
             Log.e("SyncWorker", "Error ${e.message}")
-            return Result.retry()
+            return Result.success()
         } catch (e: EOFException) {
             Log.e("SyncWorker", "EOFException: ${e.message}", e)
-            return Result.retry() // O Result.failure() según tu lógica
+            return Result.success()
+        }finally {
+            //  Reprogramar el worker
+            scheduleNextWork(applicationContext)
+            Log.e("SyncWorker", "Ejecutando doWork() scheduleNextWork...")
         }
 
 
