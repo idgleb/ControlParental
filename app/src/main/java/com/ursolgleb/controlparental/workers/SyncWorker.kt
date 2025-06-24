@@ -120,7 +120,7 @@ class SyncWorker(
 
     private fun scheduleNextWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setInitialDelay(15, TimeUnit.SECONDS)
+            .setInitialDelay(3, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(

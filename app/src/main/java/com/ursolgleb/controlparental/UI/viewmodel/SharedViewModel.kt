@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.data.apps.entities.AppEntity
+import com.ursolgleb.controlparental.data.apps.entities.DeviceEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +39,9 @@ class SharedViewModel @Inject constructor(
     private val _todosAppsMenosBlaqueados = MutableStateFlow<List<AppEntity>>(emptyList())
     val todosAppsMenosBlaqueados: StateFlow<List<AppEntity>> = _todosAppsMenosBlaqueados
 
+    private val _deviceEntity = MutableStateFlow<DeviceEntity?>(null)
+    val deviceEntity: StateFlow<DeviceEntity?> = _deviceEntity
+
     var inicieDeLecturaDeBD = false
 
     init {
@@ -61,6 +65,12 @@ class SharedViewModel @Inject constructor(
         viewModelScope.launch {
             appDataRepository.todosAppsMenosBloqueadosFlow.collect { appsNoBloqueados ->
                 _todosAppsMenosBlaqueados.value = appsNoBloqueados
+            }
+        }
+
+        viewModelScope.launch {
+            appDataRepository.getDeviceFlow().collect { device ->
+                _deviceEntity.value = device
             }
         }
     }

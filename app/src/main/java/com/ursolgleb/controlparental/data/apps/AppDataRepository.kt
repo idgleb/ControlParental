@@ -612,6 +612,7 @@ class AppDataRepository @Inject constructor(
         }
     }
 
+    fun getDeviceFlow() = deviceDao.getDevice()
 
     fun cancelarCorrutinas() {
         scope.cancel()
