@@ -19,7 +19,7 @@ object RemoteModule {
     @Provides
     @Singleton
     fun provideRetrofit(): Retrofit = Retrofit.Builder()
-        .baseUrl("https://b451-152-168-71-132.ngrok-free.app/api/")
+        .baseUrl("https://ef11-190-210-19-221.ngrok-free.app/api/")
         .client(
             OkHttpClient.Builder()
                 .readTimeout(120, TimeUnit.SECONDS)

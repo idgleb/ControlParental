@@ -19,7 +19,7 @@ import androidx.emoji2.text.EmojiCompat
 
 @HiltAndroidApp
 class ControlParentalApp : Application(), Configuration.Provider {
-    // proba Gleb 20-06-2025
+    // proba Hijo Gleb 26-06-2025
 
     @Inject lateinit var pinValidator: PinValidator
 

@@ -1,18 +1,15 @@
-
 # 📱 Control Parental App
 
 Aplicación Android de control parental desarrollada en **Kotlin**, utilizando **Room**, **WorkManager**, **Dagger Hilt** y servicios de accesibilidad para supervisar, limitar y registrar el uso de aplicaciones.
 
 [Propuesta de valor](https://docs.google.com/document/d/12kFZDpTqzES0-sYFv3g2N5VKG0sBjfh_hx_XMg7oy6Q/edit?usp=sharing)
 
-[SRS - Especificacion de requisitos](https://docs.google.com/document/d/1rpAelZsWywcVWXfYSeQUA5GreiuIhPb2/edit?usp=sharing&ouid=103592374588151306182&rtpof=true&sd=true)
+[SRS - Especificación de requisitos](https://docs.google.com/document/d/1rpAelZsWywcVWXfYSeQUA5GreiuIhPb2/edit?usp=sharing&ouid=103592374588151306182&rtpof=true&sd=true)
 
 <div style="display: flex;" align="center">
   <img src="https://github.com/user-attachments/assets/b42c6a69-f16a-45b2-9aa8-6462eea6c97a" style="width: 35%;" />
   <img src="https://github.com/user-attachments/assets/6f7884a7-5204-4363-a95a-00d7aaf5a474" style="width: 35%;"/>
 </div>
-
----
 
 ## 🧠 Características principales
 
@@ -26,8 +23,6 @@ Aplicación Android de control parental desarrollada en **Kotlin**, utilizando *
 - 🗂️ Logging de bloqueos para auditoría
 - 🔔 Notificaciones para recordar permisos o activar el servicio
 
----
-
 ## 🛠️ Tecnologías y herramientas
 
 | Herramienta         | Descripción                                   |
@@ -37,10 +32,10 @@ Aplicación Android de control parental desarrollada en **Kotlin**, utilizando *
 | Dagger Hilt         | Inyección de dependencias                     |
 | WorkManager         | Ejecución de tareas periódicas                |
 | AccessibilityService| Detección de apps en primer plano             |
+| Retrofit 2 / OkHttp  | Comunicación HTTP y consumo de API REST      |
+| Gson Converter       | Serialización/Deserialización de JSON        |
 | Coroutine / Flow    | Manejo asíncrono y reactivo                   |
 | Jsoup               | Scraping opcional para clasificación de apps |
-
----
 
 ## 📐 Arquitectura
 
@@ -68,27 +63,20 @@ El proyecto sigue una arquitectura modular y desacoplada:
 
 ```
 
----
-
 ## 📋 Permisos necesarios
 
 - `PACKAGE_USAGE_STATS`
 - `BIND_ACCESSIBILITY_SERVICE`
 - `RECEIVE_BOOT_COMPLETED`
-
----
-
----
+- `INTERNET`
+- `POST_NOTIFICATIONS`
+- `SYSTEM_ALERT_WINDOW`
 
 ## 📌 Diagrama de casos de uso
 
 [Podés visualizar el diagrama de casos de uso](https://lucid.app/lucidchart/6ba2d302-7073-4598-b272-1eeeb985a417/edit?viewport_loc=-5688%2C-462%2C3647%2C2088%2CsjI~UfAdr-eT&invitationId=inv_18c096de-ea59-49dc-8db0-ff7b3636c7fe)
 
 ![Diagrama de casos de uso de Control parental](https://github.com/user-attachments/assets/67477d44-fd85-4142-8f13-0894a2624753)
-
----
-
----
 
 ## 📌 Diagrama de clases
 
@@ -97,10 +85,7 @@ El proyecto sigue una arquitectura modular y desacoplada:
 
 ![Diagrama de clases](https://github.com/user-attachments/assets/5f61b5e0-33c4-4f32-9305-32a41b980c50)
 
----
----
-
-## 📌 Diagrama de entidad relacion
+## 📌 Diagrama de entidad-relación
 
 Base de datos principal:
 
@@ -132,15 +117,11 @@ KEY_PASSWORD=tuKeyPassword
 También podés exportar `STORE_PASSWORD` y `KEY_PASSWORD` antes de ejecutar
 `./gradlew assembleRelease`.
 
----
-
 ## 🧑‍💻 Autor
 
 **Gleb Ursol**  
 📍 Buenos Aires, Argentina  
 🎓 Analista de Sistemas | Estudiante de Escuela Da Vinci
-
----
 
 ## 📄 Licencia
 
