@@ -22,6 +22,7 @@ Aplicación Android de control parental desarrollada en **Kotlin**, utilizando *
 - 🔁 Tareas en segundo plano usando **WorkManager**
 - 🗂️ Logging de bloqueos para auditoría
 - 🔔 Notificaciones para recordar permisos o activar el servicio
+- 🌐 Sincronización de datos y control remoto en tiempo real mediante panel web Laravel
 
 ## 🛠️ Tecnologías y herramientas
 
@@ -36,8 +37,6 @@ Aplicación Android de control parental desarrollada en **Kotlin**, utilizando *
 | Gson Converter       | Serialización/Deserialización de JSON        |
 | Coroutine / Flow    | Manejo asíncrono y reactivo                   |
 | Jsoup               | Scraping opcional para clasificación de apps |
-| Navigation Component| Manejo de navegación entre pantallas          |
-| RecyclerView        | Listados eficientes en UI                    |
 
 ## 📐 Arquitectura
 
@@ -48,8 +47,8 @@ El proyecto sigue una arquitectura modular y desacoplada:
  ┣ 📂 checkers 🟢 (Validadores para bloqueo de apps)
  ┣ 📂 data 🔵 (Bases de datos y repositorios)
  ┃ ┣ 📂 apps 🔹 (Room: DAOs, entidades, DB, proveedores)
- ┃ ┣ 📂 remote 🔷 (Sincronización y modelos DTO)
- ┃ ┗ 📂 log 🔸 (Registro de bloqueos)
+ ┃ ┣ 📂 log 🔸 (Registro de bloqueos)
+ ┃ ┗ 📂 remote 🌐 (Sincronización con API REST)
  ┣ 📂 detectors 🟡 (Detectores de eventos específicos)
  ┣ 📂 di 🟣 (Inyección de dependencias con Dagger Hilt)
  ┣ 📂 handlers 🔴 (Manejo de bloqueos y acciones)
@@ -92,14 +91,11 @@ El proyecto sigue una arquitectura modular y desacoplada:
 
 Base de datos principal:
 
---
-
 <div align="center">
   <img src="https://github.com/user-attachments/assets/424f72fe-1597-4343-a2e7-af6caab76207" style="width: 70%;" />
 </div>
 
 Otra base de datos solo para logs:
---
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/03c43144-2d6d-4c7f-addc-19994982c2a2" style="width: 50%;" />
