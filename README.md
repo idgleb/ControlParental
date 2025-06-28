@@ -36,6 +36,8 @@ Aplicación Android de control parental desarrollada en **Kotlin**, utilizando *
 | Gson Converter       | Serialización/Deserialización de JSON        |
 | Coroutine / Flow    | Manejo asíncrono y reactivo                   |
 | Jsoup               | Scraping opcional para clasificación de apps |
+| Navigation Component| Manejo de navegación entre pantallas          |
+| RecyclerView        | Listados eficientes en UI                    |
 
 ## 📐 Arquitectura
 
@@ -46,6 +48,7 @@ El proyecto sigue una arquitectura modular y desacoplada:
  ┣ 📂 checkers 🟢 (Validadores para bloqueo de apps)
  ┣ 📂 data 🔵 (Bases de datos y repositorios)
  ┃ ┣ 📂 apps 🔹 (Room: DAOs, entidades, DB, proveedores)
+ ┃ ┣ 📂 remote 🔷 (Sincronización y modelos DTO)
  ┃ ┗ 📂 log 🔸 (Registro de bloqueos)
  ┣ 📂 detectors 🟡 (Detectores de eventos específicos)
  ┣ 📂 di 🟣 (Inyección de dependencias con Dagger Hilt)
