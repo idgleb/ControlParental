@@ -92,14 +92,9 @@ El proyecto sigue una arquitectura modular y desacoplada:
 Base de datos principal:
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/424f72fe-1597-4343-a2e7-af6caab76207" style="width: 70%;" />
+  <img src="https://github.com/user-attachments/assets/6375bbeb-f316-467a-91ce-0ec4fb6ab581" style="width: 90%;" />
 </div>
 
-Otra base de datos solo para logs:
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/03c43144-2d6d-4c7f-addc-19994982c2a2" style="width: 50%;" />
-</div>
 
 ## 🔑 Configuración de la firma
 
