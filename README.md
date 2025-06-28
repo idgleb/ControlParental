@@ -35,6 +35,9 @@ Aplicación Android de control parental desarrollada en **Kotlin**, utilizando *
 | AccessibilityService| Detección de apps en primer plano             |
 | Retrofit 2 / OkHttp  | Comunicación HTTP y consumo de API REST      |
 | Gson Converter       | Serialización/Deserialización de JSON        |
+| Jetpack Navigation   | Navegación tipada entre pantallas            |
+| Android ViewModel    | Gestión de estado y ciclo de vida            |
+| View Binding         | Acceso seguro a vistas sin findViewById      |
 | Coroutine / Flow    | Manejo asíncrono y reactivo                   |
 | Jsoup               | Scraping opcional para clasificación de apps |
 
