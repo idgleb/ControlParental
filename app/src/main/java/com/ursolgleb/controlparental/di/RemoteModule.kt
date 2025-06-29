@@ -31,26 +31,6 @@ object RemoteModule {
     fun provideMoshi(): Moshi {
         return Moshi.Builder()
             .add(KotlinJsonAdapterFactory())
-            .add(object : JsonAdapter.Factory {
-                override fun create(
-                    type: java.lang.reflect.Type,
-                    annotations: Set<Annotation>,
-                    moshi: Moshi
-                ): JsonAdapter<*>? {
-                    val delegate = moshi.nextAdapter<Any>(this, type, annotations)
-                    return object : JsonAdapter<Any>() {
-                        override fun fromJson(reader: JsonReader): Any? {
-                            val lenientReader = reader.peekJson().apply {
-                                isLenient = true
-                            }
-                            return delegate.fromJson(lenientReader)
-                        }
-                        override fun toJson(writer: com.squareup.moshi.JsonWriter, value: Any?) {
-                            delegate.toJson(writer, value)
-                        }
-                    }
-                }
-            })
             .build()
     }
 
@@ -79,7 +59,7 @@ object RemoteModule {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
             .build()
     }
 
