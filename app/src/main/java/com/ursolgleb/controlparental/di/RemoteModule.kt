@@ -46,6 +46,13 @@ object RemoteModule {
         loggingInterceptor: HttpLoggingInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request()
+                    .newBuilder()
+                    .addHeader("Accept", "application/json")
+                    .build()
+                chain.proceed(request)
+            }
             .addInterceptor(loggingInterceptor)
             .build()
     }
