@@ -25,7 +25,7 @@ import com.ursolgleb.controlparental.utils.Converters
         UsageStatsEntity::class,
         DeviceEntity::class,
         SyncDataEntity::class],
-    version = 48,
+    version = 51,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

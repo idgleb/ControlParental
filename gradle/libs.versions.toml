@@ -11,7 +11,7 @@ glide = "4.16.0"
 gradle = "8.9.1"
 gradlePlugin = "1.5.5"
 gradleVersion = "8.0.2"
-gson = "2.10.1"
+#gson = "2.10.1"
 guava = "31.1-android"
 hiltAndroidGradlePlugin = "2.44"
 hiltWorkVersion = "1.0.0"
@@ -39,10 +39,12 @@ workRuntimeKtx = "2.10.0"
 workRuntimeKtxVersion = "2.8.1"
 hiltWork = "1.2.0"
 emoji2 = "1.4.0"
+hilt = "2.49"
+ksp = "1.9.22-1.0.17"
 
 [libraries]
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
-retrofit-converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
+#retrofit-converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
 sqlDelightGradle = { module = "com.squareup.sqldelight:gradle-plugin", version.ref = "sqlDelight" }
 sqlDelightAndroidDriver = { module = "com.squareup.sqldelight:android-driver", version.ref = "sqlDelight" }
@@ -67,11 +69,9 @@ glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
 gradle-plugin = { module = "com.squareup.sqldelight:gradle-plugin", version.ref = "gradlePlugin" }
 gradle-v802 = { module = "com.android.tools.build:gradle", version.ref = "gradleVersion" }
-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+#gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
-hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroidGradlePlugin" }
 hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hiltAndroidGradlePlugin" }
-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltAndroidGradlePlugin" }
 json = { module = "org.json:json", version.ref = "json" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 jsoup-v1143 = { module = "org.jsoup:jsoup", version.ref = "jsoupVersion" }
@@ -90,8 +90,13 @@ androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
 androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hiltWork" }
 androidx-emoji2-bundled = { group = "androidx.emoji2", name = "emoji2-bundled", version.ref = "emoji2" }
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+
 

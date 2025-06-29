@@ -8,15 +8,15 @@ import kotlinx.coroutines.flow.Flow
 interface HorarioDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertHorario(horario: HorarioEntity): Long
+    suspend fun insertHorario(horario: HorarioEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHorarios(horarios: List<HorarioEntity>)
 
-    @Query("SELECT * FROM horarios ORDER BY id")
+    @Query("SELECT * FROM horarios ORDER BY idHorario")
     fun getAllHorarios(): Flow<List<HorarioEntity>>
 
-    @Query("SELECT * FROM horarios ORDER BY id")
+    @Query("SELECT * FROM horarios ORDER BY idHorario")
     suspend fun getAllHorariosOnce(): List<HorarioEntity>
 
     @Query("SELECT * FROM horarios WHERE nombreDeHorario = :nombre LIMIT 1")
@@ -28,9 +28,13 @@ interface HorarioDao {
     @Query("DELETE FROM horarios")
     suspend fun deleteAllHorarios()
 
-    @Query("UPDATE horarios SET isActive = :isActive WHERE id = :horarioId")
-    suspend fun setHorarioActive(horarioId: Int, isActive: Boolean)
+    @Query("DELETE FROM horarios WHERE idHorario = :idHorario AND deviceId = :deviceId")
+    suspend fun deleteByIdHorario(idHorario: Long, deviceId: String)
 
-    @Query("UPDATE horarios SET isActive = :isActive")
-    suspend fun setAllHorariosActive(isActive: Boolean)
+    // Comentados temporalmente - no se están usando
+    // @Query("UPDATE horarios SET isActive = :isActive WHERE idHorario = :horarioId")
+    // suspend fun setHorarioActive(horarioId: Long, isActive: Boolean)
+
+    // @Query("UPDATE horarios SET isActive = :isActive")
+    // suspend fun setAllHorariosActive(isActive: Boolean)
 }

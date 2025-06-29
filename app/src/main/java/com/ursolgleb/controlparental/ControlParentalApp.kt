@@ -9,12 +9,15 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.ursolgleb.controlparental.data.apps.AppDataRepository
 import com.ursolgleb.controlparental.validadors.PinValidator
-import com.ursolgleb.controlparental.workers.SyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import androidx.emoji2.text.EmojiCompat
-
+import com.ursolgleb.controlparental.workers.ModernSyncWorker
+import androidx.work.WorkManager
+import androidx.work.WorkInfo
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
 @HiltAndroidApp
@@ -30,6 +33,7 @@ class ControlParentalApp : Application(), Configuration.Provider {
     lateinit var appDataRepository: AppDataRepository
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private var workerStarted = false // Flag para evitar iniciar múltiples veces
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -44,14 +48,46 @@ class ControlParentalApp : Application(), Configuration.Provider {
         appDataRepository.inicieDelecturaDeBD()
         appDataRepository.updateBDApps()
 
-        SyncWorker.startWorker(this)
-
-
         pinValidator.savePin("1234")   // ejecuta al confirmar el PIN
 
-        appDataRepository.saveDeviceInfo()
+        appDataRepository.saveDeviceInfo().invokeOnCompletion {
+            Log.e("ControlParentalApp", "saveDeviceInfo() completado")
+
+            if (!workerStarted) {
+                workerStarted = true
+                
+                // Cancelar todos los workers existentes para evitar duplicación
+                Log.d("ControlParentalApp", "Cancelando todos los workers existentes...")
+                WorkManager.getInstance(this).cancelAllWork()
+                
+                // Usar solo el sistema moderno basado en eventos
+                Log.d("ControlParentalApp", "Iniciando ModernSyncWorker...")
+                ModernSyncWorker.startWorker(this)
+                Log.d("ControlParentalApp", "ModernSyncWorker programado")
+                
+                // Verificar el estado del worker después de un breve delay
+                coroutineScope.launch {
+                    delay(1000)
+                    checkWorkersStatus()
+                }
+            } else {
+                Log.d("ControlParentalApp", "Worker ya iniciado, ignorando llamada duplicada")
+            }
+            
+            // Sistema tradicional deshabilitado
+            // SyncWorker.startWorker(this)
+        }
 
 
+    }
+
+    private fun checkWorkersStatus() {
+        val workManager = WorkManager.getInstance(this)
+        workManager.getWorkInfosForUniqueWork("ModernSyncWorker")
+            .get()
+            .forEach { workInfo ->
+                Log.d("ControlParentalApp", "ModernSyncWorker status: ${workInfo.state}, id: ${workInfo.id}")
+            }
     }
 
     override fun onTerminate() {

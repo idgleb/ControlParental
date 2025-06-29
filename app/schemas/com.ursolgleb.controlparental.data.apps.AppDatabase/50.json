@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 48,
-    "identityHash": "ceccb2e5a33b76a90bc0710309404877",
+    "version": 50,
+    "identityHash": "e201bfa043c889808dc8b03c41721ed3",
     "entities": [
       {
         "tableName": "apps",
@@ -99,14 +99,8 @@
       },
       {
         "tableName": "horarios",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `deviceId` TEXT NOT NULL, `idHorario` INTEGER NOT NULL, `nombreDeHorario` TEXT NOT NULL, `diasDeSemana` TEXT NOT NULL, `horaInicio` TEXT NOT NULL, `horaFin` TEXT NOT NULL, `isActive` INTEGER NOT NULL, FOREIGN KEY(`deviceId`) REFERENCES `devices`(`deviceId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`deviceId` TEXT NOT NULL, `idHorario` INTEGER NOT NULL, `nombreDeHorario` TEXT NOT NULL, `diasDeSemana` TEXT NOT NULL, `horaInicio` TEXT NOT NULL, `horaFin` TEXT NOT NULL, `isActive` INTEGER NOT NULL, PRIMARY KEY(`deviceId`, `idHorario`), FOREIGN KEY(`deviceId`) REFERENCES `devices`(`deviceId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
           {
             "fieldPath": "deviceId",
             "columnName": "deviceId",
@@ -151,12 +145,24 @@
           }
         ],
         "primaryKey": {
-          "autoGenerate": true,
+          "autoGenerate": false,
           "columnNames": [
-            "id"
+            "deviceId",
+            "idHorario"
           ]
         },
-        "indices": [],
+        "indices": [
+          {
+            "name": "index_horarios_deviceId_idHorario",
+            "unique": true,
+            "columnNames": [
+              "deviceId",
+              "idHorario"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_horarios_deviceId_idHorario` ON `${TABLE_NAME}` (`deviceId`, `idHorario`)"
+          }
+        ],
         "foreignKeys": [
           {
             "table": "devices",
@@ -315,7 +321,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ceccb2e5a33b76a90bc0710309404877')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e201bfa043c889808dc8b03c41721ed3')"
     ]
   }
 }

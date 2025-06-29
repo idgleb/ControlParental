@@ -38,7 +38,14 @@ import com.ursolgleb.controlparental.handlers.SyncHandler
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-
+import com.ursolgleb.controlparental.data.remote.models.HorarioDto
+import com.ursolgleb.controlparental.data.remote.models.SyncResponse
+import com.ursolgleb.controlparental.data.common.Resource
+import com.ursolgleb.controlparental.data.common.networkBoundResource
+import com.ursolgleb.controlparental.data.remote.RemoteDataRepository
+import com.ursolgleb.controlparental.data.remote.models.toEntity
+import kotlinx.coroutines.flow.Flow
+import retrofit2.Response
 
 @Singleton
 class AppDataRepository @Inject constructor(
@@ -47,7 +54,8 @@ class AppDataRepository @Inject constructor(
     private val newAppsProvider: NewAppsProvider,
     private val usageTimeProvider: UsageTimeProvider,
     private val usageStatsProvider: UsageStatsProvider,
-    private val syncHandler: SyncHandler
+    private val syncHandler: SyncHandler,
+    private val remoteDataRepository: RemoteDataRepository
 ) {
 
     var currentPkg: String? = null
@@ -432,15 +440,14 @@ class AppDataRepository @Inject constructor(
         }
     }
 
-    suspend fun addHorarioBD(horario: HorarioEntity): Long {
-        return try {
-            val id = horarioDao.insertHorario(horario)
+    suspend fun addHorarioBD(horario: HorarioEntity) {
+        try {
+            horarioDao.insertHorario(horario)
             Logger.info(
                 context,
                 "AppDataRepository",
-                "Horario insertado en BD: $horario con ID: $id"
+                "Horario insertado en BD: $horario"
             )
-            id
         } catch (e: Exception) {
             Logger.error(
                 context,
@@ -448,7 +455,6 @@ class AppDataRepository @Inject constructor(
                 "Error al insertar horario en la BD: ${e.message}",
                 e
             )
-            -1L // valor que indique error
         }
     }
 
@@ -476,6 +482,20 @@ class AppDataRepository @Inject constructor(
                 context,
                 "AppDataRepository",
                 "Error al eliminar todos los horarios en la BD: ${e.message}",
+                e
+            )
+        }
+    }
+
+    fun deleteHorarioByIdHorario(idHorario: Long, deviceId: String): Deferred<Unit> = scope.async {
+        try {
+            horarioDao.deleteByIdHorario(idHorario, deviceId)
+            Logger.info(context, "AppDataRepository", "Horario eliminado por idHorario: $idHorario, deviceId: $deviceId")
+        } catch (e: Exception) {
+            Logger.error(
+                context,
+                "AppDataRepository",
+                "Error al eliminar horario por idHorario: ${e.message}",
                 e
             )
         }
@@ -600,7 +620,24 @@ class AppDataRepository @Inject constructor(
 
     suspend fun getDeviceInfoOnce(): DeviceEntity? {
         return try {
-            deviceDao.getDeviceOnce()
+            // Primero intentar obtener de la BD
+            val device = deviceDao.getDeviceOnce()
+            if (device != null) {
+                return device
+            }
+            
+            // Si no existe, crear uno nuevo
+            val deviceId = getOrCreateDeviceId()
+            val model = "${Build.MANUFACTURER} ${Build.MODEL}"
+            val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+            val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            val entity = DeviceEntity(deviceId = deviceId, model = model, batteryLevel = battery)
+            
+            // Guardar en la BD
+            deviceDao.replace(entity)
+            Logger.info(context, "AppDataRepository", "Device info creada y guardada: $entity")
+            
+            entity
         } catch (e: Exception) {
             Logger.error(
                 context,
@@ -608,13 +645,49 @@ class AppDataRepository @Inject constructor(
                 "Error obteniendo device info: ${e.message}",
                 e
             )
-            null
+            // Como último recurso, crear un device temporal
+            val deviceId = getOrCreateDeviceId()
+            DeviceEntity(
+                deviceId = deviceId,
+                model = "${Build.MANUFACTURER} ${Build.MODEL}",
+                batteryLevel = 100
+            )
         }
     }
 
     fun getDeviceFlow() = deviceDao.getDevice()
+    
+    suspend fun deleteAppByPackageName(packageName: String, deviceId: String) {
+        // Implementar si es necesario
+        // Por ahora no es crítico ya que las apps se sincronizan completas
+    }
 
     fun cancelarCorrutinas() {
         scope.cancel()
     }
+
+    fun getHorarios(deviceId: String): Flow<Resource<List<HorarioEntity>>> = networkBoundResource(
+        query = {
+            horarioDao.getAllHorarios()
+        },
+        fetch = {
+            // Aquí usamos el repo remoto para obtener los datos de la API
+            val response: Response<SyncResponse<HorarioDto>> = remoteDataRepository.api.getHorarios(deviceId)
+            // Adaptamos la respuesta para que coincida con el tipo esperado por networkBoundResource
+            if (response.isSuccessful && response.body() != null) {
+                Response.success(response.body()!!.data)
+            } else {
+                Response.error(response.code(), response.errorBody()!!)
+            }
+        },
+        saveFetchResult = { remoteHorarios ->
+            dbLock.withLock {
+                horarioDao.deleteAllHorarios()
+                val entities = remoteHorarios.mapNotNull { it.toEntity() }
+                horarioDao.insertHorarios(entities)
+                Log.d("AppDataRepo", "Horarios remotos guardados: ${entities.size}")
+            }
+        },
+        shouldFetch = { it.isEmpty() } // Ir a la red solo si la BD está vacía (lógica de ejemplo)
+    )
 }

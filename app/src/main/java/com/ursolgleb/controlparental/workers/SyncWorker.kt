@@ -23,8 +23,8 @@ class SyncWorker(
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
-
-        Log.e("SyncWorker", "Ejecutando doWork() vercion 3...")
+        Log.e("SyncWorker", "\n")
+        Log.e("SyncWorker", "\nEjecutando doWork() vercion 3...")
 
         val entryPoint = EntryPointAccessors
             .fromApplication(
@@ -36,14 +36,14 @@ class SyncWorker(
         val syncHandler = entryPoint.getSyncHandler()
 
         try {
-            localRepo.saveDeviceInfo().await()
+
             val device = localRepo.getDeviceInfoOnce()?.toDto()
 
             // DEVICE--------------------
             if (device != null) {
                 remoteRepo.pushDevice(device)
                 Log.w("SyncWorker", "pushDevice...$device")
-            }
+            } else return Result.success()
 
             // HORARIO--------------------
             if (syncHandler.isPushHorarioPendiente()) {
@@ -53,18 +53,82 @@ class SyncWorker(
                 if (horariosDto.isNotEmpty()) {
                     remoteRepo.pushHorarios(horariosDto)
                 } else {
-                    remoteRepo.deleteHorarios(listOf(device?.deviceId.toString()))
+                    remoteRepo.deleteHorarios(listOf(device.deviceId.toString()))
                 }
                 syncHandler.setPushHorarioPendiente(false)
             } else {
                 //FETCH HORARIO
                 Log.w("SyncWorker", "FETCH Horario...")
-                val remoteHorarios = remoteRepo.fetchHorarios(device?.deviceId)
-                localRepo.deleteAllHorarios().await()
-                if (remoteHorarios.isNotEmpty()) {
-                    val horariosEntity = remoteHorarios.mapNotNull { it.toEntity() }
-                    if (horariosEntity.isNotEmpty()) {
-                        localRepo.insertHorariosEntidades(horariosEntity)
+                
+                // Obtener el timestamp de la última sincronización
+                val lastSync = syncHandler.getLastHorarioSync()
+                
+                // Obtener los IDs de horarios actuales para detectar eliminaciones
+                val currentHorarios = localRepo.horariosFlow.first()
+                val knownIds: List<Long> = currentHorarios.map { it.idHorario }
+                
+                try {
+                    // Llamar a fetchHorarios con los nuevos parámetros
+                    val syncResponse = remoteRepo.fetchHorarios(
+                        deviceId = device?.deviceId,
+                        lastSync = lastSync,
+                        knownIds = knownIds
+                    )
+                    
+                    // Verificar si hay cambios
+                    if (syncResponse.status == "no_changes") {
+                        Log.d("SyncWorker", "No hay cambios en horarios")
+                    } else if (syncResponse.status == "success") {
+                        // Procesar cambios
+                        val changes = syncResponse.changes
+                        
+                        // 1. Eliminar horarios que fueron borrados en el servidor
+                        if (changes?.deleted?.isNotEmpty() == true) {
+                            Log.d("SyncWorker", "Eliminando horarios: ${changes.deleted}")
+                            changes.deleted.forEach { idHorario ->
+                                localRepo.deleteHorarioByIdHorario(idHorario,
+                                    device.deviceId.toString()
+                                ).await()
+                            }
+                        }
+                        
+                        // 2. Insertar o actualizar horarios nuevos/modificados
+                        val horariosToUpdate = syncResponse.data
+                        if (!horariosToUpdate.isNullOrEmpty()) {
+                            Log.d("SyncWorker", "Actualizando ${horariosToUpdate.size} horarios")
+                            val horariosEntity = horariosToUpdate.mapNotNull { it.toEntity() }
+                            if (horariosEntity.isNotEmpty()) {
+                                localRepo.insertHorariosEntidades(horariosEntity)
+                            }
+                        }
+                        
+                        // 3. Guardar el timestamp de esta sincronización
+                        syncResponse.timestamp?.let { timestamp ->
+                            syncHandler.setLastHorarioSync(timestamp)
+                        }
+                        
+                        Log.d("SyncWorker", "Sincronización de horarios completada - " +
+                                "Agregados: ${changes?.added?.size ?: 0}, " +
+                                "Actualizados: ${changes?.updated?.size ?: 0}, " +
+                                "Eliminados: ${changes?.deleted?.size ?: 0}")
+                    }
+                } catch (e: Exception) {
+                    // Si falla, hacer sincronización completa
+                    Log.e("SyncWorker", "Error en sincronización incremental, haciendo sync completo: ${e.message}")
+                    try {
+                        // Usar el método legacy que devuelve List<HorarioDto>
+                        val remoteHorarios = remoteRepo.fetchHorarios(device?.deviceId)
+                        localRepo.deleteAllHorarios().await()
+                        if (remoteHorarios.isNotEmpty()) {
+                            val horariosEntity = remoteHorarios.mapNotNull { it.toEntity() }
+                            if (horariosEntity.isNotEmpty()) {
+                                localRepo.insertHorariosEntidades(horariosEntity)
+                            }
+                        }
+                        // Resetear el timestamp para la próxima vez
+                        syncHandler.setLastHorarioSync(null)
+                    } catch (fallbackError: Exception) {
+                        Log.e("SyncWorker", "Error en sincronización completa de horarios: ${fallbackError.message}")
                     }
                 }
             }
@@ -85,14 +149,20 @@ class SyncWorker(
             } else {
                 //FETCH APPS
                 Log.w("SyncWorker", "FETCH Apps...")
-                val remoteApps = remoteRepo.fetchApps(device?.deviceId)
-                Log.e("SyncWorker", "remoteApps: $remoteApps")
-                localRepo.deleteAllApps().await()
-                if (remoteApps.isNotEmpty()) {
-                    val appsEntity = remoteApps.mapNotNull { it.toEntity() }
-                    if (appsEntity.isNotEmpty()) {
-                        localRepo.insertAppsEntidades(appsEntity)
+                try {
+                    val remoteApps = remoteRepo.fetchApps(device?.deviceId, includeIcons = true)
+                    Log.d("SyncWorker", "Successfully fetched ${remoteApps.size} apps")
+                    
+                    localRepo.deleteAllApps().await()
+                    if (remoteApps.isNotEmpty()) {
+                        val appsEntity = remoteApps.mapNotNull { it.toEntity() }
+                        if (appsEntity.isNotEmpty()) {
+                            localRepo.insertAppsEntidades(appsEntity)
+                            Log.d("SyncWorker", "Inserted ${appsEntity.size} apps into local database")
+                        }
                     }
+                } catch (e: Exception) {
+                    Log.e("SyncWorker", "Error fetching apps: ${e.message}", e)
                 }
             }
 
@@ -109,7 +179,7 @@ class SyncWorker(
         } catch (e: EOFException) {
             Log.e("SyncWorker", "EOFException: ${e.message}", e)
             return Result.success()
-        }finally {
+        } finally {
             //  Reprogramar el worker
             scheduleNextWork(applicationContext)
             Log.e("SyncWorker", "Ejecutando doWork() scheduleNextWork...")
@@ -120,12 +190,12 @@ class SyncWorker(
 
     private fun scheduleNextWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setInitialDelay(3, TimeUnit.SECONDS)
+            .setInitialDelay(10, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(
             "SyncWorker",
-            ExistingWorkPolicy.APPEND_OR_REPLACE,
+            ExistingWorkPolicy.REPLACE,
             workRequest
         )
     }
@@ -137,7 +207,7 @@ class SyncWorker(
 
             WorkManager.getInstance(context).enqueueUniqueWork(
                 "SyncWorker",
-                ExistingWorkPolicy.APPEND_OR_REPLACE,
+                ExistingWorkPolicy.REPLACE,
                 workRequest
             )
         }

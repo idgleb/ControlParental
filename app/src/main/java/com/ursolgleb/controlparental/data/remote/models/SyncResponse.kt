@@ -1,0 +1,35 @@
+package com.ursolgleb.controlparental.data.remote.models
+
+// Moshi reflexión: no necesitamos Json
+
+data class SyncResponse<T>(
+    val status: String,
+
+    val data: List<T>? = null,
+
+    val changes: Changes? = null,
+
+    val timestamp: String? = null,
+
+    val totalChanges: Int? = null,
+
+    val message: String? = null,
+
+    val deviceId: String? = null,
+
+    val error: String? = null,
+
+    val details: String? = null
+)
+
+data class Changes(
+    val added: List<Long>? = null,
+
+    val updated: List<Long>? = null,
+
+    val deleted: List<Long>? = null
+) {
+    fun getAddedSafe(): List<Long> = added ?: emptyList()
+    fun getUpdatedSafe(): List<Long> = updated ?: emptyList()
+    fun getDeletedSafe(): List<Long> = deleted ?: emptyList()
+}

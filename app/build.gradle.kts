@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("kotlin-kapt")
+    id("com.google.devtools.ksp")
 
     id("dagger.hilt.android.plugin")
     id("com.google.dagger.hilt.android") // 👈 Plugin de Hilt
@@ -17,17 +17,6 @@ plugins {
 android {
     namespace = "com.ursolgleb.controlparental"
     compileSdk = 35
-
-    kapt {
-        correctErrorTypes = true
-
-        arguments {
-            arg("room.schemaLocation", "$projectDir/schemas")
-            arg("room.incremental", "true")
-        }
-
-    }
-
 
     defaultConfig {
         applicationId = "com.ursolgleb.controlparental"
@@ -93,13 +82,14 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.androidx.room.runtime)
-    kapt(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
     implementation(libs.jsoup)
     implementation(libs.json)  // Lo mismo aquí
     implementation(libs.okhttp)
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation(libs.glide) // Última versión de Glide
-    kapt(libs.compiler) // Para generación de código
+    ksp(libs.compiler)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.fragment.ktx)
@@ -107,12 +97,12 @@ dependencies {
 
     // WorkManager con Hilt (opcional si usas WorkManager)
     implementation("androidx.hilt:hilt-work:1.0.0")
-    kapt("androidx.hilt:hilt-compiler:1.0.0")
+    ksp("androidx.hilt:hilt-compiler:1.0.0")
 
 
 
     implementation("com.google.dagger:hilt-android:2.49")
-    kapt("com.google.dagger:hilt-compiler:2.49")
+    ksp("com.google.dagger:hilt-compiler:2.49")
 
     val work_version = "2.9.1"
 
@@ -134,8 +124,7 @@ dependencies {
     // optional - Multiprocess support
     implementation("androidx.work:work-multiprocess:$work_version")
 
-    implementation(libs.gson)
-
+    // Dependencias de Moshi añadidas más arriba; Gson ya no es necesario
     implementation(libs.kotlinx.coroutines.core)
 
     implementation(libs.cache4k)
@@ -150,10 +139,20 @@ dependencies {
 
 
     implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.gson)
+    // Moshi se usa como converter; dependencia Gson eliminada
 
     implementation(libs.androidx.emoji2.bundled)
 
+
+    // Reemplazar Gson con Moshi
+    implementation("com.squareup.moshi:moshi:1.15.0")
+    implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
+
+    // Interceptor para depuración
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // Se eliminó moshi-kotlin-codegen: usaremos reflexión para los adaptadores
 
 }
 

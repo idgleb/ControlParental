@@ -12,15 +12,20 @@ import androidx.core.app.NotificationCompat
 import android.os.Build
 import com.ursolgleb.controlparental.ControlParentalApp
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.workers.SyncWorker
+import com.ursolgleb.controlparental.services.AppBlockerService
+import com.ursolgleb.controlparental.workers.ModernSyncWorker
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         if (intent?.action == Intent.ACTION_BOOT_COMPLETED ||
             intent?.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
             Log.d("BootReceiver", "Dispositivo reiniciado o app actualizada")
 
-            SyncWorker.startWorker(context) // ✅ Inicia el Worker tras reinicio o update
+            Log.d("BootReceiver", "onReceive: $intent?.action")
+            // Usar el sistema moderno de sincronización basado en eventos
+            ModernSyncWorker.startWorker(context)
 
             val enabledServices = Settings.Secure.getString(
                 context.contentResolver,

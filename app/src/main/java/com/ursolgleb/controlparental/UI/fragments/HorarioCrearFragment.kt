@@ -52,7 +52,7 @@ class HorarioCrearFragment : Fragment() {
 
     private fun initUI() {
 
-        if (horario.id != 0L) {
+        if (horario.idHorario != 0L) {
             binding.tvTituloDeFragment.text = "Editar horario de bloqueo"
             binding.btnEliminarHorario.visibility = View.VISIBLE
         }
@@ -125,23 +125,35 @@ class HorarioCrearFragment : Fragment() {
                     return@setOnClickListener
                 }
 
-
-                horario = HorarioEntity(
-                    id = horario.id,
-                    deviceId = appDataRepository.getOrCreateDeviceId(),
-                    nombreDeHorario = nombreHorario,
-                    diasDeSemana = diasDeSemana,
-                    horaInicio = horaInicio,
-                    horaFin = horaFin,
-                    isActive = horario.isActive
-                )
-
                 appDataRepository.scope.launch {
-                    appDataRepository.addHorarioBD(horario)
-                    syncHendler.setPushHorarioPendiente(true)
-                }
+                    // Si es un horario nuevo (idHorario == 0), generar un nuevo ID
+                    val finalIdHorario = if (horario.idHorario == 0L) {
+                        // Obtener el máximo idHorario actual y sumar 1
+                        val maxId = appDataRepository.horariosFlow.value
+                            .filter { it.deviceId == appDataRepository.getOrCreateDeviceId() }
+                            .maxOfOrNull { it.idHorario } ?: 0L
+                        maxId + 1
+                    } else {
+                        horario.idHorario
+                    }
 
-                findNavController().popBackStack()
+                    val nuevoHorario = HorarioEntity(
+                        idHorario = finalIdHorario,
+                        deviceId = appDataRepository.getOrCreateDeviceId(),
+                        nombreDeHorario = nombreHorario,
+                        diasDeSemana = diasDeSemana,
+                        horaInicio = horaInicio,
+                        horaFin = horaFin,
+                        isActive = horario.isActive
+                    )
+
+                    appDataRepository.addHorarioBD(nuevoHorario)
+                    syncHendler.setPushHorarioPendiente(true)
+                    
+                    requireActivity().runOnUiThread {
+                        findNavController().popBackStack()
+                    }
+                }
             } catch (e: Exception) {
                 // Manejar error de formato de hora
                 return@setOnClickListener
