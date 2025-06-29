@@ -13,9 +13,9 @@ data class PostEventsRequest(
  * Representa un evento individual que se sincroniza.
  */
 data class EventDto(
-    @field:Json(name = "entity_type") val entityType: String,
-    @field:Json(name = "entity_id") val entityId: String,
+    val entity_type: String,
+    val entity_id: String,
     val action: String,
     val data: Map<String, Any?>? = null,
     val timestamp: String
-) 
+)

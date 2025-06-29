@@ -206,8 +206,8 @@ class EventSyncManager @Inject constructor(
             
             horarios.forEach { horario ->
                 events.add(EventDto(
-                    entityType = "horario",
-                    entityId = horario.idHorario.toString(),
+                    entity_type = "horario",
+                    entity_id = horario.idHorario.toString(),
                     action = "update",
                     data = horario.toDto().toMap(),
                     timestamp = now
@@ -221,8 +221,8 @@ class EventSyncManager @Inject constructor(
             
             apps.forEach { app ->
                 events.add(EventDto(
-                    entityType = "app",
-                    entityId = app.packageName,
+                    entity_type = "app",
+                    entity_id = app.packageName,
                     action = "update",
                     data = app.toDto().toMap(),
                     timestamp = now
