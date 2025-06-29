@@ -79,7 +79,9 @@ class Fun {
         }
 
         fun estaDentroDelHorario(horaActual: LocalTime, horaInicio: String, horaFin: String): Boolean {
-            return horaActual.isAfter(horaInicio) && horaActual.isBefore(horaFin)
+            val inicio = LocalTime.parse(horaInicio)
+            val fin = LocalTime.parse(horaFin)
+            return horaActual.isAfter(inicio) && horaActual.isBefore(fin)
         }
 
         fun millisToFormattedDate(millis: Long, pattern: String = "dd/MM/yyyy HH:mm:ss"): String {
