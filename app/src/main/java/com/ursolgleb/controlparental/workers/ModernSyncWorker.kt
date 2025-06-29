@@ -101,7 +101,7 @@ class ModernSyncWorker(
 
         WorkManager.getInstance(context).enqueueUniqueWork(
             WORK_NAME,
-            ExistingWorkPolicy.REPLACE,
+            ExistingWorkPolicy.APPEND,
             workRequest
         )
     }
