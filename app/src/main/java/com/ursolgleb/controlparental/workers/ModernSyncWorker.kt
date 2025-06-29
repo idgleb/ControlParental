@@ -7,11 +7,12 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.ursolgleb.controlparental.data.common.Resource
 import com.ursolgleb.controlparental.data.remote.models.toDto
 import com.ursolgleb.controlparental.di.SyncWorkerEntryPoint
 import dagger.hilt.android.EntryPointAccessors
 import java.util.concurrent.TimeUnit
-import com.ursolgleb.controlparental.data.remote.models.Resource
+import kotlinx.coroutines.flow.first
 
 /**
  * Worker moderno que usa sincronización basada en eventos
@@ -63,12 +64,21 @@ class ModernSyncWorker(
             // Disparar la sincronización de horarios.
             // La lógica de si debe o no ir a la red está dentro del NetworkBoundResource.
             Log.d(TAG, "Triggering Horarios sync...")
-            localRepo.getHorarios(deviceId).collect { resource ->
-                // Opcional: loguear el estado del recurso
-                when (resource) {
-                    is Resource.Success -> Log.d(TAG, "Horarios sync success: ${resource.data?.size} items")
-                    is Resource.Error -> Log.e(TAG, "Horarios sync error: ${resource.message}")
-                    is Resource.Loading -> Log.d(TAG, "Horarios sync loading...")
+
+            // Obtener solo el primer resultado no-loading para evitar que el
+            // worker se quede recolectando actualizaciones indefinidamente
+            val syncResult = localRepo
+                .getHorarios(deviceId)
+                .first { it !is Resource.Loading }
+
+            when (syncResult) {
+                is Resource.Success ->
+                    Log.d(TAG, "Horarios sync success: ${syncResult.data?.size} items")
+                is Resource.Error ->
+                    Log.e(TAG, "Horarios sync error: ${syncResult.message}")
+                else -> {
+                    // No debería emitirse otro tipo aquí, pero se ignora por seguridad
+                    Log.d(TAG, "Horarios sync finished with state: ${syncResult::class.simpleName}")
                 }
             }
             
