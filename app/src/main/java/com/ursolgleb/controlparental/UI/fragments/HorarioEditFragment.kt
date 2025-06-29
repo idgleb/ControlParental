@@ -68,8 +68,8 @@ class HorarioEditFragment : Fragment(R.layout.fragment_horario_edit) {
                 idHorario = 0L, // Se asignará un ID real cuando se guarde
                 nombreDeHorario = "",
                 diasDeSemana = listOf(),
-                horaInicio = LocalTime.of(0, 0),
-                horaFin = LocalTime.of(0, 0),
+                horaInicio = LocalTime.of(0, 0).toString(),
+                horaFin = LocalTime.of(0, 0).toString(),
                 isActive = true
             )
             val action = MainAdminFragmentDirections.actionGlobalHorarioCrearFragment(horario)

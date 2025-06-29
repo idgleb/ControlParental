@@ -61,12 +61,12 @@ class HorarioCrearFragment : Fragment() {
 
         binding.etNombreHorario.setText(horario.nombreDeHorario)
 
-        val inicio = horario.horaInicio
+        val inicio = LocalTime.parse(horario.horaInicio)
         binding.tpHoraInicio.apply {
             hour = inicio.hour
             minute = inicio.minute
         }
-        val fin = horario.horaFin
+        val fin = LocalTime.parse(horario.horaFin)
         binding.tpHoraFin.apply {
             hour = fin.hour
             minute = fin.minute
@@ -142,8 +142,8 @@ class HorarioCrearFragment : Fragment() {
                         deviceId = appDataRepository.getOrCreateDeviceId(),
                         nombreDeHorario = nombreHorario,
                         diasDeSemana = diasDeSemana,
-                        horaInicio = horaInicio,
-                        horaFin = horaFin,
+                        horaInicio = horaInicio.toString(),
+                        horaFin = horaFin.toString(),
                         isActive = horario.isActive
                     )
 

@@ -78,7 +78,7 @@ class Fun {
             return if (dia == Calendar.SUNDAY) 7 else dia - 1 // 1 = lunes, ..., 7 = domingo
         }
 
-        fun estaDentroDelHorario(horaActual: LocalTime, horaInicio: LocalTime, horaFin: LocalTime): Boolean {
+        fun estaDentroDelHorario(horaActual: LocalTime, horaInicio: String, horaFin: String): Boolean {
             return horaActual.isAfter(horaInicio) && horaActual.isBefore(horaFin)
         }
 
@@ -89,3 +89,5 @@ class Fun {
 
     }
 }
+
+private fun LocalTime.isAfter(string: String) {}
