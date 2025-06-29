@@ -52,9 +52,7 @@ class ModernSyncWorker(
             )
         
         val localRepo = entryPoint.getAppDataRepository()
-        // val remoteRepo = entryPoint.getRemoteDataRepository() // Ya no se usa aquí
-        // val eventSyncManager = entryPoint.getEventSyncManager() // Ya no se usa aquí
-        // val syncHandler = entryPoint.getSyncHandler() // Ya no se usa aquí
+        val eventSyncManager = entryPoint.getEventSyncManager()
 
         Log.d(TAG, "Dependencies obtained successfully")
 
@@ -83,6 +81,14 @@ class ModernSyncWorker(
             }
             
             // (Aquí se añadiría la llamada a getApps cuando se implemente)
+            // Asegurar que los cambios locales se envíen al servidor
+            val syncEventsResult = eventSyncManager.sync()
+            if (syncEventsResult.isSuccess) {
+                Log.d(TAG, "Event sync finished successfully")
+            } else {
+                Log.e(TAG, "Event sync failed: ${syncEventsResult.exceptionOrNull()?.message}")
+            }
+
 
             Log.d(TAG, "Modern sync cycle completed successfully.")
             scheduleNextWork(applicationContext)
