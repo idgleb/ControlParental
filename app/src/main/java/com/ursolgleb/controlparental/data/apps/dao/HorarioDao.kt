@@ -31,6 +31,12 @@ interface HorarioDao {
     @Query("DELETE FROM horarios WHERE idHorario = :idHorario AND deviceId = :deviceId")
     suspend fun deleteByIdHorario(idHorario: Long, deviceId: String)
 
+    @Query("DELETE FROM horarios WHERE deviceId = :deviceId")
+    suspend fun deleteHorariosByDeviceId(deviceId: String)
+
+    @Query("SELECT * FROM horarios WHERE idHorario = :idHorario AND deviceId = :deviceId LIMIT 1")
+    suspend fun getHorarioByIdOnce(idHorario: Long, deviceId: String): HorarioEntity?
+
     // Comentados temporalmente - no se están usando
     // @Query("UPDATE horarios SET isActive = :isActive WHERE idHorario = :horarioId")
     // suspend fun setHorarioActive(horarioId: Long, isActive: Boolean)

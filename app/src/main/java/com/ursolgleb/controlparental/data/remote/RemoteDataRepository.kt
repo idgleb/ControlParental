@@ -116,13 +116,13 @@ class RemoteDataRepository @Inject constructor(
     // Nueva API de sincronización basada en eventos
     suspend fun getEvents(
         deviceId: String, 
-        lastEventId: Long = 0,
-        types: List<String> = listOf("horario", "app")
+        lastEventId: Long,
+        types: String
     ): SyncEventsResponse {
         return api.getEvents(deviceId, lastEventId, types)
     }
     
-    suspend fun postEvents(request: PostEventsRequest): Response<Any> {
+    suspend fun postEvents(request: PostEventsRequest): Response<Unit> {
         return api.postEvents(request)
     }
     

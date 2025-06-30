@@ -30,6 +30,30 @@ object RemoteModule {
     @Provides
     fun provideMoshi(): Moshi {
         return Moshi.Builder()
+            .add(object : JsonAdapter.Factory {
+                override fun create(
+                    type: java.lang.reflect.Type,
+                    annotations: Set<Annotation>,
+                    moshi: Moshi
+                ): JsonAdapter<*>? {
+                    if (type == Long::class.java || type == java.lang.Long::class.java) {
+                        return object : JsonAdapter<Long>() {
+                            override fun fromJson(reader: JsonReader): Long? {
+                                return if (reader.peek() == JsonReader.Token.NUMBER) {
+                                    reader.nextLong()
+                                } else {
+                                    reader.skipValue()
+                                    null
+                                }
+                            }
+                            override fun toJson(writer: com.squareup.moshi.JsonWriter, value: Long?) {
+                                writer.value(value)
+                            }
+                        }
+                    }
+                    return null
+                }
+            })
             .add(KotlinJsonAdapterFactory())
             .build()
     }

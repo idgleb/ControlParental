@@ -268,8 +268,8 @@ class AppDataRepository @Inject constructor(
                 "Start insertListaApps nuevasEntidades a BD..."
             )
             appDao.insertListaApps(nuevasEntidades)
+            nuevasEntidades.forEach { syncHandler.addPendingAppId(it.packageName) }
             mostrarBottomSheetActualizadaFlow.value = true
-            syncHandler.setPushAppsPendiente(true)
             Logger.info(
                 context,
                 "AppDataRepository",
@@ -309,8 +309,8 @@ class AppDataRepository @Inject constructor(
                         "addAppsASiempreBloqueadasBD agregando a BD..."
                     )
                     appDao.insertListaApps(appsBloqueadas)
+                    appsBloqueadas.forEach { syncHandler.addPendingAppId(it.packageName) }
                     mostrarBottomSheetActualizadaFlow.value = true
-                    syncHandler.setPushAppsPendiente(true)
                 }
             } catch (e: Exception) {
                 Logger.error(
@@ -347,8 +347,8 @@ class AppDataRepository @Inject constructor(
                         "addAppsASiempreDisponiblesBD agregando a BD..."
                     )
                     appDao.insertListaApps(appsDispon)
+                    appsDispon.forEach { syncHandler.addPendingAppId(it.packageName) }
                     mostrarBottomSheetActualizadaFlow.value = true
-                    syncHandler.setPushAppsPendiente(true)
                 }
             } catch (e: Exception) {
                 Logger.error(
@@ -381,8 +381,8 @@ class AppDataRepository @Inject constructor(
                 dbLock.withLock {
                     Logger.info(context, "AppDataRepository", "addAppsAHorarioBD agregando a BD...")
                     appDao.insertListaApps(appsHorario)
+                    appsHorario.forEach { syncHandler.addPendingAppId(it.packageName) }
                     mostrarBottomSheetActualizadaFlow.value = true
-                    syncHandler.setPushAppsPendiente(true)
                 }
             } catch (e: Exception) {
                 Logger.error(
@@ -443,6 +443,7 @@ class AppDataRepository @Inject constructor(
     suspend fun addHorarioBD(horario: HorarioEntity) {
         try {
             horarioDao.insertHorario(horario)
+            syncHandler.addPendingHorarioId(horario.idHorario)
             Logger.info(
                 context,
                 "AppDataRepository",
@@ -463,6 +464,7 @@ class AppDataRepository @Inject constructor(
             try {
                 horarioDao.deleteHorario(horario)
                 Logger.info(context, "AppDataRepository", "Horario eliminado en BD: $horario")
+                syncHandler.addDeletedHorarioId(horario.idHorario)
             } catch (e: Exception) {
                 Logger.error(
                     context,
@@ -658,8 +660,33 @@ class AppDataRepository @Inject constructor(
     fun getDeviceFlow() = deviceDao.getDevice()
     
     suspend fun deleteAppByPackageName(packageName: String, deviceId: String) {
-        // Implementar si es necesario
-        // Por ahora no es crítico ya que las apps se sincronizan completas
+        try {
+            dbLock.withLock {
+                appDao.deleteAppByPackageName(packageName, deviceId)
+                syncHandler.addDeletedAppId(packageName)
+                Log.d("AppDataRepository", "App eliminada: $packageName, notificada para sync.")
+            }
+        } catch (e: Exception) {
+            Logger.error(context, "AppDataRepository", "Error deleteAppByPackageName: ${e.message}", e)
+        }
+    }
+
+    suspend fun getAppByPackageNameOnce(packageName: String, deviceId: String): AppEntity? {
+        return try {
+            appDao.getAppByPackageNameOnce(packageName, deviceId)
+        } catch (e: Exception) {
+            Logger.error(context, "AppDataRepository", "Error getAppByPackageNameOnce: ${e.message}", e)
+            null
+        }
+    }
+
+    suspend fun getHorarioByIdOnce(idHorario: Long, deviceId: String): HorarioEntity? {
+        return try {
+            horarioDao.getHorarioByIdOnce(idHorario, deviceId)
+        } catch (e: Exception) {
+            Logger.error(context, "AppDataRepository", "Error getHorarioByIdOnce: ${e.message}", e)
+            null
+        }
     }
 
     fun cancelarCorrutinas() {
@@ -671,23 +698,24 @@ class AppDataRepository @Inject constructor(
             horarioDao.getAllHorarios()
         },
         fetch = {
-            // Aquí usamos el repo remoto para obtener los datos de la API
-            val response: Response<SyncResponse<HorarioDto>> = remoteDataRepository.api.getHorarios(deviceId)
-            // Adaptamos la respuesta para que coincida con el tipo esperado por networkBoundResource
+            val response = remoteDataRepository.api.getHorarios(deviceId)
             if (response.isSuccessful && response.body() != null) {
+                // Adaptamos la respuesta: devolvemos solo la lista de DTOs
                 Response.success(response.body()!!.data)
             } else {
+                // Si la respuesta no es exitosa, la pasamos tal cual para que se maneje el error
                 Response.error(response.code(), response.errorBody()!!)
             }
         },
         saveFetchResult = { remoteHorarios ->
             dbLock.withLock {
-                horarioDao.deleteAllHorarios()
+                // Borrar solo los horarios de este dispositivo para no afectar a otros.
+                horarioDao.deleteHorariosByDeviceId(deviceId)
                 val entities = remoteHorarios.mapNotNull { it.toEntity() }
                 horarioDao.insertHorarios(entities)
                 Log.d("AppDataRepo", "Horarios remotos guardados: ${entities.size}")
             }
         },
-        shouldFetch = { it.isEmpty() } // Ir a la red solo si la BD está vacía (lógica de ejemplo)
+        shouldFetch = { it == null || it.isEmpty() } 
     )
 }

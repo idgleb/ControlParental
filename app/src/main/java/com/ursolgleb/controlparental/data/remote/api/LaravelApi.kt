@@ -59,12 +59,12 @@ interface LaravelApi {
     @GET("sync/events")
     suspend fun getEvents(
         @Query("deviceId") deviceId: String,
-        @Query("lastEventId") lastEventId: Long = 0,
-        @Query("types") types: List<String> = listOf("horario", "app")
+        @Query("lastEventId") lastEventId: Long,
+        @Query("types") types: String
     ): SyncEventsResponse
 
     @POST("sync/events")
-    suspend fun postEvents(@Body request: PostEventsRequest): Response<Any>
+    suspend fun postEvents(@Body request: PostEventsRequest): Response<Unit>
 
     @GET("sync/status")
     suspend fun getSyncStatus(@Query("deviceId") deviceId: String): SyncStatusResponse

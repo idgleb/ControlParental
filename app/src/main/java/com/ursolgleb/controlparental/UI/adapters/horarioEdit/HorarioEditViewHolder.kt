@@ -8,6 +8,9 @@ import com.ursolgleb.controlparental.databinding.ItemHorarioEditBinding
 import androidx.navigation.findNavController
 import com.ursolgleb.controlparental.handlers.SyncHandler
 import kotlinx.coroutines.launch
+import android.widget.Toast
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 
 class HorarioEditViewHolder(
     private val binding: ItemHorarioEditBinding,
@@ -38,21 +41,18 @@ class HorarioEditViewHolder(
 
         binding.switchHorario.isChecked = horario.isActive
 
+        // Configurar el listener para el switch
         binding.switchHorario.setOnCheckedChangeListener { _, isChecked ->
-            horario.isActive = isChecked
-
-            appDataRepository.scope.launch {
-                appDataRepository.addHorarioBD(horario)
-                syncHendler.setPushHorarioPendiente(true)
+            val horarioActualizado = horario.copy(isActive = isChecked)
+            CoroutineScope(Dispatchers.Main).launch {
+                appDataRepository.addHorarioBD(horarioActualizado)
             }
-
         }
 
         binding.itemHorarioEdit.setOnClickListener {
             val action = MainAdminFragmentDirections.actionGlobalHorarioCrearFragment(horario)
             binding.root.findNavController().navigate(action)
         }
-
     }
 }
 

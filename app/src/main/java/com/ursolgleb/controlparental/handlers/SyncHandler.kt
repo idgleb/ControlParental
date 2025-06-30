@@ -22,66 +22,76 @@ class SyncHandler @Inject constructor(
 
     private val prefs = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
 
-    suspend fun isPushHorarioPendiente(): Boolean {
-        return try {
-            val result = getSyncDataInfoOnce()?.isPushHorarioPendiente ?: false
-            Log.d("SyncHandler", "isPushHorarioPendiente: $result")
-            result
-        } catch (e: Exception) {
-            // Usar SharedPreferences como respaldo
-            val result = prefs.getBoolean("push_horario_pendiente", false)
-            Log.d("SyncHandler", "isPushHorarioPendiente from prefs: $result")
-            result
-        }
+    // --- Métodos para pendientes de creación/actualización de Horarios ---
+    fun addPendingHorarioId(id: Long) {
+        val current = getPendingHorarioIds()
+        val newSet = current.toMutableSet()
+        newSet.add(id.toString())
+        prefs.edit().putStringSet("pending_horario_ids", newSet).apply()
+        Log.d("SyncHandler", "Added pending horario ID: $id.")
     }
 
-    suspend fun isPushAppsPendiente(): Boolean {
-        return try {
-            val result = getSyncDataInfoOnce()?.isPushAppsPendiente ?: false
-            Log.d("SyncHandler", "isPushAppsPendiente: $result")
-            result
-        } catch (e: Exception) {
-            // Usar SharedPreferences como respaldo
-            val result = prefs.getBoolean("push_apps_pendiente", false)
-            Log.d("SyncHandler", "isPushAppsPendiente from prefs: $result")
-            result
-        }
+    fun getPendingHorarioIds(): Set<String> {
+        return prefs.getStringSet("pending_horario_ids", emptySet()) ?: emptySet()
     }
 
-    fun setPushHorarioPendiente(pendiente: Boolean): Deferred<Unit> = appDataRepository.get().scope.async {
-        Log.d("SyncHandler", "setPushHorarioPendiente called with: $pendiente")
-        try {
-            val syncData = getSyncDataInfoOnce() ?: SyncDataEntity((appDataRepository.get().getOrCreateDeviceId()))
-            syncData.isPushHorarioPendiente = pendiente
-            syncDataDao.insert(syncData)
-            Log.d("SyncHandler", "setPushHorarioPendiente saved: $pendiente")
-        } catch (e: Exception) {
-            Log.e("SyncHandler", "Error saving to DB, using prefs", e)
-        }
-        // Siempre guardar en SharedPreferences como respaldo
-        prefs.edit().putBoolean("push_horario_pendiente", pendiente).apply()
+    fun clearPendingHorarioIds() {
+        prefs.edit().remove("pending_horario_ids").apply()
+        Log.d("SyncHandler", "Cleared pending horario IDs.")
     }
 
-    fun setPushAppsPendiente(pendiente: Boolean): Deferred<Unit> = appDataRepository.get().scope.async {
-        Log.d("SyncHandler", "setPushAppsPendiente called with: $pendiente")
-        try {
-            val syncData = getSyncDataInfoOnce() ?: SyncDataEntity((appDataRepository.get().getOrCreateDeviceId()))
-            syncData.isPushAppsPendiente = pendiente
-            syncDataDao.insert(syncData)
-            Log.d("SyncHandler", "setPushAppsPendiente saved: $pendiente")
-        } catch (e: Exception) {
-            Log.e("SyncHandler", "Error saving to DB, using prefs", e)
-        }
-        // Siempre guardar en SharedPreferences como respaldo
-        prefs.edit().putBoolean("push_apps_pendiente", pendiente).apply()
+    // --- Métodos para pendientes de eliminación de Horarios ---
+    fun addDeletedHorarioId(id: Long) {
+        val current = getDeletedHorarioIds()
+        val newSet = current.toMutableSet()
+        newSet.add(id.toString())
+        prefs.edit().putStringSet("deleted_horario_ids", newSet).apply()
+        Log.d("SyncHandler", "Added deleted horario ID: $id.")
     }
 
-    fun getLastHorarioSync(): String? {
-        return prefs.getString("last_horario_sync", null)
+    fun getDeletedHorarioIds(): Set<String> {
+        return prefs.getStringSet("deleted_horario_ids", emptySet()) ?: emptySet()
     }
 
-    fun setLastHorarioSync(timestamp: String?) {
-        prefs.edit().putString("last_horario_sync", timestamp).apply()
+    fun clearDeletedHorarioIds() {
+        prefs.edit().remove("deleted_horario_ids").apply()
+        Log.d("SyncHandler", "Cleared deleted horario IDs.")
+    }
+
+    // --- Métodos para pendientes de creación/actualización de Apps ---
+    fun addPendingAppId(packageName: String) {
+        val current = getPendingAppIds()
+        val newSet = current.toMutableSet()
+        newSet.add(packageName)
+        prefs.edit().putStringSet("pending_app_ids", newSet).apply()
+        Log.d("SyncHandler", "Added pending app ID: $packageName.")
+    }
+
+    fun getPendingAppIds(): Set<String> {
+        return prefs.getStringSet("pending_app_ids", emptySet()) ?: emptySet()
+    }
+
+    fun clearPendingAppIds() {
+        prefs.edit().remove("pending_app_ids").apply()
+        Log.d("SyncHandler", "Cleared pending app IDs.")
+    }
+
+    // --- Métodos para pendientes de eliminación de Apps ---
+    fun addDeletedAppId(packageName: String) {
+        val current = getDeletedAppIds()
+        val newSet = current.toMutableSet()
+        newSet.add(packageName)
+        prefs.edit().putStringSet("deleted_app_ids", newSet).apply()
+        Log.d("SyncHandler", "Added deleted app ID: $packageName.")
+    }
+
+    fun getDeletedAppIds(): Set<String> {
+        return prefs.getStringSet("deleted_app_ids", emptySet()) ?: emptySet()
+    }
+
+    fun clearDeletedAppIds() {
+        prefs.edit().remove("deleted_app_ids").apply()
+        Log.d("SyncHandler", "Cleared deleted app IDs.")
     }
 
     suspend fun getSyncDataInfoOnce(): SyncDataEntity? {

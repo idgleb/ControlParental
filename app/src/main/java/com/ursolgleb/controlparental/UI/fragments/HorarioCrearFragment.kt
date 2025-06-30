@@ -92,7 +92,6 @@ class HorarioCrearFragment : Fragment() {
 
         binding.btnEliminarHorario.setOnClickListener {
             appDataRepository.deleteHorarioBD(horario)
-            syncHendler.setPushHorarioPendiente(true)
             findNavController().popBackStack()
         }
 
@@ -148,7 +147,6 @@ class HorarioCrearFragment : Fragment() {
                     )
 
                     appDataRepository.addHorarioBD(nuevoHorario)
-                    syncHendler.setPushHorarioPendiente(true)
                     
                     requireActivity().runOnUiThread {
                         findNavController().popBackStack()

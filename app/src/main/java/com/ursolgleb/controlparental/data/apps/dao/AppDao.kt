@@ -10,9 +10,6 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface AppDao {
 
-    @Query("SELECT COUNT(*) FROM apps WHERE packageName = :pkg LIMIT 1")
-    suspend fun countByPackage(pkg: String): Int
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertListaApps(apps: List<AppEntity>)
 
@@ -43,5 +40,14 @@ interface AppDao {
         }
 
     }
+
+    @Query("DELETE FROM apps WHERE packageName = :packageName AND deviceId = :deviceId")
+    suspend fun deleteAppByPackageName(packageName: String, deviceId: String)
+
+    @Query("SELECT COUNT(packageName) FROM apps WHERE packageName = :packageName")
+    suspend fun countByPackage(packageName: String): Int
+
+    @Query("SELECT * FROM apps WHERE packageName = :packageName AND deviceId = :deviceId LIMIT 1")
+    suspend fun getAppByPackageNameOnce(packageName: String, deviceId: String): AppEntity?
 
 }

@@ -9,7 +9,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.ursolgleb.controlparental.data.common.Resource
 import com.ursolgleb.controlparental.data.remote.models.toDto
-import com.ursolgleb.controlparental.di.SyncWorkerEntryPoint
+import com.ursolgleb.controlparental.di.ModernSyncWorkerEntryPoint
 import dagger.hilt.android.EntryPointAccessors
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
@@ -48,7 +48,7 @@ class ModernSyncWorker(
         val entryPoint = EntryPointAccessors
             .fromApplication(
                 applicationContext,
-                SyncWorkerEntryPoint::class.java
+                ModernSyncWorkerEntryPoint::class.java
             )
         
         val localRepo = entryPoint.getAppDataRepository()
@@ -70,8 +70,10 @@ class ModernSyncWorker(
                 .first { it !is Resource.Loading }
 
             when (syncResult) {
-                is Resource.Success ->
-                    Log.d(TAG, "Horarios sync success: ${syncResult.data?.size} items")
+                is Resource.Success -> {
+                    val count = syncResult.data?.size ?: 0
+                    Log.d(TAG, "Horarios sync success: $count items")
+                }
                 is Resource.Error ->
                     Log.e(TAG, "Horarios sync error: ${syncResult.message}")
                 else -> {
@@ -89,14 +91,15 @@ class ModernSyncWorker(
                 Log.e(TAG, "Event sync failed: ${syncEventsResult.exceptionOrNull()?.message}")
             }
 
-
             Log.d(TAG, "Modern sync cycle completed successfully.")
             scheduleNextWork(applicationContext)
-            Result.success()
+            return Result.success()
 
         } catch (e: Exception) {
             Log.e(TAG, "Error in ModernSyncWorker", e)
-            Result.retry() // Reintentar si hay un error inesperado
+            // Siempre reprogramar, incluso si hay error, para asegurar la resiliencia.
+            scheduleNextWork(applicationContext)
+            return Result.retry()
         }
     }
 

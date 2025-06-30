@@ -13,6 +13,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import java.io.EOFException
 import retrofit2.HttpException
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
 /**
  * Manager moderno para sincronización basada en eventos
@@ -61,7 +63,11 @@ class EventSyncManager @Inject constructor(
             
             while (hasMore && retryCount < 5) {
                 try {
-                    val serverEvents = remoteRepo.getEvents(deviceId, lastEventId)
+                    val serverEvents = remoteRepo.getEvents(
+                        deviceId = deviceId, 
+                        lastEventId = lastEventId,
+                        types = "horario,app" // Enviar como una sola cadena
+                    )
                     
                     if (serverEvents.events.isNotEmpty()) {
                         Log.d(TAG, "Received ${serverEvents.events.size} events from server")
@@ -118,30 +124,37 @@ class EventSyncManager @Inject constructor(
      * Aplicar evento de horario
      */
     private suspend fun applyHorarioEvent(event: SyncEvent) {
+        val idHorario = event.entity_id.toLongOrNull() ?: run {
+            Log.e(TAG, "Received horario event with invalid entity_id: ${event.entity_id}")
+            return
+        }
+
         when (event.action) {
             "create", "update" -> {
-                event.data?.let { data ->
-                    val horarioDto = HorarioDto(
-                        deviceId = data["deviceId"] as? String ?: "",
-                        idHorario = (data["idHorario"] as? Number)?.toLong() ?: 0L,
-                        nombreDeHorario = data["nombreDeHorario"] as? String ?: "",
-                        diasDeSemana = (data["diasDeSemana"] as? List<*>)?.mapNotNull { 
-                            (it as? Number)?.toInt() 
-                        } ?: emptyList(),
-                        horaInicio = data["horaInicio"] as? String ?: "",
-                        horaFin = data["horaFin"] as? String ?: "",
-                        isActive = data["isActive"] as? Boolean ?: false
-                    )
-                    
-                    horarioDto.toEntity()?.let { entity ->
-                        localRepo.insertHorariosEntidades(listOf(entity))
-                    }
+                val data = event.data ?: run {
+                    Log.e(TAG, "Received horario update event without data for id: $idHorario")
+                    return
+                }
+
+                // Construir el DTO directamente desde el mapa, igual que hacemos con las apps.
+                val horarioDto = HorarioDto(
+                    deviceId = event.deviceId, // Usar el deviceId del evento como fuente de verdad
+                    idHorario = idHorario,     // Usar el entity_id del evento como fuente de verdad
+                    nombreDeHorario = data["nombreDeHorario"] as? String ?: "",
+                    diasDeSemana = (data["diasDeSemana"] as? List<*>)?.mapNotNull { (it as? Double)?.toInt() } ?: emptyList(),
+                    horaInicio = data["horaInicio"] as? String ?: "00:00",
+                    horaFin = data["horaFin"] as? String ?: "23:59",
+                    isActive = data["isActive"] as? Boolean ?: false
+                )
+
+                horarioDto.toEntity().let {
+                    Log.d(TAG, "Applying server event: CREATE/UPDATE Horario ${it.idHorario}")
+                    localRepo.insertHorariosEntidades(listOf(it))
                 }
             }
             "delete" -> {
-                val idHorario = event.entity_id.toLongOrNull() ?: return
-                val deviceId = event.deviceId
-                localRepo.deleteHorarioByIdHorario(idHorario, deviceId).await()
+                Log.d(TAG, "Applying server event: DELETE Horario $idHorario")
+                localRepo.deleteHorarioByIdHorario(idHorario, event.deviceId).await()
             }
         }
     }
@@ -199,27 +212,46 @@ class EventSyncManager @Inject constructor(
     private suspend fun collectLocalEvents(deviceId: String): List<EventDto> {
         val events = mutableListOf<EventDto>()
         val now = dateFormat.format(Date())
-        
-        // Si hay cambios de horarios pendientes
-        if (syncHandler.isPushHorarioPendiente()) {
-            val horarios = localRepo.horariosFlow.first()
-            
-            horarios.forEach { horario ->
-                events.add(EventDto(
-                    entity_type = "horario",
-                    entity_id = horario.idHorario.toString(),
-                    action = "update",
-                    data = horario.toDto().toMap(),
-                    timestamp = now
-                ))
+
+        // 1. Procesar horarios pendientes de eliminación
+        syncHandler.getDeletedHorarioIds().forEach { id ->
+            events.add(EventDto(
+                entity_type = "horario",
+                entity_id = id,
+                action = "delete",
+                timestamp = now
+            ))
+        }
+
+        // 2. Procesar horarios pendientes de creación/actualización
+        syncHandler.getPendingHorarioIds().forEach { id ->
+            val idAsLong = id.toLongOrNull()
+            if (idAsLong != null) {
+                localRepo.getHorarioByIdOnce(idAsLong, deviceId)?.let { horario ->
+                    events.add(EventDto(
+                        entity_type = "horario",
+                        entity_id = horario.idHorario.toString(),
+                        action = "update", // El servidor usará updateOrCreate
+                        data = horario.toDto().toMap(),
+                        timestamp = now
+                    ))
+                }
             }
         }
         
-        // Si hay cambios de apps pendientes
-        if (syncHandler.isPushAppsPendiente()) {
-            val apps = localRepo.todosAppsFlow.value
-            
-            apps.forEach { app ->
+        // 3. Procesar apps pendientes de eliminación
+        syncHandler.getDeletedAppIds().forEach { packageName ->
+            events.add(EventDto(
+                entity_type = "app",
+                entity_id = packageName,
+                action = "delete",
+                timestamp = now
+            ))
+        }
+
+        // 4. Procesar apps pendientes de creación/actualización
+        syncHandler.getPendingAppIds().forEach { packageName ->
+            localRepo.getAppByPackageNameOnce(packageName, deviceId)?.let { app ->
                 events.add(EventDto(
                     entity_type = "app",
                     entity_id = app.packageName,
@@ -275,8 +307,8 @@ class EventSyncManager @Inject constructor(
     private fun HorarioDto.toMap(): Map<String, Any?> {
         val map = mutableMapOf<String, Any?>()
         
-        deviceId?.let { map["deviceId"] = it }
         map["idHorario"] = idHorario
+        deviceId?.let { map["deviceId"] = it }
         map["nombreDeHorario"] = nombreDeHorario
         map["diasDeSemana"] = diasDeSemana
         horaInicio?.let { map["horaInicio"] = it }
@@ -316,230 +348,9 @@ class EventSyncManager @Inject constructor(
     }
     
     private fun clearLocalEventFlags() {
-        syncHandler.setPushHorarioPendiente(false)
-        syncHandler.setPushAppsPendiente(false)
-    }
-    
-    /**
-     * Push cambios locales pendientes al servidor
-     */
-    suspend fun pushPendingChanges() {
-        Log.d(TAG, "pushPendingChanges called")
-        val device = localRepo.getDeviceInfoOnce()?.toDto() ?: return
-        
-        try {
-            // Push horarios si hay cambios pendientes
-            val horarioPendiente = syncHandler.isPushHorarioPendiente()
-            Log.d(TAG, "Checking horario pendiente: $horarioPendiente")
-            
-            if (horarioPendiente) {
-                Log.d(TAG, "Pushing pending horarios...")
-                val horariosDto = localRepo.horariosFlow.first().map { it.toDto() }
-                Log.d(TAG, "Found ${horariosDto.size} horarios to push")
-                if (horariosDto.isNotEmpty()) {
-                    remoteRepo.pushHorarios(horariosDto)
-                } else {
-                    remoteRepo.deleteHorarios(listOf(device.deviceId.toString()))
-                }
-                syncHandler.setPushHorarioPendiente(false)
-            }
-            
-            // Push apps si hay cambios pendientes
-            val appsPendiente = syncHandler.isPushAppsPendiente()
-            Log.d(TAG, "Checking apps pendiente: $appsPendiente")
-            
-            if (appsPendiente) {
-                Log.d(TAG, "Pushing pending apps...")
-                val appsDto = localRepo.todosAppsFlow.value.map { it.toDto() }
-                Log.d(TAG, "Found ${appsDto.size} apps to push")
-                if (appsDto.isNotEmpty()) {
-                    remoteRepo.pushApps(appsDto)
-                } else {
-                    remoteRepo.deleteApps(listOf(device.deviceId.toString()))
-                }
-                syncHandler.setPushAppsPendiente(false)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error pushing pending changes", e)
-            throw e
-        }
-    }
-
-    suspend fun syncWithServer(): Boolean {
-        Log.d(TAG, "syncWithServer called at ${System.currentTimeMillis()}")
-        return try {
-            val device = localRepo.getDeviceInfoOnce()?.toDto()
-            if (device == null) {
-                Log.e(TAG, "No device info available")
-                return false
-            }
-            
-            // 1. Sincronizar información del dispositivo
-            try {
-                remoteRepo.pushDevice(device)
-                Log.d(TAG, "Device info synced: $device")
-            } catch (e: EOFException) {
-                Log.w(TAG, "EOFException syncing device, continuing...")
-            }
-            
-            // 2. Verificar estado de sincronización
-            val status = try {
-                remoteRepo.getSyncStatus(device.deviceId.toString())
-            } catch (e: EOFException) {
-                Log.w(TAG, "EOFException getting sync status, continuing...")
-                null
-            } catch (e: Exception) {
-                Log.e(TAG, "Error getting sync status, continuing anyway", e)
-                null
-            }
-            
-            if (status != null) {
-                Log.d(TAG, "Sync status: $status")
-            }
-            
-            // 3. Obtener el último ID de evento procesado
-            val lastEventId = getLastEventId()
-            Log.d(TAG, "Last processed event ID: $lastEventId")
-            
-            // 4. Obtener y procesar eventos pendientes
-            var hasMoreEvents = true
-            var currentLastEventId = lastEventId
-            var totalEventsProcessed = 0
-            var retryCount = 0
-            val maxRetries = 3
-            
-            while (hasMoreEvents && retryCount < maxRetries) {
-                try {
-                    val eventsResponse = remoteRepo.getEvents(
-                        deviceId = device.deviceId.toString(),
-                        lastEventId = currentLastEventId,
-                        types = listOf("horario", "app")
-                    )
-                    
-                    Log.d(TAG, "Fetched ${eventsResponse.events.size} events, hasMore: ${eventsResponse.hasMore}")
-                    
-                    // Procesar eventos
-                    for (event in eventsResponse.events) {
-                        try {
-                            applyServerEvent(event)
-                            totalEventsProcessed++
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error applying event ${event.id}: ${e.message}")
-                        }
-                    }
-                    
-                    // Actualizar el último ID procesado
-                    if (eventsResponse.events.isNotEmpty()) {
-                        currentLastEventId = eventsResponse.lastEventId
-                        setLastEventId(currentLastEventId)
-                    }
-                    
-                    hasMoreEvents = eventsResponse.hasMore
-                    retryCount = 0 // Reset retry count on success
-                    
-                } catch (e: EOFException) {
-                    retryCount++
-                    Log.w(TAG, "EOFException getting events (attempt $retryCount/$maxRetries): ${e.message}")
-                    if (retryCount < maxRetries) {
-                        kotlinx.coroutines.delay(1000L * retryCount)
-                        continue
-                    } else {
-                        Log.e(TAG, "Max retries reached for events sync")
-                        break
-                    }
-                } catch (e: HttpException) {
-                    Log.e(TAG, "HTTP error getting events: ${e.code()} ${e.message()}")
-                    break
-                } catch (e: Exception) {
-                    Log.e(TAG, "Unexpected error getting events", e)
-                    break
-                }
-            }
-            
-            Log.d(TAG, "Event sync completed. Total events processed: $totalEventsProcessed")
-            
-            // 5. Si es la primera sincronización (lastEventId era 0), hacer sync completo
-            if (lastEventId == 0L && totalEventsProcessed == 0) {
-                Log.d(TAG, "First sync detected, performing full sync")
-                try {
-                    performFullSync(device)
-                } catch (e: EOFException) {
-                    Log.e(TAG, "EOFException during full sync, will retry next time", e)
-                    return false
-                }
-            }
-            
-            // 6. Actualizar tiempo de uso de apps
-            localRepo.updateTiempoUsoAppsHoy().await()
-            
-            true
-        } catch (e: EOFException) {
-            Log.e(TAG, "EOFException in sync", e)
-            false
-        } catch (e: Exception) {
-            Log.e(TAG, "Sync failed", e)
-            false
-        }
-    }
-    
-    private suspend fun applyServerEvent(event: SyncEvent) {
-        Log.d(TAG, "Applying server event: ${event.action} ${event.entity_type} ${event.entity_id}")
-        
-        when (event.entity_type) {
-            "horario" -> applyHorarioEvent(event)
-            "app" -> applyAppEvent(event)
-            "device" -> applyDeviceEvent(event)
-            else -> Log.w(TAG, "Unknown entity type: ${event.entity_type}")
-        }
-    }
-    
-    private suspend fun performFullSync(device: DeviceDto) {
-        try {
-            // Primero asegurar que el dispositivo existe en la BD local
-            Log.d(TAG, "Ensuring device exists in local DB")
-            localRepo.saveDeviceInfo().await()
-            
-            // Sincronizar horarios
-            Log.d(TAG, "Performing full horarios sync")
-            val remoteHorariosResponse = remoteRepo.fetchHorarios(
-                deviceId = device.deviceId,
-                lastSync = null, // Forzar full sync
-                knownIds = null
-            )
-            val remoteHorarios = remoteHorariosResponse.data
-            
-            Log.d(TAG, "Received ${remoteHorarios?.size ?: 0} horarios from full sync.")
-
-            if (!remoteHorarios.isNullOrEmpty()) {
-                localRepo.deleteAllHorarios().await()
-                val horariosEntity = remoteHorarios.mapNotNull { it.toEntity() }
-                if (horariosEntity.isNotEmpty()) {
-                    localRepo.insertHorariosEntidades(horariosEntity)
-                    Log.d(TAG, "Inserted ${horariosEntity.size} horarios")
-                }
-            } else {
-                Log.d(TAG, "No remote horarios found, clearing local.")
-                localRepo.deleteAllHorarios().await()
-            }
-            
-            // Sincronizar apps
-            Log.d(TAG, "Performing full apps sync")
-            // Primera pasada: sincronizar sin íconos para obtener todos los datos rápidamente
-            val remoteApps = remoteRepo.fetchApps(device.deviceId, includeIcons = false)
-            if (remoteApps.isNotEmpty()) {
-                localRepo.deleteAllApps().await()
-                val appsEntity = remoteApps.mapNotNull { it.toEntity() }
-                if (appsEntity.isNotEmpty()) {
-                    localRepo.insertAppsEntidades(appsEntity)
-                    Log.d(TAG, "Inserted ${appsEntity.size} apps")
-                }
-                
-                // TODO: En una futura versión, sincronizar íconos por separado
-                // Esto evitaría los problemas de JSON truncado
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Full sync failed", e)
-            throw e
-        }
+        syncHandler.clearDeletedHorarioIds()
+        syncHandler.clearPendingHorarioIds()
+        syncHandler.clearDeletedAppIds()
+        syncHandler.clearPendingAppIds()
     }
 } 
