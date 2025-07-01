@@ -37,6 +37,30 @@ interface HorarioDao {
     @Query("SELECT * FROM horarios WHERE idHorario = :idHorario AND deviceId = :deviceId LIMIT 1")
     suspend fun getHorarioByIdOnce(idHorario: Long, deviceId: String): HorarioEntity?
 
+    @Query("SELECT * FROM horarios WHERE deviceId = :deviceId")
+    suspend fun getHorariosByDeviceIdOnce(deviceId: String): List<HorarioEntity>
+
+    @Query("DELETE FROM horarios WHERE idHorario = :idHorario")
+    suspend fun deleteHorarioById(idHorario: Long)
+
+    @Query("DELETE FROM horarios WHERE idHorario IN (:ids)")
+    suspend fun deleteHorariosByIds(ids: List<Long>)
+
+    @Update
+    suspend fun updateHorario(horario: HorarioEntity)
+
+    @Transaction
+    suspend fun insertOrUpdateHorarios(horarios: List<HorarioEntity>) {
+        horarios.forEach { horario ->
+            val existing = getHorarioByIdOnce(horario.idHorario, horario.deviceId)
+            if (existing != null) {
+                updateHorario(horario)
+            } else {
+                insertHorario(horario)
+            }
+        }
+    }
+
     // Comentados temporalmente - no se están usando
     // @Query("UPDATE horarios SET isActive = :isActive WHERE idHorario = :horarioId")
     // suspend fun setHorarioActive(horarioId: Long, isActive: Boolean)

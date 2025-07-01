@@ -59,36 +59,59 @@ class ModernSyncWorker(
         return try {
             val deviceId = localRepo.getOrCreateDeviceId()
             
-            // Disparar la sincronización de horarios.
-            // La lógica de si debe o no ir a la red está dentro del NetworkBoundResource.
-            Log.d(TAG, "Triggering Horarios sync...")
-
-            // Obtener solo el primer resultado no-loading para evitar que el
-            // worker se quede recolectando actualizaciones indefinidamente
-            val syncResult = localRepo
-                .getHorarios(deviceId)
-                .first { it !is Resource.Loading }
-
-            when (syncResult) {
-                is Resource.Success -> {
-                    val count = syncResult.data?.size ?: 0
-                    Log.d(TAG, "Horarios sync success: $count items")
+            // FLUJO IDEAL DE SINCRONIZACIÓN
+            
+            // Paso 1: Verificar si necesitamos sincronización completa
+            val hasLocalHorarios = localRepo.horariosFlow.value.isNotEmpty()
+            val hasLocalApps = localRepo.todosAppsFlow.value.isNotEmpty()
+            val isFirstSync = !hasLocalHorarios || !hasLocalApps
+            
+            if (isFirstSync) {
+                Log.d(TAG, "First sync detected, performing full sync...")
+                
+                // Sincronización completa para datos iniciales
+                if (!hasLocalHorarios) {
+                    Log.d(TAG, "Fetching all horarios...")
+                    val horariosResult = localRepo.getHorarios(deviceId).first { it !is Resource.Loading }
+                    when (horariosResult) {
+                        is Resource.Success -> Log.d(TAG, "Horarios sync success: ${horariosResult.data?.size ?: 0} items")
+                        is Resource.Error -> Log.e(TAG, "Horarios sync error: ${horariosResult.message}")
+                        else -> Log.d(TAG, "Horarios sync completed")
+                    }
                 }
-                is Resource.Error ->
-                    Log.e(TAG, "Horarios sync error: ${syncResult.message}")
-                else -> {
-                    // No debería emitirse otro tipo aquí, pero se ignora por seguridad
-                    Log.d(TAG, "Horarios sync finished with state: ${syncResult::class.simpleName}")
+                
+                if (!hasLocalApps) {
+                    Log.d(TAG, "Fetching all apps...")
+                    val appsResult = localRepo.getApps(deviceId).first { it !is Resource.Loading }
+                    when (appsResult) {
+                        is Resource.Success -> Log.d(TAG, "Apps sync success: ${appsResult.data?.size ?: 0} items")
+                        is Resource.Error -> Log.e(TAG, "Apps sync error: ${appsResult.message}")
+                        else -> Log.d(TAG, "Apps sync completed")
+                    }
                 }
             }
             
-            // (Aquí se añadiría la llamada a getApps cuando se implemente)
-            // Asegurar que los cambios locales se envíen al servidor
+            // Paso 2: Sincronización incremental por eventos (siempre se ejecuta)
+            Log.d(TAG, "Starting incremental event sync...")
             val syncEventsResult = eventSyncManager.sync()
+            
             if (syncEventsResult.isSuccess) {
                 Log.d(TAG, "Event sync finished successfully")
+                
+                // Paso 3: Si los eventos indican cambios, las próximas llamadas a getHorarios/getApps
+                // los descargarán automáticamente gracias a hasPendingServerChanges()
+                
             } else {
                 Log.e(TAG, "Event sync failed: ${syncEventsResult.exceptionOrNull()?.message}")
+                
+                // En caso de error persistente, marcar para re-sincronización completa
+                if (syncEventsResult.exceptionOrNull() is java.net.UnknownHostException) {
+                    Log.d(TAG, "Network unavailable, will retry later")
+                } else {
+                    // Marcar que hay cambios pendientes para forzar sincronización en la próxima oportunidad
+                    localRepo.markServerChanges("horario", true)
+                    localRepo.markServerChanges("app", true)
+                }
             }
 
             Log.d(TAG, "Modern sync cycle completed successfully.")

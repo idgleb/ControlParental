@@ -124,6 +124,202 @@ También podés exportar `STORE_PASSWORD` y `KEY_PASSWORD` antes de ejecutar
 
 Este proyecto se publica bajo la [MIT License](LICENSE).
 
+## 🔄 Arquitectura de Sincronización
+
+### Flujo de Sincronización Completo
+
+El sistema implementa un flujo de sincronización híbrido que combina sincronización completa inicial con sincronización incremental basada en eventos:
+
+```mermaid
+graph TD
+    subgraph "Cliente Android"
+        A[App Inicia] --> B{¿Primera sync?}
+        B -->|Sí| C[Sync Completa]
+        B -->|No| D[Sync Incremental]
+        
+        C --> E[getHorarios<br/>getApps]
+        D --> F[EventSyncManager]
+        
+        E --> G[NetworkBoundResource]
+        F --> H[GET /sync/status]
+        
+        H --> I{¿Cambios<br/>pendientes?}
+        I -->|Sí| J[GET /sync/events]
+        I -->|No| K[POST /sync/events]
+        
+        J --> L[Aplicar cambios<br/>remotos]
+        L --> K
+        K --> M[Enviar cambios<br/>locales]
+    end
+    
+    subgraph "Servidor Laravel"
+        N[API Endpoints]
+        O[sync_events table]
+        P[Event Controllers]
+        
+        N --> O
+        O --> P
+    end
+    
+    G -.-> N
+    J -.-> N
+    K -.-> N
+    H -.-> N
+```
+
+### Estados de Sincronización
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle: App inicia
+    
+    Idle --> Syncing: Worker trigger
+    
+    Syncing --> CheckingStatus: GET /sync/status
+    CheckingStatus --> FetchingEvents: Si hay cambios
+    CheckingStatus --> SendingEvents: Si no hay cambios remotos
+    
+    FetchingEvents --> ApplyingEvents: Eventos recibidos
+    ApplyingEvents --> SendingEvents: Eventos aplicados
+    
+    SendingEvents --> Success: Todo OK
+    SendingEvents --> Error: Fallo de red
+    
+    Success --> Idle: Completado
+    Error --> Idle: Retry programado
+    
+    note right of Success
+        - Limpia flags
+        - Actualiza lastEventId
+        - Programa próxima sync
+    end note
+    
+    note right of Error
+        - Mantiene flags
+        - Programa retry
+        - Marca entidades para re-sync
+    end note
+```
+
+### Sincronización Inicial (Primera vez)
+
+```mermaid
+sequenceDiagram
+    participant App as Android App
+    participant NBR as NetworkBoundResource
+    participant API as Laravel API
+    participant DB as Local SQLite
+    
+    App->>NBR: getHorarios(deviceId)
+    Note over NBR: shouldFetch = true<br/>(no hay datos locales)
+    NBR->>API: GET /api/sync/horarios?deviceId=X
+    API-->>NBR: Lista completa de horarios
+    NBR->>DB: Sincronización inteligente<br/>(solo cambios necesarios)
+    NBR-->>App: Resource.Success(horarios)
+    
+    App->>NBR: getApps(deviceId)
+    NBR->>API: GET /api/sync/apps?deviceId=X
+    API-->>NBR: Lista completa de apps
+    NBR->>DB: Sincronización inteligente<br/>(preserva íconos locales)
+    NBR-->>App: Resource.Success(apps)
+```
+
+### Sincronización Incremental
+
+```mermaid
+sequenceDiagram
+    participant Worker as ModernSyncWorker
+    participant ESM as EventSyncManager
+    participant API as Laravel API
+    participant Handler as SyncHandler
+    participant DB as Local SQLite
+    
+    Worker->>ESM: sync()
+    
+    Note over ESM: 1. Verificar estado
+    ESM->>API: GET /api/sync/status?deviceId=X
+    API-->>ESM: {pendingEvents: {horario: 2, app: 0}}
+    
+    Note over ESM: 2. Obtener eventos del servidor
+    ESM->>API: GET /api/sync/events?lastEventId=42
+    API-->>ESM: Lista de eventos nuevos
+    
+    ESM->>DB: Aplicar eventos recibidos
+    Note over DB: - Update horario 123<br/>- Delete horario 456
+    
+    Note over ESM: 3. Enviar cambios locales
+    ESM->>Handler: collectLocalEvents()
+    Handler-->>ESM: Lista de IDs pendientes
+    
+    ESM->>API: POST /api/sync/events<br/>[{action: "update", entity_id: "789"}]
+    API-->>ESM: Success
+    
+    ESM->>Handler: clearLocalEventFlags()
+    Note over Handler: Limpia SharedPreferences
+```
+
+### Detección y Propagación de Cambios
+
+```mermaid
+graph LR
+    subgraph "Cambio Local (Android)"
+        A1[Usuario modifica horario] --> B1[HorarioDao.update]
+        B1 --> C1[SyncHandler.addPendingHorarioId]
+        C1 --> D1[SharedPreferences flag]
+    end
+    
+    subgraph "Sincronización"
+        E1[ModernSyncWorker<br/>cada 15 seg] --> F1[EventSyncManager.sync]
+        F1 --> G1[collectLocalEvents]
+        G1 --> H1[POST /sync/events]
+    end
+    
+    subgraph "Cambio Remoto (Web)"
+        A2[Admin modifica en web] --> B2[sync_events tabla]
+        B2 --> C2[Evento registrado]
+    end
+    
+    subgraph "Actualización Cliente"
+        I1[GET /sync/events] --> J1[Detecta evento]
+        J1 --> K1[Aplica cambio local]
+        K1 --> L1[UI actualizada]
+    end
+    
+    D1 -.-> G1
+    H1 -.-> B2
+    C2 -.-> I1
+```
+
+### Componentes Clave
+
+#### 1. **NetworkBoundResource**
+- Patrón que combina datos locales con datos remotos
+- Emite estados: Loading → Success/Error
+- Implementa sincronización inteligente (solo actualiza cambios)
+
+#### 2. **EventSyncManager**
+- Gestiona la sincronización bidireccional de eventos
+- Mantiene el `lastEventId` para sincronización incremental
+- Maneja reintentos y recuperación de errores
+
+#### 3. **SyncHandler**
+- Rastrea cambios locales pendientes en SharedPreferences
+- Expone StateFlows reactivos para la UI
+- Maneja flags de sincronización por tipo de entidad
+
+#### 4. **ModernSyncWorker**
+- Worker periódico que ejecuta cada 15 segundos
+- Implementa el flujo ideal: primera sync completa, luego incremental
+- Maneja errores y programa reintentos automáticos
+
+### Optimizaciones Implementadas
+
+1. **Sincronización Inteligente**: Solo se actualizan registros que realmente cambiaron
+2. **Preservación de Íconos**: Los íconos de apps se mantienen locales, no se descargan
+3. **Detección de Cambios**: Sistema de flags para marcar entidades con cambios pendientes
+4. **Reintentos Automáticos**: En caso de error, se programan reintentos con backoff
+5. **Estado Reactivo**: La UI se actualiza automáticamente con cambios de sincronización
+
 ## Flujo de Sincronización
 
 El sistema utiliza una arquitectura de sincronización incremental basada en eventos para mantener los datos consistentes entre el cliente y el servidor de manera eficiente. Esto evita la necesidad de transferir bases de datos completas, enviando únicamente los cambios específicos que han ocurrido.

@@ -57,6 +57,13 @@ class EventSyncManager @Inject constructor(
             
             if (status != null) {
                 Log.d(TAG, "Sync status: $status")
+                // Marcar qué tipos de entidades tienen cambios pendientes en el servidor
+                status.pendingEvents.forEach { (entityType, count) ->
+                    if (count > 0) {
+                        localRepo.markServerChanges(entityType, true)
+                        Log.d(TAG, "Marked $entityType as having $count pending changes")
+                    }
+                }
             }
             
             // 2. Obtener eventos del servidor
@@ -65,6 +72,7 @@ class EventSyncManager @Inject constructor(
             var hasMore = true
             var retryCount = 0
             var totalEventsReceived = 0
+            val affectedEntityTypes = mutableSetOf<String>()
             
             while (hasMore && retryCount < 5) {
                 try {
@@ -77,6 +85,12 @@ class EventSyncManager @Inject constructor(
                     if (serverEvents.events.isNotEmpty()) {
                         Log.d(TAG, "Received ${serverEvents.events.size} events from server")
                         totalEventsReceived += serverEvents.events.size
+                        
+                        // Recopilar tipos de entidades afectadas
+                        serverEvents.events.forEach { event ->
+                            affectedEntityTypes.add(event.entity_type)
+                        }
+                        
                         syncStateManager.setSyncState(SyncState.SYNCING, "Aplicando ${serverEvents.events.size} eventos...")
                         applyServerEvents(serverEvents.events)
                         lastEventId = serverEvents.lastEventId
@@ -91,6 +105,11 @@ class EventSyncManager @Inject constructor(
                     if (retryCount >= 5) throw e
                     kotlinx.coroutines.delay(1000) // Wait before retry
                 }
+            }
+            
+            // Limpiar las marcas de cambios pendientes del servidor para los tipos afectados
+            affectedEntityTypes.forEach { entityType ->
+                localRepo.markServerChanges(entityType, false)
             }
             
             // 3. Enviar eventos locales pendientes

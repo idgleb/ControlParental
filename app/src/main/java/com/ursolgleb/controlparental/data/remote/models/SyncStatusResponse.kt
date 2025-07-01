@@ -14,14 +14,9 @@ package com.ursolgleb.controlparental.data.remote.models
  */
 data class SyncStatusResponse(
     val status: String,
-
     val deviceId: String,
-
     val pendingEvents: Map<String, Int> = emptyMap(),
-
     val lastEventId: Long,
-
     val lastEventTime: String? = null,
-
     val serverTime: String
 ) 

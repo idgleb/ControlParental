@@ -704,13 +704,221 @@ class AppDataRepository @Inject constructor(
         },
         saveFetchResult = { remoteHorarios ->
             dbLock.withLock {
-                // Borrar solo los horarios de este dispositivo para no afectar a otros.
-                horarioDao.deleteHorariosByDeviceId(deviceId)
-                val entities = remoteHorarios.mapNotNull { it.toEntity() }
-                horarioDao.insertHorarios(entities)
-                Log.d("AppDataRepo", "Horarios remotos guardados: ${entities.size}")
+                // Sincronización inteligente: solo aplicar cambios necesarios
+                Log.d("AppDataRepo", "Iniciando sincronización inteligente de horarios")
+                
+                // 1. Obtener horarios locales actuales
+                val localHorarios = horarioDao.getHorariosByDeviceIdOnce(deviceId)
+                val localIds = localHorarios.map { it.idHorario }.toSet()
+                val remoteIds = remoteHorarios.map { it.idHorario }.toSet()
+                
+                Log.d("AppDataRepo", "Horarios locales: ${localIds.size}, remotos: ${remoteIds.size}")
+                
+                // 2. Identificar horarios a eliminar (existen localmente pero no en el servidor)
+                val idsToDelete = localIds - remoteIds
+                if (idsToDelete.isNotEmpty()) {
+                    Log.d("AppDataRepo", "Eliminando ${idsToDelete.size} horarios que ya no existen en el servidor: $idsToDelete")
+                    horarioDao.deleteHorariosByIds(idsToDelete.toList())
+                }
+                
+                // 3. Identificar horarios nuevos y actualizados
+                val horariosToInsert = mutableListOf<HorarioEntity>()
+                val horariosToUpdate = mutableListOf<HorarioEntity>()
+                
+                remoteHorarios.forEach { remoteHorario ->
+                    val entity = remoteHorario.toEntity()
+                    val localHorario = localHorarios.find { it.idHorario == remoteHorario.idHorario }
+                    
+                    if (localHorario == null) {
+                        // Horario nuevo
+                        horariosToInsert.add(entity)
+                    } else if (hasChanges(localHorario, entity)) {
+                        // Horario existente con cambios
+                        horariosToUpdate.add(entity)
+                    }
+                    // Si no hay cambios, no hacer nada
+                }
+                
+                // 4. Aplicar inserciones
+                if (horariosToInsert.isNotEmpty()) {
+                    Log.d("AppDataRepo", "Insertando ${horariosToInsert.size} horarios nuevos")
+                    horarioDao.insertHorarios(horariosToInsert)
+                }
+                
+                // 5. Aplicar actualizaciones
+                if (horariosToUpdate.isNotEmpty()) {
+                    Log.d("AppDataRepo", "Actualizando ${horariosToUpdate.size} horarios modificados")
+                    horariosToUpdate.forEach { horarioDao.updateHorario(it) }
+                }
+                
+                val totalChanges = idsToDelete.size + horariosToInsert.size + horariosToUpdate.size
+                Log.d("AppDataRepo", "Sincronización completada. Total de cambios: $totalChanges")
             }
         },
-        shouldFetch = { it == null || it.isEmpty() } 
+        shouldFetch = { localData ->
+            // Solo sincronizar si:
+            // 1. No hay datos locales
+            // 2. Es una sincronización inicial forzada
+            // 3. Hay una flag indicando que hay cambios en el servidor
+            localData == null || 
+            localData.isEmpty() || 
+            hasPendingServerChanges("horario")
+        } 
     )
+    
+    /**
+     * Compara dos horarios para detectar si hay cambios
+     */
+    private fun hasChanges(local: HorarioEntity, remote: HorarioEntity): Boolean {
+        return local.nombreDeHorario != remote.nombreDeHorario ||
+               local.diasDeSemana != remote.diasDeSemana ||
+               local.horaInicio != remote.horaInicio ||
+               local.horaFin != remote.horaFin ||
+               local.isActive != remote.isActive
+    }
+    
+    /**
+     * Obtiene las aplicaciones del dispositivo con sincronización de red
+     * Similar a getHorarios pero para apps
+     */
+    fun getApps(deviceId: String): Flow<Resource<List<AppEntity>>> = networkBoundResource(
+        query = {
+            appDao.getAllApps()
+        },
+        fetch = {
+            // Usar la API paginada de apps
+            val response = remoteDataRepository.api.getApps(
+                deviceId = deviceId,
+                limit = 1000, // Obtener todas las apps
+                includeIcons = false // Los íconos los manejamos localmente
+            )
+            Response.success(response.data)
+        },
+        saveFetchResult = { remoteApps ->
+            dbLock.withLock {
+                // Sincronización inteligente de apps
+                Log.d("AppDataRepo", "Iniciando sincronización inteligente de apps")
+                
+                // 1. Obtener apps locales actuales del dispositivo
+                val localApps = appDao.getAllApps().first().filter { it.deviceId == deviceId }
+                val localPackages = localApps.map { it.packageName }.toSet()
+                val remotePackages = remoteApps.mapNotNull { it.packageName }.toSet()
+                
+                Log.d("AppDataRepo", "Apps locales: ${localPackages.size}, remotas: ${remotePackages.size}")
+                
+                // 2. Identificar apps a eliminar (ya no están en el servidor)
+                val packagesToDelete = localPackages - remotePackages
+                if (packagesToDelete.isNotEmpty()) {
+                    Log.d("AppDataRepo", "Eliminando ${packagesToDelete.size} apps que ya no existen en el servidor")
+                    packagesToDelete.forEach { pkg ->
+                        appDao.deleteAppByPackageName(pkg, deviceId)
+                    }
+                }
+                
+                // 3. Identificar apps nuevas y actualizadas
+                val appsToInsert = mutableListOf<AppEntity>()
+                val appsToUpdate = mutableListOf<AppEntity>()
+                
+                remoteApps.forEach { remoteApp ->
+                    val entity = remoteApp.toEntity()
+                    if (entity != null) {
+                        val localApp = localApps.find { it.packageName == remoteApp.packageName }
+                        
+                        if (localApp == null) {
+                            // App nueva - pero preservar el ícono local si existe
+                            val existingIcon = getLocalAppIcon(remoteApp.packageName!!)
+                            if (existingIcon != null) {
+                                appsToInsert.add(entity.copy(appIcon = existingIcon))
+                            } else {
+                                appsToInsert.add(entity)
+                            }
+                        } else if (hasAppChanges(localApp, entity)) {
+                            // App existente con cambios - preservar ícono local
+                            appsToUpdate.add(entity.copy(appIcon = localApp.appIcon))
+                        }
+                    }
+                }
+                
+                // 4. Aplicar cambios
+                if (appsToInsert.isNotEmpty() || appsToUpdate.isNotEmpty()) {
+                    val allAppsToSave = appsToInsert + appsToUpdate
+                    Log.d("AppDataRepo", "Guardando ${allAppsToSave.size} apps (${appsToInsert.size} nuevas, ${appsToUpdate.size} actualizadas)")
+                    appDao.insertListaApps(allAppsToSave)
+                }
+                
+                val totalChanges = packagesToDelete.size + appsToInsert.size + appsToUpdate.size
+                Log.d("AppDataRepo", "Sincronización de apps completada. Total de cambios: $totalChanges")
+            }
+        },
+        shouldFetch = { localApps ->
+            // Sincronizar si:
+            // 1. No hay datos locales
+            // 2. Hay cambios pendientes en el servidor
+            // 3. Los datos están obsoletos (más de 5 minutos)
+            localApps == null || 
+            localApps.isEmpty() || 
+            hasPendingServerChanges("app") ||
+            isDataStale()
+        }
+    )
+    
+    /**
+     * Verifica si hay cambios pendientes en el servidor para un tipo de entidad
+     */
+    private fun hasPendingServerChanges(entityType: String): Boolean {
+        val prefs = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
+        val pendingChanges = prefs.getStringSet("pending_server_changes", emptySet()) ?: emptySet()
+        return pendingChanges.contains(entityType)
+    }
+    
+    /**
+     * Marca que hay cambios pendientes del servidor para un tipo de entidad
+     */
+    fun markServerChanges(entityType: String, hasPending: Boolean) {
+        val prefs = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
+        val pendingChanges = prefs.getStringSet("pending_server_changes", emptySet())?.toMutableSet() ?: mutableSetOf()
+        
+        if (hasPending) {
+            pendingChanges.add(entityType)
+        } else {
+            pendingChanges.remove(entityType)
+        }
+        
+        prefs.edit().putStringSet("pending_server_changes", pendingChanges).apply()
+    }
+    
+    /**
+     * Compara dos apps para detectar si hay cambios (excluyendo el ícono)
+     */
+    private fun hasAppChanges(local: AppEntity, remote: AppEntity): Boolean {
+        return local.appName != remote.appName ||
+               local.appStatus != remote.appStatus ||
+               local.dailyUsageLimitMinutes != remote.dailyUsageLimitMinutes ||
+               local.appCategory != remote.appCategory ||
+               local.contentRating != remote.contentRating ||
+               local.isSystemApp != remote.isSystemApp
+    }
+    
+    /**
+     * Obtiene el ícono de una app instalada localmente
+     */
+    private fun getLocalAppIcon(packageName: String): android.graphics.Bitmap? {
+        return try {
+            val appInfo = context.packageManager.getApplicationInfo(packageName, 0)
+            val drawable = appInfo.loadIcon(context.packageManager)
+            AppsFun.drawableToBitmap(drawable)
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    /**
+     * Verifica si los datos locales están desactualizados
+     */
+    private fun isDataStale(): Boolean {
+        // Considerar datos obsoletos después de 5 minutos
+        val lastSyncTime = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
+            .getLong("last_apps_sync", 0)
+        return System.currentTimeMillis() - lastSyncTime > 5 * 60 * 1000
+    }
 }
