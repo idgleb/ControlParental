@@ -264,7 +264,6 @@ class AppDataRepository @Inject constructor(
             )
             appDao.insertListaApps(nuevasEntidades)
             nuevasEntidades.forEach { syncHandler.addPendingAppId(it.packageName) }
-            syncStateManager.updatePendingEventsCount()
             mostrarBottomSheetActualizadaFlow.value = true
             Logger.info(
                 context,
@@ -306,7 +305,6 @@ class AppDataRepository @Inject constructor(
                     )
                     appDao.insertListaApps(appsBloqueadas)
                     appsBloqueadas.forEach { syncHandler.addPendingAppId(it.packageName) }
-                    syncStateManager.updatePendingEventsCount()
                     mostrarBottomSheetActualizadaFlow.value = true
                 }
             } catch (e: Exception) {
@@ -345,7 +343,6 @@ class AppDataRepository @Inject constructor(
                     )
                     appDao.insertListaApps(appsDispon)
                     appsDispon.forEach { syncHandler.addPendingAppId(it.packageName) }
-                    syncStateManager.updatePendingEventsCount()
                     mostrarBottomSheetActualizadaFlow.value = true
                 }
             } catch (e: Exception) {
@@ -380,7 +377,6 @@ class AppDataRepository @Inject constructor(
                     Logger.info(context, "AppDataRepository", "addAppsAHorarioBD agregando a BD...")
                     appDao.insertListaApps(appsHorario)
                     appsHorario.forEach { syncHandler.addPendingAppId(it.packageName) }
-                    syncStateManager.updatePendingEventsCount()
                     mostrarBottomSheetActualizadaFlow.value = true
                 }
             } catch (e: Exception) {
@@ -443,7 +439,6 @@ class AppDataRepository @Inject constructor(
         try {
             horarioDao.insertHorario(horario)
             syncHandler.addPendingHorarioId(horario.idHorario)
-            syncStateManager.updatePendingEventsCount()
             Logger.info(
                 context,
                 "AppDataRepository",
@@ -465,7 +460,6 @@ class AppDataRepository @Inject constructor(
                 horarioDao.deleteHorario(horario)
                 Logger.info(context, "AppDataRepository", "Horario eliminado en BD: $horario")
                 syncHandler.addDeletedHorarioId(horario.idHorario)
-                syncStateManager.updatePendingEventsCount()
             } catch (e: Exception) {
                 Logger.error(
                     context,

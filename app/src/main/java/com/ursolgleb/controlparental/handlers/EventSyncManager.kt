@@ -15,17 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Estados posibles de sincronización
- */
-enum class SyncState {
-    IDLE,           // Sin actividad
-    SYNCING,        // Sincronizando
-    SUCCESS,        // Última sincronización exitosa
-    ERROR,          // Error en la última sincronización
-    PENDING_EVENTS  // Hay eventos pendientes de enviar
-}
-
-/**
  * Manager moderno para sincronización basada en eventos
  */
 @Singleton
@@ -113,7 +102,6 @@ class EventSyncManager @Inject constructor(
                 val response = remoteRepo.postEvents(PostEventsRequest(deviceId, localEvents))
                 if (response.isSuccessful) {
                     clearLocalEventFlags()
-                    syncStateManager.updatePendingEventsCount()
                 }
             }
             

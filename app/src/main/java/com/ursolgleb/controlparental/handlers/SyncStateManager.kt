@@ -17,7 +17,7 @@ import javax.inject.Singleton
 @Singleton
 class SyncStateManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val syncHandler: SyncHandler
+    syncHandler: SyncHandler
 ) {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     
@@ -29,9 +29,30 @@ class SyncStateManager @Inject constructor(
     private val _syncInfo = MutableStateFlow("")
     val syncInfo: StateFlow<String> = _syncInfo.asStateFlow()
     
-    // Contador de eventos pendientes
-    private val _pendingEventsCount = MutableStateFlow(0)
-    val pendingEventsCount: StateFlow<Int> = _pendingEventsCount.asStateFlow()
+    // Contador de eventos pendientes (reactivo)
+    val pendingEventsCount: StateFlow<Int> = combine(
+        syncHandler.pendingHorarioIdsFlow,
+        syncHandler.deletedHorarioIdsFlow,
+        syncHandler.pendingAppIdsFlow,
+        syncHandler.deletedAppIdsFlow
+    ) { pendingH, deletedH, pendingA, deletedA ->
+        val total = pendingH.size + deletedH.size + pendingA.size + deletedA.size
+        
+        // Actualizar el estado si hay eventos pendientes
+        if (total > 0 && _syncState.value == SyncState.IDLE) {
+            _syncState.value = SyncState.PENDING_EVENTS
+            _syncInfo.value = "Eventos pendientes: ${pendingH.size + deletedH.size} horarios, ${pendingA.size + deletedA.size} apps"
+        } else if (total == 0 && _syncState.value == SyncState.PENDING_EVENTS) {
+            _syncState.value = SyncState.IDLE
+            _syncInfo.value = ""
+        }
+        
+        total
+    }.stateIn(
+        scope,
+        SharingStarted.Eagerly,
+        0
+    )
     
     // Estado combinado para UI
     val syncStatusText: StateFlow<String> = combine(
@@ -59,32 +80,9 @@ class SyncStateManager @Inject constructor(
         "Iniciando..."
     )
     
-    init {
-        // Monitorear cambios en los eventos pendientes
-        scope.launch {
-            while (true) {
-                updatePendingEventsCount()
-                kotlinx.coroutines.delay(5000) // Actualizar cada 5 segundos
-            }
-        }
-    }
-    
     fun setSyncState(state: SyncState, info: String = "") {
         _syncState.value = state
         _syncInfo.value = info
-    }
-    
-    fun updatePendingEventsCount() {
-        val pendingHorarios = syncHandler.getPendingHorarioIds().size + 
-                            syncHandler.getDeletedHorarioIds().size
-        val pendingApps = syncHandler.getPendingAppIds().size + 
-                         syncHandler.getDeletedAppIds().size
-        _pendingEventsCount.value = pendingHorarios + pendingApps
-        
-        if (pendingHorarios + pendingApps > 0 && _syncState.value == SyncState.IDLE) {
-            _syncState.value = SyncState.PENDING_EVENTS
-            _syncInfo.value = "Eventos pendientes: $pendingHorarios horarios, $pendingApps apps"
-        }
     }
     
     private fun getFormattedLastSyncTime(): String {
