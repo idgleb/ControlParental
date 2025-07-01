@@ -408,7 +408,9 @@ class AppDataRepository @Inject constructor(
 
     fun deleteAllApps(): Deferred<Unit> = scope.async {
         try {
+            val apps = appDao.getAllApps().first()
             appDao.deleteAllApps()
+            apps.forEach { syncHandler.addDeletedAppId(it.packageName) }
         } catch (e: Exception) {
             Logger.error(
                 context,

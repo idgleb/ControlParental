@@ -45,21 +45,11 @@ class DesarolloCardFragment : Fragment(R.layout.fragment_desarollo_card) {
     private fun initListeners() {
 
         binding.delitBlackedAppBoton.setOnClickListener {
-            lifecycleScope.launch(Dispatchers.IO) {
-                appDao.unblockAllApps()
-                withContext(Dispatchers.Main) {
-                    Log.w("BlockedAppsFragment", "Apps delited")
-                }
-            }
+            appDataRepository.addAppsASiempreDisponiblesBD(appDataRepository.blockedAppsFlow.value)
         }
 
         binding.delitAllAppBoton.setOnClickListener {
-            lifecycleScope.launch(Dispatchers.IO) {
-                appDao.deleteAllApps()
-                withContext(Dispatchers.Main) {
-                    Log.e("BlockedAppsFragment", "Todos Apps delited")
-                }
-            }
+            appDataRepository.deleteAllApps()
         }
 
         binding.llenarAllAppBoton.setOnClickListener {
