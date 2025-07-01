@@ -2,7 +2,7 @@ package com.ursolgleb.controlparental.checkers
 
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.local.AppDataRepository
 import com.ursolgleb.controlparental.utils.AppsFun
 import javax.inject.Inject
 import javax.inject.Singleton

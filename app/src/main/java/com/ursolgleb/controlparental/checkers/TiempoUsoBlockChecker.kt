@@ -1,6 +1,6 @@
 package com.ursolgleb.controlparental.checkers
 
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.local.AppDataRepository
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import javax.inject.Singleton

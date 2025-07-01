@@ -8,7 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.chip.Chip
-import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
+import com.ursolgleb.controlparental.data.local.entities.HorarioEntity
 import com.ursolgleb.controlparental.databinding.FragmentHorarioCrearBinding
 import com.ursolgleb.controlparental.handlers.SyncHandler
 import dagger.hilt.android.AndroidEntryPoint
@@ -27,7 +27,7 @@ class HorarioCrearFragment : Fragment() {
     private val binding get() = _binding!!
 
     @Inject
-    lateinit var appDataRepository: com.ursolgleb.controlparental.data.apps.AppDataRepository
+    lateinit var appDataRepository: com.ursolgleb.controlparental.data.local.AppDataRepository
 
     @Inject
     lateinit var syncHendler: SyncHandler

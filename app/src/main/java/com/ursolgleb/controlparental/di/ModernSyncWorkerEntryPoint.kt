@@ -1,6 +1,6 @@
 package com.ursolgleb.controlparental.di
 
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.local.AppDataRepository
 import com.ursolgleb.controlparental.data.remote.RemoteDataRepository
 import com.ursolgleb.controlparental.handlers.EventSyncManager
 import com.ursolgleb.controlparental.handlers.SyncHandler

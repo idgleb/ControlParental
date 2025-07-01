@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental.data.apps.entities
+package com.ursolgleb.controlparental.data.local.entities
 
 import android.os.Parcelable
 import androidx.room.Entity

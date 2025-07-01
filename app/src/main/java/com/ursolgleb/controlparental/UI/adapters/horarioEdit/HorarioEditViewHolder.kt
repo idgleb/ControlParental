@@ -2,13 +2,12 @@ package com.ursolgleb.controlparental.UI.adapters.marcarAppsPara
 
 import androidx.recyclerview.widget.RecyclerView
 import com.ursolgleb.controlparental.UI.fragments.MainAdminFragmentDirections
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
-import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
+import com.ursolgleb.controlparental.data.local.AppDataRepository
+import com.ursolgleb.controlparental.data.local.entities.HorarioEntity
 import com.ursolgleb.controlparental.databinding.ItemHorarioEditBinding
 import androidx.navigation.findNavController
 import com.ursolgleb.controlparental.handlers.SyncHandler
 import kotlinx.coroutines.launch
-import android.widget.Toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 

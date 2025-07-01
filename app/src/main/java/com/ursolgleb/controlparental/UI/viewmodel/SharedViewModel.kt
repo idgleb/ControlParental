@@ -4,9 +4,9 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
-import com.ursolgleb.controlparental.data.apps.entities.AppEntity
-import com.ursolgleb.controlparental.data.apps.entities.DeviceEntity
+import com.ursolgleb.controlparental.data.local.AppDataRepository
+import com.ursolgleb.controlparental.data.local.entities.AppEntity
+import com.ursolgleb.controlparental.data.local.entities.DeviceEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

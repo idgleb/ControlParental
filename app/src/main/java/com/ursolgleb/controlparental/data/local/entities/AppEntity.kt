@@ -1,8 +1,7 @@
-package com.ursolgleb.controlparental.data.apps.entities
+package com.ursolgleb.controlparental.data.local.entities
 
 import android.graphics.Bitmap
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
 
 @Entity(

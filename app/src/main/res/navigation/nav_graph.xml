@@ -48,7 +48,7 @@
         android:label="Blocked Apps" >
         <argument
             android:name="horario"
-            app:argType="com.ursolgleb.controlparental.data.apps.entities.HorarioEntity" />
+            app:argType="com.ursolgleb.controlparental.data.local.entities.HorarioEntity" />
     </fragment>
 
 

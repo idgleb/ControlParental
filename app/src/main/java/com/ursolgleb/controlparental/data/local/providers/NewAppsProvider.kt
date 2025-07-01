@@ -1,8 +1,8 @@
-package com.ursolgleb.controlparental.data.apps.providers
+package com.ursolgleb.controlparental.data.local.providers
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
-import com.ursolgleb.controlparental.data.apps.dao.AppDao
+import com.ursolgleb.controlparental.data.local.dao.AppDao
 import com.ursolgleb.controlparental.utils.AppsFun
 import com.ursolgleb.controlparental.utils.Logger
 import kotlinx.coroutines.runBlocking

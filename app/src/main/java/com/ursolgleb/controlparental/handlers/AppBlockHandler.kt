@@ -1,9 +1,7 @@
 package com.ursolgleb.controlparental.handlers
 
-import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.local.AppDataRepository
 import com.ursolgleb.controlparental.data.log.LogDataRepository
 import com.ursolgleb.controlparental.checkers.AppBlockChecker
 import com.ursolgleb.controlparental.checkers.HorarioBlockChecker

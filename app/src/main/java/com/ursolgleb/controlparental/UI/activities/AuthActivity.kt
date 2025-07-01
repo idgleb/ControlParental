@@ -6,7 +6,7 @@ import androidx.annotation.RequiresApi
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.local.AppDataRepository
 import com.ursolgleb.controlparental.utils.Session
 import com.ursolgleb.controlparental.validadors.PinValidator
 import com.ursolgleb.controlparental.databinding.ActivityAuthBinding

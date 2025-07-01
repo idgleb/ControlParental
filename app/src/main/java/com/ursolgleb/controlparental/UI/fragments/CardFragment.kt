@@ -15,8 +15,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
-import com.ursolgleb.controlparental.data.apps.dao.AppDao
+import com.ursolgleb.controlparental.data.local.AppDataRepository
+import com.ursolgleb.controlparental.data.local.dao.AppDao
 import com.ursolgleb.controlparental.databinding.FragmentCardBinding
 import com.ursolgleb.controlparental.utils.Fun
 import com.ursolgleb.controlparental.utils.StatusApp

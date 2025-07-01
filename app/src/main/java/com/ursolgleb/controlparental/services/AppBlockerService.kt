@@ -14,7 +14,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.ursolgleb.controlparental.UI.activities.AuthActivity
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.local.AppDataRepository
 import com.ursolgleb.controlparental.handlers.AppBlockHandler
 import com.ursolgleb.controlparental.utils.Session
 import dagger.hilt.android.AndroidEntryPoint

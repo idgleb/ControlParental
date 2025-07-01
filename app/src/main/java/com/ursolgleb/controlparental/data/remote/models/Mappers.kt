@@ -1,9 +1,9 @@
 package com.ursolgleb.controlparental.data.remote.models
 
 import android.util.Log
-import com.ursolgleb.controlparental.data.apps.entities.AppEntity
-import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
-import com.ursolgleb.controlparental.data.apps.entities.DeviceEntity
+import com.ursolgleb.controlparental.data.local.entities.AppEntity
+import com.ursolgleb.controlparental.data.local.entities.HorarioEntity
+import com.ursolgleb.controlparental.data.local.entities.DeviceEntity
 import com.ursolgleb.controlparental.utils.StatusApp
 import com.ursolgleb.controlparental.utils.Converters
 

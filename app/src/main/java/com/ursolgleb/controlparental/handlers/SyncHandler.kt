@@ -2,22 +2,18 @@ package com.ursolgleb.controlparental.handlers
 
 import android.content.Context
 import android.util.Log
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
-import com.ursolgleb.controlparental.data.apps.dao.SyncDataDao
-import com.ursolgleb.controlparental.data.apps.entities.SyncDataEntity
+import com.ursolgleb.controlparental.data.local.AppDataRepository
 import com.ursolgleb.controlparental.utils.Logger
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
 import javax.inject.Provider
 import javax.inject.Inject
 import javax.inject.Singleton
+import androidx.core.content.edit
 
 @Singleton
 class SyncHandler @Inject constructor(
     @ApplicationContext private val context: Context,
     private val appDataRepository: Provider<AppDataRepository>,
-    val syncDataDao: SyncDataDao,
 ) {
 
     private val prefs = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
@@ -27,7 +23,7 @@ class SyncHandler @Inject constructor(
         val current = getPendingHorarioIds()
         val newSet = current.toMutableSet()
         newSet.add(id.toString())
-        prefs.edit().putStringSet("pending_horario_ids", newSet).apply()
+        prefs.edit() { putStringSet("pending_horario_ids", newSet) }
         Log.d("SyncHandler", "Added pending horario ID: $id.")
     }
 
@@ -36,7 +32,7 @@ class SyncHandler @Inject constructor(
     }
 
     fun clearPendingHorarioIds() {
-        prefs.edit().remove("pending_horario_ids").apply()
+        prefs.edit() { remove("pending_horario_ids") }
         Log.d("SyncHandler", "Cleared pending horario IDs.")
     }
 
@@ -45,7 +41,7 @@ class SyncHandler @Inject constructor(
         val current = getDeletedHorarioIds()
         val newSet = current.toMutableSet()
         newSet.add(id.toString())
-        prefs.edit().putStringSet("deleted_horario_ids", newSet).apply()
+        prefs.edit() { putStringSet("deleted_horario_ids", newSet) }
         Log.d("SyncHandler", "Added deleted horario ID: $id.")
     }
 
@@ -54,7 +50,7 @@ class SyncHandler @Inject constructor(
     }
 
     fun clearDeletedHorarioIds() {
-        prefs.edit().remove("deleted_horario_ids").apply()
+        prefs.edit() { remove("deleted_horario_ids") }
         Log.d("SyncHandler", "Cleared deleted horario IDs.")
     }
 
@@ -63,7 +59,7 @@ class SyncHandler @Inject constructor(
         val current = getPendingAppIds()
         val newSet = current.toMutableSet()
         newSet.add(packageName)
-        prefs.edit().putStringSet("pending_app_ids", newSet).apply()
+        prefs.edit() { putStringSet("pending_app_ids", newSet) }
         Log.d("SyncHandler", "Added pending app ID: $packageName.")
     }
 
@@ -72,7 +68,7 @@ class SyncHandler @Inject constructor(
     }
 
     fun clearPendingAppIds() {
-        prefs.edit().remove("pending_app_ids").apply()
+        prefs.edit() { remove("pending_app_ids") }
         Log.d("SyncHandler", "Cleared pending app IDs.")
     }
 
@@ -81,7 +77,7 @@ class SyncHandler @Inject constructor(
         val current = getDeletedAppIds()
         val newSet = current.toMutableSet()
         newSet.add(packageName)
-        prefs.edit().putStringSet("deleted_app_ids", newSet).apply()
+        prefs.edit() { putStringSet("deleted_app_ids", newSet) }
         Log.d("SyncHandler", "Added deleted app ID: $packageName.")
     }
 
@@ -90,22 +86,8 @@ class SyncHandler @Inject constructor(
     }
 
     fun clearDeletedAppIds() {
-        prefs.edit().remove("deleted_app_ids").apply()
+        prefs.edit() { remove("deleted_app_ids") }
         Log.d("SyncHandler", "Cleared deleted app IDs.")
-    }
-
-    suspend fun getSyncDataInfoOnce(): SyncDataEntity? {
-        return try {
-            syncDataDao.getSyncDataOnce()
-        } catch (e: Exception) {
-            Logger.error(
-                context,
-                "SyncHandler",
-                "Error obteniendo SyncData info: ${e.message}",
-                e
-            )
-            null
-        }
     }
 
 }

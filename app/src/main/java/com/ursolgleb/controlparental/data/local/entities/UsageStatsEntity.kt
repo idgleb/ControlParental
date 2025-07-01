@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental.data.apps.entities
+package com.ursolgleb.controlparental.data.local.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

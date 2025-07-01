@@ -1,7 +1,7 @@
-package com.ursolgleb.controlparental.data.apps.dao
+package com.ursolgleb.controlparental.data.local.dao
 
 import androidx.room.*
-import com.ursolgleb.controlparental.data.apps.entities.HorarioEntity
+import com.ursolgleb.controlparental.data.local.entities.HorarioEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

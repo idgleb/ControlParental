@@ -1,9 +1,8 @@
-package com.ursolgleb.controlparental.data.apps.providers
+package com.ursolgleb.controlparental.data.local.providers
 
 import android.app.usage.UsageEvents
 import android.content.Context
 import com.ursolgleb.controlparental.utils.Fun
-import com.ursolgleb.controlparental.utils.Logger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.reactivecircus.cache4k.Cache
 import javax.inject.Inject

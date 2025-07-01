@@ -22,4 +22,4 @@
 
 # Navigation arguments are loaded using reflection. Prevent obfuscation of
 # HorarioEntity so the Navigation component can find the class at runtime.
--keep class com.ursolgleb.controlparental.data.apps.entities.HorarioEntity { *; }
+-keep class com.ursolgleb.controlparental.data.local.entities.HorarioEntity { *; }

@@ -1,4 +1,4 @@
-package com.ursolgleb.controlparental.data.apps.dao
+package com.ursolgleb.controlparental.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -6,7 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import com.ursolgleb.controlparental.data.apps.entities.DeviceEntity
+import com.ursolgleb.controlparental.data.local.entities.DeviceEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

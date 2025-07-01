@@ -1,7 +1,7 @@
 package com.ursolgleb.controlparental.checkers
 
 import android.util.Log
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.local.AppDataRepository
 import com.ursolgleb.controlparental.utils.Fun
 import javax.inject.Inject
 import javax.inject.Singleton

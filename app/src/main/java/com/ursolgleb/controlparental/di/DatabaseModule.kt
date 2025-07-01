@@ -1,20 +1,14 @@
 package com.ursolgleb.controlparental.di
 
 import android.content.Context
-import android.os.Build
 import android.os.UserManager
-import android.util.Log
-import androidx.core.content.ContextCompat
 import androidx.room.Room
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
-import com.ursolgleb.controlparental.data.apps.AppDatabase
-import com.ursolgleb.controlparental.data.apps.dao.AppDao
-import com.ursolgleb.controlparental.data.apps.dao.HorarioDao
-import com.ursolgleb.controlparental.data.apps.dao.UsageEventDao
-import com.ursolgleb.controlparental.data.apps.dao.UsageStatsDao
-import com.ursolgleb.controlparental.data.apps.dao.DeviceDao
-import com.ursolgleb.controlparental.data.apps.dao.SyncDataDao
+import com.ursolgleb.controlparental.data.local.AppDatabase
+import com.ursolgleb.controlparental.data.local.dao.AppDao
+import com.ursolgleb.controlparental.data.local.dao.HorarioDao
+import com.ursolgleb.controlparental.data.local.dao.UsageEventDao
+import com.ursolgleb.controlparental.data.local.dao.UsageStatsDao
+import com.ursolgleb.controlparental.data.local.dao.DeviceDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -72,10 +66,5 @@ object DatabaseModule {
     @Provides
     fun provideDeviceDao(db: AppDatabase): DeviceDao =
         db.deviceDao()
-
-    @Singleton
-    @Provides
-    fun provideSyncDataDao(db: AppDatabase): SyncDataDao =
-        db.syncDataDao()
 
 }

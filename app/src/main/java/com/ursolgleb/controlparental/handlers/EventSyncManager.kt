@@ -2,19 +2,28 @@ package com.ursolgleb.controlparental.handlers
 
 import android.content.Context
 import android.util.Log
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.local.AppDataRepository
 import com.ursolgleb.controlparental.data.remote.RemoteDataRepository
 import com.ursolgleb.controlparental.data.remote.models.*
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.first
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
-import java.io.EOFException
-import retrofit2.HttpException
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/**
+ * Estados posibles de sincronización
+ */
+enum class SyncState {
+    IDLE,           // Sin actividad
+    SYNCING,        // Sincronizando
+    SUCCESS,        // Última sincronización exitosa
+    ERROR,          // Error en la última sincronización
+    PENDING_EVENTS  // Hay eventos pendientes de enviar
+}
 
 /**
  * Manager moderno para sincronización basada en eventos
@@ -24,11 +33,13 @@ class EventSyncManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val localRepo: AppDataRepository,
     private val remoteRepo: RemoteDataRepository,
-    private val syncHandler: SyncHandler
+    private val syncHandler: SyncHandler,
+    private val syncStateManager: SyncStateManager
 ) {
     companion object {
         private const val TAG = "EventSyncManager"
         private const val PREF_LAST_EVENT_ID = "last_sync_event_id"
+        private const val PREF_LAST_SYNC_TIME = "last_sync_time"
     }
     
     private val prefs = context.getSharedPreferences("event_sync", Context.MODE_PRIVATE)
@@ -41,10 +52,13 @@ class EventSyncManager @Inject constructor(
      */
     suspend fun sync(): Result<Unit> {
         return try {
+            syncStateManager.setSyncState(SyncState.SYNCING, "Iniciando sincronización...")
+            
             val deviceInfo = localRepo.getDeviceInfoOnce() ?: return Result.failure(Exception("No device info"))
             val deviceId = deviceInfo.deviceId
             
             // 1. Verificar estado de sincronización
+            syncStateManager.setSyncState(SyncState.SYNCING, "Verificando estado...")
             val status = try {
                 remoteRepo.getSyncStatus(deviceId)
             } catch (e: Exception) {
@@ -57,9 +71,11 @@ class EventSyncManager @Inject constructor(
             }
             
             // 2. Obtener eventos del servidor
+            syncStateManager.setSyncState(SyncState.SYNCING, "Obteniendo eventos del servidor...")
             var lastEventId = getLastEventId()
             var hasMore = true
             var retryCount = 0
+            var totalEventsReceived = 0
             
             while (hasMore && retryCount < 5) {
                 try {
@@ -71,6 +87,8 @@ class EventSyncManager @Inject constructor(
                     
                     if (serverEvents.events.isNotEmpty()) {
                         Log.d(TAG, "Received ${serverEvents.events.size} events from server")
+                        totalEventsReceived += serverEvents.events.size
+                        syncStateManager.setSyncState(SyncState.SYNCING, "Aplicando ${serverEvents.events.size} eventos...")
                         applyServerEvents(serverEvents.events)
                         lastEventId = serverEvents.lastEventId
                         setLastEventId(lastEventId)
@@ -88,17 +106,29 @@ class EventSyncManager @Inject constructor(
             
             // 3. Enviar eventos locales pendientes
             val localEvents = collectLocalEvents(deviceId)
+            
             if (localEvents.isNotEmpty()) {
+                syncStateManager.setSyncState(SyncState.SYNCING, "Enviando ${localEvents.size} eventos locales...")
                 Log.d(TAG, "Sending ${localEvents.size} local events")
                 val response = remoteRepo.postEvents(PostEventsRequest(deviceId, localEvents))
                 if (response.isSuccessful) {
                     clearLocalEventFlags()
+                    syncStateManager.updatePendingEventsCount()
                 }
             }
+            
+            // Guardar tiempo de última sincronización exitosa
+            setLastSyncTime()
+            
+            syncStateManager.setSyncState(
+                SyncState.SUCCESS, 
+                "Sincronización completada (${totalEventsReceived} recibidos, ${localEvents.size} enviados)"
+            )
             
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Sync error", e)
+            syncStateManager.setSyncState(SyncState.ERROR, "Error: ${e.message}")
             Result.failure(e)
         }
     }
@@ -345,6 +375,10 @@ class EventSyncManager @Inject constructor(
     
     private fun setLastEventId(eventId: Long) {
         prefs.edit().putLong(PREF_LAST_EVENT_ID, eventId).apply()
+    }
+    
+    private fun setLastSyncTime() {
+        prefs.edit().putLong(PREF_LAST_SYNC_TIME, System.currentTimeMillis()).apply()
     }
     
     private fun clearLocalEventFlags() {

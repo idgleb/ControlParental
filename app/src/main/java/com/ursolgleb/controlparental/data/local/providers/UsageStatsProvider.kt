@@ -1,9 +1,9 @@
-package com.ursolgleb.controlparental.data.apps.providers
+package com.ursolgleb.controlparental.data.local.providers
 
 import android.app.usage.UsageStatsManager
 import android.content.Context
-import com.ursolgleb.controlparental.data.apps.dao.UsageStatsDao
-import com.ursolgleb.controlparental.data.apps.entities.UsageStatsEntity
+import com.ursolgleb.controlparental.data.local.dao.UsageStatsDao
+import com.ursolgleb.controlparental.data.local.entities.UsageStatsEntity
 import com.ursolgleb.controlparental.utils.Fun
 import com.ursolgleb.controlparental.utils.Logger
 import dagger.hilt.android.qualifiers.ApplicationContext

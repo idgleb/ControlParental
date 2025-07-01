@@ -6,8 +6,8 @@ import android.view.View
 import androidx.fragment.app.Fragment
 import com.ursolgleb.controlparental.R
 import androidx.lifecycle.lifecycleScope
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
-import com.ursolgleb.controlparental.data.apps.dao.AppDao
+import com.ursolgleb.controlparental.data.local.AppDataRepository
+import com.ursolgleb.controlparental.data.local.dao.AppDao
 import com.ursolgleb.controlparental.databinding.FragmentDesarolloCardBinding
 import com.ursolgleb.controlparental.handlers.SyncHandler
 import dagger.hilt.android.AndroidEntryPoint

@@ -8,7 +8,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.ursolgleb.controlparental.data.apps.AppDataRepository
+import com.ursolgleb.controlparental.data.local.AppDataRepository
 import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.databinding.FragmentPermisosBinding
 import com.ursolgleb.controlparental.utils.Archivo
