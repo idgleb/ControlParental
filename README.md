@@ -23,6 +23,8 @@ Aplicación Android de control parental desarrollada en **Kotlin**, utilizando *
 - 🗂️ Logging de bloqueos para auditoría
 - 🔔 Notificaciones para recordar permisos o activar el servicio
 - 🌐 Sincronización de datos y control remoto en tiempo real mediante panel web Laravel
+- 📍 **Ubicación en tiempo real** del dispositivo con sistema de Heartbeat
+- 🔋 Monitoreo del nivel de batería del dispositivo
 
 ## 🛠️ Tecnologías y herramientas
 
@@ -40,6 +42,8 @@ Aplicación Android de control parental desarrollada en **Kotlin**, utilizando *
 | View Binding         | Acceso seguro a vistas sin findViewById      |
 | Coroutine / Flow    | Manejo asíncrono y reactivo                   |
 | Jsoup               | Scraping opcional para clasificación de apps |
+| **Location Services** | **API de ubicación de Android para rastreo GPS**  |
+| **BatteryManager**   | **Monitoreo del estado de batería del dispositivo** |
 
 ## 📐 Arquitectura
 
@@ -52,11 +56,18 @@ El proyecto sigue una arquitectura modular y desacoplada:
  ┃ ┣ 📂 apps 🔹 (Room: DAOs, entidades, DB, proveedores)
  ┃ ┣ 📂 log 🔸 (Registro de bloqueos)
  ┃ ┗ 📂 remote 🌐 (Sincronización con API REST)
+ ┃   ┣ 📄 HeartbeatRequest (Envío de ubicación al servidor)
+ ┃   ┣ 📄 DeviceDto (DTO con campos de ubicación)
+ ┃   ┣ 📄 EventDto (Estructura de eventos de sincronización)
+ ┃   ┣ 📄 PostEventsRequest (Envío de eventos al servidor)
+ ┃   ┗ 📄 Mappers (Conversión entre DTOs y entidades)
  ┣ 📂 detectors 🟡 (Detectores de eventos específicos)
  ┣ 📂 di 🟣 (Inyección de dependencias con Dagger Hilt)
  ┣ 📂 handlers 🔴 (Manejo de bloqueos y acciones)
  ┣ 📂 receiver 📥 (Recepción de eventos del sistema)
  ┣ 📂 services ⚙️ (Servicios en segundo plano)
+ ┃ ┣ 📄 AppBlockerService (Bloqueo de aplicaciones)
+ ┃ ┗ 📄 HeartbeatService 📍 (Envío de ubicación y estado)
  ┣ 📂 UI 🎨 (Interfaz de usuario)
  ┃ ┣ 📂 activities 🖥️ (Pantallas principales)
  ┃ ┣ 📂 adapters 📋 (Adaptadores para listas)
@@ -68,6 +79,36 @@ El proyecto sigue una arquitectura modular y desacoplada:
 
 ```
 
+### 📍 Sistema de Heartbeat y Ubicación
+
+El sistema implementa un servicio de **HeartbeatService** que:
+
+- **Envía pings periódicos** al servidor (configurable, por defecto cada 30 segundos)
+- **Obtiene la ubicación GPS** del dispositivo si hay permisos disponibles
+- **Monitorea el nivel de batería** y el modelo del dispositivo
+- **Actualiza la información localmente** en la base de datos Room
+- **Marca cambios para sincronización** cuando detecta actualizaciones
+
+**Flujo de datos de ubicación:**
+
+```
+GPS/Network Provider → HeartbeatService → HeartbeatRequest → API Server
+                           ↓
+                      DeviceEntity (Room DB)
+                           ↓
+                    EventSyncManager → Sincronización completa
+```
+
+**Estructura de datos:**
+
+- **HeartbeatRequest**: Contiene `latitude` y `longitude` opcionales
+- **DeviceDto**: Incluye campos de ubicación para sincronización completa
+- **DeviceEntity**: Almacena localmente:
+  - `latitude`, `longitude`: Coordenadas GPS
+  - `locationUpdatedAt`: Timestamp de última actualización
+  - `lastSeen`: Último heartbeat recibido
+  - `pingIntervalSeconds`: Intervalo configurable de heartbeat
+
 ## 📋 Permisos necesarios
 
 - `PACKAGE_USAGE_STATS`
@@ -76,6 +117,8 @@ El proyecto sigue una arquitectura modular y desacoplada:
 - `INTERNET`
 - `POST_NOTIFICATIONS`
 - `SYSTEM_ALERT_WINDOW`
+- **`ACCESS_FINE_LOCATION`** - Para obtener ubicación GPS precisa
+- **`ACCESS_COARSE_LOCATION`** - Para ubicación aproximada por red
 
 ## 📌 Diagrama de casos de uso
 
@@ -301,6 +344,7 @@ graph LR
 - Gestiona la sincronización bidireccional de eventos
 - Mantiene el `lastEventId` para sincronización incremental
 - Maneja reintentos y recuperación de errores
+- Genera y procesa objetos EventDto para cada cambio
 
 #### 3. **SyncHandler**
 - Rastrea cambios locales pendientes en SharedPreferences
@@ -311,6 +355,44 @@ graph LR
 - Worker periódico que ejecuta cada 15 segundos
 - Implementa el flujo ideal: primera sync completa, luego incremental
 - Maneja errores y programa reintentos automáticos
+
+#### 5. **EventDto** 
+- Estructura central para la comunicación de eventos entre cliente y servidor
+- Soporta tres tipos de entidades: `horario`, `app`, `device`
+- Tres acciones posibles: `create`, `update`, `delete`
+- Incluye timestamp ISO 8601 para ordenamiento temporal
+- Campo `data` opcional con la información completa de la entidad (solo para create/update)
+
+**Estructura de EventDto:**
+```kotlin
+data class EventDto(
+    val entity_type: String,      // "horario", "app", "device"
+    val entity_id: String,        // ID único o packageName
+    val action: String,           // "create", "update", "delete"
+    val data: Map<String, Any?>?, // Datos completos (opcional)
+    val timestamp: String         // ISO 8601 timestamp
+)
+```
+
+**Ejemplo de uso en sincronización:**
+```json
+{
+  "deviceId": "abc-123-def-456",
+  "events": [
+    {
+      "entity_type": "horario",
+      "entity_id": "123",
+      "action": "update",
+      "data": {
+        "nombreDeHorario": "Horario Escolar",
+        "horaInicio": "08:00",
+        "horaFin": "14:00"
+      },
+      "timestamp": "2025-06-29T10:30:00Z"
+    }
+  ]
+}
+```
 
 ### Optimizaciones Implementadas
 
@@ -324,9 +406,47 @@ graph LR
 
 El sistema utiliza una arquitectura de sincronización incremental basada en eventos para mantener los datos consistentes entre el cliente y el servidor de manera eficiente. Esto evita la necesidad de transferir bases de datos completas, enviando únicamente los cambios específicos que han ocurrido.
 
+### Estructura de Eventos (EventDto)
+
+Cada cambio en el sistema se representa como un **EventDto**, que es la unidad fundamental de sincronización:
+
+- **entity_type**: Tipo de entidad modificada (`horario`, `app`, `device`)
+- **entity_id**: Identificador único de la entidad
+- **action**: Acción realizada (`create`, `update`, `delete`)
+- **data**: Datos completos de la entidad (solo para create/update)
+- **timestamp**: Marca temporal ISO 8601 para ordenamiento
+
 ### 1. Sincronización del Cliente al Servidor
 
 Cuando un usuario realiza un cambio en la aplicación Android (por ejemplo, crear, actualizar o eliminar un horario), el sistema no envía la lista completa de datos. En su lugar, registra la acción específica y la sincroniza con el servidor.
+
+**Generación de EventDto en el Cliente:**
+
+El `EventSyncManager` colecta automáticamente los cambios locales pendientes y los convierte en objetos EventDto:
+
+```kotlin
+// Ejemplo de generación de EventDto para un horario actualizado
+EventDto(
+    entity_type = "horario",
+    entity_id = "123",
+    action = "update",
+    data = mapOf(
+        "nombreDeHorario" to "Horario Escolar",
+        "diasDeSemana" to listOf(1, 2, 3, 4, 5),
+        "horaInicio" to "08:00",
+        "horaFin" to "14:00",
+        "isActive" to true
+    ),
+    timestamp = "2025-06-29T10:30:00Z"
+)
+```
+
+**Flujo de Colección de Eventos:**
+1. **Detección de cambios**: SyncHandler marca IDs de entidades modificadas
+2. **Colección**: EventSyncManager consulta las entidades marcadas
+3. **Conversión**: Cada entidad se convierte a EventDto según su tipo
+4. **Agrupación**: Los eventos se agrupan en PostEventsRequest
+5. **Envío**: POST /api/sync/events con todos los cambios pendientes
 
 **Ejemplo: Eliminación de un Horario**
 
@@ -363,6 +483,28 @@ sequenceDiagram
 
 Cuando se realiza un cambio directamente en el servidor (por ejemplo, a través de una interfaz web), el sistema lo registra en un "diario de novedades" (la tabla `sync_events`). El cliente consulta periódicamente este diario para mantenerse actualizado.
 
+**Procesamiento de EventDto del Servidor:**
+
+El cliente recibe eventos del servidor en formato EventDto y los procesa según su tipo y acción:
+
+```kotlin
+// Procesamiento de eventos recibidos
+when (event.entity_type) {
+    "horario" -> when (event.action) {
+        "create" -> createHorarioFromData(event.data)
+        "update" -> updateHorarioFromData(event.entity_id, event.data)
+        "delete" -> deleteHorario(event.entity_id)
+    }
+    "app" -> when (event.action) {
+        "update" -> updateAppFromData(event.entity_id, event.data)
+        "delete" -> deleteApp(event.entity_id)
+    }
+    "device" -> when (event.action) {
+        "update" -> updateDeviceFromData(event.data)
+    }
+}
+```
+
 **Ejemplo: Creación de un Horario en el Servidor**
 
 1.  **Acción en el Servidor:** Un administrador crea un nuevo horario desde la interfaz web.
@@ -393,3 +535,15 @@ sequenceDiagram
         deactivate Cliente Android
     end
 ```
+
+### Ventajas de la Arquitectura basada en EventDto
+
+La utilización de **EventDto** como unidad fundamental de sincronización proporciona:
+
+1. **Eficiencia en la Transferencia**: Solo se transfieren los cambios, no datos completos
+2. **Trazabilidad Completa**: Cada evento tiene timestamp y acción específica
+3. **Flexibilidad**: Fácil agregar nuevos tipos de entidades sin cambiar la arquitectura
+4. **Resiliencia**: Los eventos se pueden reintentar individualmente en caso de fallo
+5. **Orden Garantizado**: Los timestamps ISO 8601 aseguran el orden correcto de aplicación
+6. **Sincronización Bidireccional**: El mismo formato sirve para cliente→servidor y servidor→cliente
+7. **Auditoría**: Historial completo de cambios en la tabla `sync_events` del servidor
