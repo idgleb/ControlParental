@@ -25,7 +25,7 @@ object RemoteModule {
     // CAMBIAR SEGÚN TU CONFIGURACIÓN:
     // - Emulador: "http://10.0.2.2/api/"
     // - Dispositivo físico: "http://192.168.1.35/api/"
-    private const val BASE_URL = "http://10.0.2.2/api/" // IP de tu máquina en la red
+    private const val BASE_URL = "https://87f4-200-117-178-44.ngrok-free.app/api/"
 
     @Provides
     fun provideMoshi(): Moshi {

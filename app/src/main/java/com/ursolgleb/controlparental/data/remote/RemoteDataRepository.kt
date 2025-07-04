@@ -9,6 +9,8 @@ import com.ursolgleb.controlparental.data.remote.models.SyncResponse
 import com.ursolgleb.controlparental.data.remote.models.SyncEventsResponse
 import com.ursolgleb.controlparental.data.remote.models.SyncStatusResponse
 import com.ursolgleb.controlparental.data.remote.models.PostEventsRequest
+import com.ursolgleb.controlparental.data.remote.models.HeartbeatResponse
+import com.ursolgleb.controlparental.data.remote.models.HeartbeatRequest
 import kotlinx.coroutines.delay
 import retrofit2.Response
 import javax.inject.Inject
@@ -132,6 +134,22 @@ class RemoteDataRepository @Inject constructor(
     
     suspend fun deleteAppByPackageName(packageName: String, deviceId: String) {
         // Por ahora no implementado, se puede agregar si es necesario
+    }
+
+    /**
+     * Envía un heartbeat al servidor para mantener el dispositivo online
+     */
+    suspend fun sendHeartbeat(
+        deviceId: String,
+        latitude: Double? = null,
+        longitude: Double? = null
+    ): Response<HeartbeatResponse> {
+        val request = HeartbeatRequest(
+            latitude = latitude,
+            longitude = longitude
+        )
+        
+        return api.sendHeartbeat(deviceId, request)
     }
 
 }

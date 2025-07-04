@@ -45,6 +45,8 @@ fun AppDto.toEntity(): AppEntity? {
         } else {
             Log.w("Mappers", "AppIcon is null or empty for $pkg")
             // Crear un bitmap gris por defecto de 35x35
+            // TODO: En el futuro, podríamos intentar obtener el ícono del PackageManager
+            // si la app está instalada en el dispositivo
             val defaultBitmap = android.graphics.Bitmap.createBitmap(35, 35, android.graphics.Bitmap.Config.ARGB_8888)
             val canvas = android.graphics.Canvas(defaultBitmap)
             canvas.drawColor(android.graphics.Color.LTGRAY)
@@ -99,7 +101,9 @@ fun HorarioDto.toEntity(): HorarioEntity {
 fun DeviceEntity.toDto() = DeviceDto(
     deviceId = deviceId,
     model = model,
-    batteryLevel = batteryLevel
+    batteryLevel = batteryLevel,
+    latitude = latitude,
+    longitude = longitude
 )
 
 fun DeviceDto.toEntity(): DeviceEntity? {
@@ -109,7 +113,10 @@ fun DeviceDto.toEntity(): DeviceEntity? {
     return DeviceEntity(
         deviceId = id,
         model = m,
-        batteryLevel = level
+        batteryLevel = level,
+        latitude = latitude,
+        longitude = longitude,
+        locationUpdatedAt = if (latitude != null && longitude != null) System.currentTimeMillis() else null
     )
 }
 

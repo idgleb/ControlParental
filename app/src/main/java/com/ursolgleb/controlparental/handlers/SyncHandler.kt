@@ -20,7 +20,7 @@ class SyncHandler @Inject constructor(
 ) {
 
     private val prefs = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
-    
+
     // Flows reactivos para los IDs pendientes
     private val _pendingHorarioIds = MutableStateFlow<Set<String>>(emptySet())
     val pendingHorarioIdsFlow: StateFlow<Set<String>> = _pendingHorarioIds.asStateFlow()
@@ -34,12 +34,16 @@ class SyncHandler @Inject constructor(
     private val _deletedAppIds = MutableStateFlow<Set<String>>(emptySet())
     val deletedAppIdsFlow: StateFlow<Set<String>> = _deletedAppIds.asStateFlow()
     
+    private val _deviceUpdatePending = MutableStateFlow(false)
+    val deviceUpdatePendingFlow: StateFlow<Boolean> = _deviceUpdatePending.asStateFlow()
+    
     init {
         // Cargar valores iniciales desde SharedPreferences
         _pendingHorarioIds.value = getPendingHorarioIds()
         _deletedHorarioIds.value = getDeletedHorarioIds()
         _pendingAppIds.value = getPendingAppIds()
         _deletedAppIds.value = getDeletedAppIds()
+        _deviceUpdatePending.value = isDeviceUpdatePending()
     }
 
     // --- Métodos para pendientes de creación/actualización de Horarios ---
@@ -120,6 +124,23 @@ class SyncHandler @Inject constructor(
         prefs.edit() { remove("deleted_app_ids") }
         _deletedAppIds.value = emptySet()
         Log.d("SyncHandler", "Cleared deleted app IDs.")
+    }
+
+    // --- Métodos para actualización de dispositivo ---
+    fun markDeviceUpdatePending() {
+        prefs.edit() { putBoolean("device_update_pending", true) }
+        _deviceUpdatePending.value = true
+        Log.d("SyncHandler", "Marked device update as pending.")
+    }
+
+    fun isDeviceUpdatePending(): Boolean {
+        return prefs.getBoolean("device_update_pending", false)
+    }
+
+    fun clearDeviceUpdatePending() {
+        prefs.edit() { remove("device_update_pending") }
+        _deviceUpdatePending.value = false
+        Log.d("SyncHandler", "Cleared device update pending flag.")
     }
 
 }

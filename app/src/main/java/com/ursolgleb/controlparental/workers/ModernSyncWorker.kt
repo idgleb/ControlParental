@@ -53,7 +53,6 @@ class ModernSyncWorker(
         
         val localRepo = entryPoint.getAppDataRepository()
         val eventSyncManager = entryPoint.getEventSyncManager()
-
         Log.d(TAG, "Dependencies obtained successfully")
 
         return try {
@@ -128,7 +127,7 @@ class ModernSyncWorker(
 
     private fun scheduleNextWork(context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<ModernSyncWorker>()
-            .setInitialDelay(15, TimeUnit.SECONDS)
+            .setInitialDelay(4, TimeUnit.SECONDS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(

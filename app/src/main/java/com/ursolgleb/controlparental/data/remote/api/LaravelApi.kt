@@ -8,11 +8,14 @@ import com.ursolgleb.controlparental.data.remote.models.PaginatedResponse
 import com.ursolgleb.controlparental.data.remote.models.SyncEventsResponse
 import com.ursolgleb.controlparental.data.remote.models.SyncStatusResponse
 import com.ursolgleb.controlparental.data.remote.models.PostEventsRequest
+import com.ursolgleb.controlparental.data.remote.models.HeartbeatRequest
+import com.ursolgleb.controlparental.data.remote.models.HeartbeatResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 /**
@@ -68,5 +71,12 @@ interface LaravelApi {
 
     @GET("sync/status")
     suspend fun getSyncStatus(@Query("deviceId") deviceId: String): SyncStatusResponse
+
+    // Heartbeat para mantener dispositivo online
+    @POST("devices/{deviceId}/heartbeat")
+    suspend fun sendHeartbeat(
+        @Path("deviceId") deviceId: String,
+        @Body request: HeartbeatRequest
+    ): Response<HeartbeatResponse>
 
 }

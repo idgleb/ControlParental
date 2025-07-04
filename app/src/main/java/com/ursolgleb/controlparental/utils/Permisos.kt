@@ -6,6 +6,12 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import android.app.Activity
+import androidx.core.app.ActivityCompat
+import androidx.core.net.toUri
 
 class Permisos {
     companion object{
@@ -31,10 +37,21 @@ class Permisos {
         fun requestUsageStatsPermission(context: Context) {
             val intent = Intent(
                 Settings.ACTION_USAGE_ACCESS_SETTINGS,
-                Uri.parse("package:${context.packageName}")
+                "package:${context.packageName}".toUri()
             )
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) // ✅ necesario fuera de Activity
             context.startActivity(intent)
+        }
+        
+        fun hasLocationPermission(context: Context): Boolean {
+            return ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
         }
 
     }

@@ -605,6 +605,10 @@ class AppDataRepository @Inject constructor(
             val entity =
                 DeviceEntity(deviceId = deviceId, model = model, batteryLevel = battery)
             deviceDao.replace(entity)
+            
+            // Marcar el dispositivo como pendiente de sincronización
+            syncHandler.markDeviceUpdatePending()
+            
             //f85d8cc0-5637-430d-a109-b96da8c2718c
             Logger.info(context, "AppDataRepository", "Device info guardada: $entity")
         } catch (e: Exception) {
@@ -655,6 +659,23 @@ class AppDataRepository @Inject constructor(
     }
 
     fun getDeviceFlow() = deviceDao.getDevice()
+    
+    /**
+     * Actualiza la información del dispositivo en la base de datos
+     */
+    suspend fun updateDeviceInfo(device: DeviceEntity) {
+        try {
+            deviceDao.replace(device)
+            Logger.info(context, "AppDataRepository", "Device info actualizada: $device")
+        } catch (e: Exception) {
+            Logger.error(
+                context,
+                "AppDataRepository",
+                "Error actualizando device info: ${e.message}",
+                e
+            )
+        }
+    }
     
     suspend fun deleteAppByPackageName(packageName: String, deviceId: String) {
         try {

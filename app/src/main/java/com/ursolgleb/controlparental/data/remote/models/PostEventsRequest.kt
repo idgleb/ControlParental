@@ -30,4 +30,4 @@ package com.ursolgleb.controlparental.data.remote.models
 data class PostEventsRequest(
     val deviceId: String,
     val events: List<EventDto>
-)
+) 

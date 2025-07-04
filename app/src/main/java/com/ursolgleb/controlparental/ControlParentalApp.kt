@@ -17,6 +17,7 @@ import com.ursolgleb.controlparental.workers.ModernSyncWorker
 import androidx.work.WorkManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.ursolgleb.controlparental.services.HeartbeatService
 
 
 @HiltAndroidApp
@@ -64,6 +65,10 @@ class ControlParentalApp : Application(), Configuration.Provider {
                 ModernSyncWorker.startWorker(this)
                 Log.d("ControlParentalApp", "ModernSyncWorker programado")
                 
+                // Iniciar el servicio de heartbeat
+                Log.d("ControlParentalApp", "Iniciando HeartbeatService...")
+                HeartbeatService.start(this)
+                
                 // Verificar el estado del worker después de un breve delay
                 coroutineScope.launch {
                     delay(1000)
@@ -72,9 +77,6 @@ class ControlParentalApp : Application(), Configuration.Provider {
             } else {
                 Log.d("ControlParentalApp", "Worker ya iniciado, ignorando llamada duplicada")
             }
-            
-            // Sistema tradicional deshabilitado
-            // SyncWorker.startWorker(this)
         }
 
 
@@ -93,6 +95,9 @@ class ControlParentalApp : Application(), Configuration.Provider {
         super.onTerminate()
         appDataRepository.cancelarCorrutinas() // Cancela las corrutinas al cerrar la app
         coroutineScope.cancel()
+        
+        // Detener el servicio de heartbeat
+        HeartbeatService.stop(this)
     }
 
 }

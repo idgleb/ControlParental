@@ -13,6 +13,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.core.content.edit
 
 /**
  * Manager moderno para sincronización basada en eventos
@@ -57,6 +58,18 @@ class EventSyncManager @Inject constructor(
             
             if (status != null) {
                 Log.d(TAG, "Sync status: $status")
+                
+                // Verificar si el servidor tiene un lastEventId menor que el nuestro
+                // Esto puede pasar si se reinició la tabla de eventos
+                val localLastEventId = getLastEventId()
+                val serverLastEventId = status.lastEventId
+                
+                if (serverLastEventId < localLastEventId) {
+                    Log.w(TAG, "Server lastEventId ($serverLastEventId) is less than local ($localLastEventId). Resetting to 0.")
+                    // Resetear el lastEventId local para recibir todos los eventos desde el principio
+                    setLastEventId(0)
+                }
+                
                 // Marcar qué tipos de entidades tienen cambios pendientes en el servidor
                 status.pendingEvents.forEach { (entityType, count) ->
                     if (count > 0) {
@@ -79,7 +92,7 @@ class EventSyncManager @Inject constructor(
                     val serverEvents = remoteRepo.getEvents(
                         deviceId = deviceId, 
                         lastEventId = lastEventId,
-                        types = "horario,app" // Enviar como una sola cadena
+                        types = "horario,app,device" // Agregar device a los tipos
                     )
                     
                     if (serverEvents.events.isNotEmpty()) {
@@ -129,7 +142,7 @@ class EventSyncManager @Inject constructor(
             
             syncStateManager.setSyncState(
                 SyncState.SUCCESS, 
-                "Sincronización completada (${totalEventsReceived} recibidos, ${localEvents.size} enviados)"
+                "Sincronización (${totalEventsReceived} recibidos, ${localEvents.size} enviados)"
             )
             
             Result.success(Unit)
@@ -174,16 +187,16 @@ class EventSyncManager @Inject constructor(
                 }
 
                 // Construir el DTO directamente desde el mapa, igual que hacemos con las apps.
-                val horarioDto = HorarioDto(
+                    val horarioDto = HorarioDto(
                     deviceId = event.deviceId, // Usar el deviceId del evento como fuente de verdad
                     idHorario = idHorario,     // Usar el entity_id del evento como fuente de verdad
-                    nombreDeHorario = data["nombreDeHorario"] as? String ?: "",
+                        nombreDeHorario = data["nombreDeHorario"] as? String ?: "",
                     diasDeSemana = (data["diasDeSemana"] as? List<*>)?.mapNotNull { (it as? Double)?.toInt() } ?: emptyList(),
                     horaInicio = data["horaInicio"] as? String ?: "00:00",
                     horaFin = data["horaFin"] as? String ?: "23:59",
-                    isActive = data["isActive"] as? Boolean ?: false
-                )
-
+                        isActive = data["isActive"] as? Boolean ?: false
+                    )
+                    
                 horarioDto.toEntity().let {
                     Log.d(TAG, "Applying server event: CREATE/UPDATE Horario ${it.idHorario}")
                     localRepo.insertHorariosEntidades(listOf(it))
@@ -203,22 +216,62 @@ class EventSyncManager @Inject constructor(
         when (event.action) {
             "create", "update" -> {
                 event.data?.let { data ->
+                    val packageName = data["packageName"] as? String ?: event.entity_id
+                    val eventDeviceId = event.deviceId // Usar el deviceId del evento, no del data
+                    
+                    // Obtener el deviceId local
+                    val localDeviceId = localRepo.getDeviceInfoOnce()?.deviceId ?: ""
+                    
+                    // Log para debugging
+                    Log.d(TAG, "Applying app event: packageName=$packageName, eventDeviceId=$eventDeviceId, localDeviceId=$localDeviceId")
+                    
+                    // Buscar la app existente para preservar valores locales cuando sea necesario
+                    val existingApp = localRepo.getAppByPackageNameOnce(packageName, eventDeviceId)
+                    
+                    // Determinar si debemos preservar valores locales (ícono y tiempos de uso)
+                    // Preservar si el evento es del MISMO dispositivo (somos la fuente de verdad)
+                    val shouldPreserveLocalValues = (eventDeviceId == localDeviceId)
+                    
+                    Log.d(TAG, "shouldPreserveLocalValues=$shouldPreserveLocalValues for app $packageName")
+                    
                     val appDto = AppDto(
-                        deviceId = data["deviceId"] as? String ?: "",
-                        packageName = data["packageName"] as? String ?: event.entity_id,
+                        deviceId = eventDeviceId,
+                        packageName = packageName,
                         appName = data["appName"] as? String ?: "",
                         appIcon = null, // Los íconos no se sincronizan en eventos
                         appCategory = data["appCategory"] as? String,
                         contentRating = data["contentRating"] as? String,
                         isSystemApp = data["isSystemApp"] as? Boolean ?: false,
-                        usageTimeToday = (data["usageTimeToday"] as? Number)?.toLong() ?: 0L,
-                        timeStempUsageTimeToday = (data["timeStempUsageTimeToday"] as? Number)?.toLong() ?: 0L,
+                        // Si es nuestro propio dispositivo, ignorar tiempos del evento (preservaremos los locales)
+                        // Si es otro dispositivo, usar los tiempos del evento
+                        usageTimeToday = if (shouldPreserveLocalValues) 0L else ((data["usageTimeToday"] as? Number)?.toLong() ?: 0L),
+                        timeStempUsageTimeToday = if (shouldPreserveLocalValues) 0L else ((data["timeStempUsageTimeToday"] as? Number)?.toLong() ?: 0L),
                         appStatus = data["appStatus"] as? String ?: "DEFAULT",
                         dailyUsageLimitMinutes = (data["dailyUsageLimitMinutes"] as? Number)?.toInt() ?: 0
                     )
                     
                     appDto.toEntity()?.let { entity ->
-                        localRepo.insertAppsEntidades(listOf(entity))
+                        // Aplicar lógica de preservación según el origen del evento
+                        val finalEntity = if (existingApp != null && shouldPreserveLocalValues) {
+                            // Evento del mismo dispositivo: preservar ícono Y tiempos de uso locales
+                            Log.d(TAG, "Preserving local values for app $packageName")
+                            entity.copy(
+                                appIcon = existingApp.appIcon,
+                                usageTimeToday = existingApp.usageTimeToday,
+                                timeStempUsageTimeToday = existingApp.timeStempUsageTimeToday
+                            )
+                        } else if (existingApp != null && !shouldPreserveLocalValues) {
+                            // Evento de otro dispositivo: preservar solo el ícono local
+                            // (cada dispositivo mantiene sus propios íconos)
+                            Log.d(TAG, "Preserving only icon for app $packageName from other device")
+                            entity.copy(appIcon = existingApp.appIcon)
+                        } else {
+                            // Nueva app: usar valores del evento (ícono será gris por defecto)
+                            Log.d(TAG, "New app $packageName, using event values")
+                            entity
+                        }
+                        localRepo.insertAppsEntidades(listOf(finalEntity))
+                        Log.d(TAG, "App $packageName updated successfully")
                     }
                 }
             }
@@ -234,11 +287,41 @@ class EventSyncManager @Inject constructor(
      * Aplicar evento de dispositivo
      */
     private suspend fun applyDeviceEvent(event: SyncEvent) {
-        // Por ahora solo manejamos actualizaciones de dispositivo
         when (event.action) {
             "update" -> {
-                // Los datos del dispositivo se actualizan en otros lugares
-                Log.d(TAG, "Device update event received but not processed here")
+                event.data?.let { data ->
+                    // Obtener el deviceId local
+                    val localDeviceId = localRepo.getDeviceInfoOnce()?.deviceId ?: ""
+                    
+                    // Solo aplicar eventos de otros dispositivos
+                    // (los cambios locales ya están en la BD)
+                    if (event.deviceId != localDeviceId) {
+                        val deviceDto = DeviceDto(
+                            deviceId = event.deviceId,
+                            model = data["model"] as? String,
+                            batteryLevel = (data["batteryLevel"] as? Number)?.toInt(),
+                            latitude = (data["latitude"] as? Number)?.toDouble(),
+                            longitude = (data["longitude"] as? Number)?.toDouble()
+                        )
+                        
+                        deviceDto.toEntity()?.let { entity ->
+                            // Preservar timestamps locales si el dispositivo ya existe
+                            val existingDevice = localRepo.getDeviceInfoOnce()
+                            val finalEntity = if (existingDevice != null && existingDevice.deviceId == entity.deviceId) {
+                                entity.copy(
+                                    lastSeen = existingDevice.lastSeen,
+                                    createdAt = existingDevice.createdAt,
+                                    updatedAt = System.currentTimeMillis()
+                                )
+                            } else {
+                                entity
+                            }
+                            
+                            // Usar el deviceDao directamente para actualizar
+                            localRepo.updateDeviceInfo(finalEntity)
+                        }
+                    }
+                }
             }
         }
     }
@@ -249,7 +332,7 @@ class EventSyncManager @Inject constructor(
     private suspend fun collectLocalEvents(deviceId: String): List<EventDto> {
         val events = mutableListOf<EventDto>()
         val now = dateFormat.format(Date())
-
+        
         // 1. Procesar horarios pendientes de eliminación
         syncHandler.getDeletedHorarioIds().forEach { id ->
             events.add(EventDto(
@@ -265,15 +348,15 @@ class EventSyncManager @Inject constructor(
             val idAsLong = id.toLongOrNull()
             if (idAsLong != null) {
                 localRepo.getHorarioByIdOnce(idAsLong, deviceId)?.let { horario ->
-                    events.add(EventDto(
+                events.add(EventDto(
                         entity_type = "horario",
                         entity_id = horario.idHorario.toString(),
                         action = "update", // El servidor usará updateOrCreate
-                        data = horario.toDto().toMap(),
-                        timestamp = now
-                    ))
-                }
+                    data = horario.toDto().toMap(),
+                    timestamp = now
+                ))
             }
+        }
         }
         
         // 3. Procesar apps pendientes de eliminación
@@ -299,6 +382,19 @@ class EventSyncManager @Inject constructor(
             }
         }
         
+        // 5. Procesar actualización de dispositivo si hay cambios pendientes
+        if (syncHandler.isDeviceUpdatePending()) {
+            localRepo.getDeviceInfoOnce()?.let { device ->
+                events.add(EventDto(
+                    entity_type = "device",
+                    entity_id = device.deviceId,
+                    action = "update",
+                    data = device.toDto().toMap(),
+                    timestamp = now
+                ))
+            }
+        }
+        
         return events
     }
     
@@ -315,7 +411,7 @@ class EventSyncManager @Inject constructor(
             } ?: emptyList(),
             horaInicio = data["horaInicio"] as? String ?: "",
             horaFin = data["horaFin"] as? String ?: "",
-            isActive = data["isActive"] as? Boolean ?: false
+            isActive = data["isActive"] as? Boolean == true
         )
     }
     
@@ -376,16 +472,31 @@ class EventSyncManager @Inject constructor(
         return map
     }
     
+    /**
+     * Convertir DeviceDto a Map para enviar
+     */
+    private fun DeviceDto.toMap(): Map<String, Any?> {
+        val map = mutableMapOf<String, Any?>()
+        
+        deviceId?.let { map["deviceId"] = it }
+        model?.let { map["model"] = it }
+        batteryLevel?.let { map["batteryLevel"] = it }
+        latitude?.let { map["latitude"] = it }
+        longitude?.let { map["longitude"] = it }
+        
+        return map
+    }
+    
     private fun getLastEventId(): Long {
         return prefs.getLong(PREF_LAST_EVENT_ID, 0)
     }
     
     private fun setLastEventId(eventId: Long) {
-        prefs.edit().putLong(PREF_LAST_EVENT_ID, eventId).apply()
+        prefs.edit() { putLong(PREF_LAST_EVENT_ID, eventId) }
     }
     
     private fun setLastSyncTime() {
-        prefs.edit().putLong(PREF_LAST_SYNC_TIME, System.currentTimeMillis()).apply()
+        prefs.edit() { putLong(PREF_LAST_SYNC_TIME, System.currentTimeMillis()) }
     }
     
     private fun clearLocalEventFlags() {
@@ -393,5 +504,6 @@ class EventSyncManager @Inject constructor(
         syncHandler.clearPendingHorarioIds()
         syncHandler.clearDeletedAppIds()
         syncHandler.clearPendingAppIds()
+        syncHandler.clearDeviceUpdatePending()
     }
 } 

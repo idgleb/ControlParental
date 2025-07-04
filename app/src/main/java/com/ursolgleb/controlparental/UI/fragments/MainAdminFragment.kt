@@ -85,7 +85,9 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
 
     override fun onStart() {
         super.onStart()
-        if (!Permisos.hasUsageStatsPermission(appDataRepository.context)) {
+        if (!Permisos.hasUsageStatsPermission(appDataRepository.context)
+            || !Permisos.hasLocationPermission(appDataRepository.context)
+        ) {
 
             val bottomSheetPermisos = BottomSheetPermisosFragment()
             bottomSheetPermisos.show(parentFragmentManager, "BottomSheetDialog")
@@ -105,10 +107,12 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
         // Copiar deviceId al portapapeles
         binding.btnCopyDeviceId.setOnClickListener {
             val deviceId = binding.tvDeviceId.text.toString()
-            val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clipboard =
+                requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("Device ID", deviceId)
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(requireContext(), "ID copiado al portapapeles", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "ID copiado al portapapeles", Toast.LENGTH_SHORT)
+                .show()
         }
     }
 

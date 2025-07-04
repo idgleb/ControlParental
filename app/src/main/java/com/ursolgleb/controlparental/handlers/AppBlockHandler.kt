@@ -29,7 +29,8 @@ class AppBlockHandler @Inject constructor(
     private val settingsClickDetector: SettingsClickDetector,
     private val subSettingsDetector: SubSettingsDetector,
     private val propioAppDetector: PropioAppDetector,
-    private val pinValidator: PinValidator
+    private val pinValidator: PinValidator,
+    private val syncHandler: SyncHandler
 ) {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -123,18 +124,25 @@ class AppBlockHandler @Inject constructor(
 
     private fun launchJobRenovarTiempo(event: AccessibilityEvent) {
         val pkg = event.packageName?.toString() ?: return
-        if (isBlockerEnabled || event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        if (isBlockerEnabled) return
 
         val now = System.currentTimeMillis()
         val lastTime = lastEventTime[pkg] ?: 0L
         if (now - lastTime < 10000L) return
         lastEventTime[pkg] = now
+        Logger.info(appDataRepository.context, "AppBlockHandler", "event.eventType ${event.eventType}")
 
         coroutineScope.launch {
             jobManager.launchUniqueJob(coroutineScope, "renovar_$pkg") {
                 try {
                     if (pkg in appDataRepository.todosAppsFlow.value.map { it.packageName }) {
                         appDataRepository.updateTiempoDeUsoUnaApp(pkg)
+                        Logger.info(
+                            appDataRepository.context,
+                            "AppBlockHandler",
+                            "renovarTiempoUsoAppHoy: $pkg"
+                        )
+                        syncHandler.addPendingAppId(pkg)
                     }
                 } catch (e: Exception) {
                     Logger.error(
