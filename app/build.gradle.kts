@@ -25,6 +25,10 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // URLs centralizadas
+        buildConfigField("String", "API_BASE_URL", "\"https://9a38-186-128-91-119.ngrok-free.app/api/\"")
+        buildConfigField("String", "API_BASE_URL_LOCAL", "\"http://192.168.1.35/api/\"")
     }
 
     signingConfigs {
@@ -63,6 +67,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 
@@ -148,11 +153,10 @@ dependencies {
     implementation("com.squareup.moshi:moshi:1.15.0")
     implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
     implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
+    ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.0")
 
     // Interceptor para depuración
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-
-    // Se eliminó moshi-kotlin-codegen: usaremos reflexión para los adaptadores
 
 }
 

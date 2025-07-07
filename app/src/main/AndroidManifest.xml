@@ -44,6 +44,13 @@
         android:theme="@style/Theme.ControlParental"
         android:usesCleartextTraffic="true"
         tools:targetApi="tiramisu" >
+        <!-- Actividad de autenticación de dispositivo -->
+        <activity
+            android:name=".presentation.auth.DeviceAuthActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ControlParental"
+            android:screenOrientation="portrait" />
+            
         <!-- Actividad-diálogo -->
         <activity
             android:name=".UI.activities.AuthActivity"

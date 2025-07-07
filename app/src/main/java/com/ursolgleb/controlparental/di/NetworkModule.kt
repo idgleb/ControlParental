@@ -1,12 +1,11 @@
 package com.ursolgleb.controlparental.di
 
-import android.util.Log
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import com.ursolgleb.controlparental.data.remote.RemoteDataRepository
-import com.ursolgleb.controlparental.data.remote.api.LaravelApi
+import com.ursolgleb.controlparental.BuildConfig
+import com.ursolgleb.controlparental.data.auth.remote.DeviceAuthInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,18 +15,18 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
+/**
+ * Módulo Hilt para configuración de red
+ */
 @Module
 @InstallIn(SingletonComponent::class)
-object RemoteModule {
+object NetworkModule {
     
-    // CAMBIAR SEGÚN TU CONFIGURACIÓN:
-    // - Emulador: "http://10.0.2.2/api/"
-    // - Dispositivo físico: "http://192.168.1.35/api/"
-    private const val BASE_URL = "https://87f4-200-117-178-44.ngrok-free.app/api/"
-
     @Provides
+    @Singleton
     fun provideMoshi(): Moshi {
         return Moshi.Builder()
             .add(object : JsonAdapter.Factory {
@@ -57,17 +56,24 @@ object RemoteModule {
             .add(KotlinJsonAdapterFactory())
             .build()
     }
-
+    
     @Provides
-    fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor {
+    @Singleton
+    fun provideLoggingInterceptor(): HttpLoggingInterceptor {
         return HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
     }
-
+    
     @Provides
-    fun provideOkHttpClient(
-        loggingInterceptor: HttpLoggingInterceptor
+    @Singleton
+    fun provideBaseOkHttpClient(
+        loggingInterceptor: HttpLoggingInterceptor,
+        deviceAuthInterceptor: DeviceAuthInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor { chain ->
@@ -77,30 +83,25 @@ object RemoteModule {
                     .build()
                 chain.proceed(request)
             }
+            .addInterceptor(deviceAuthInterceptor)
             .addInterceptor(loggingInterceptor)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
-
-
+    
     @Provides
-    fun provideRetrofit(
+    @Singleton
+    @Named("base")
+    fun provideBaseRetrofit(
         moshi: Moshi,
         okHttpClient: OkHttpClient
     ): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.API_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
             .build()
     }
-
-    @Provides
-    @Singleton
-    fun provideLaravelApi(retrofit: Retrofit): LaravelApi =
-        retrofit.create(LaravelApi::class.java)
-
-    @Provides
-    @Singleton
-    fun provideRemoteRepository(api: LaravelApi): RemoteDataRepository =
-        RemoteDataRepository(api)
-}
+} 

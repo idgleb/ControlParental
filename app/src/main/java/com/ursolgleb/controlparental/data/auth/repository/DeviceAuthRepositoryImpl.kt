@@ -1,0 +1,167 @@
+package com.ursolgleb.controlparental.data.auth.repository
+
+import com.ursolgleb.controlparental.data.auth.local.DeviceAuthLocalDataSource
+import com.ursolgleb.controlparental.data.auth.remote.DeviceAuthApiService
+import com.ursolgleb.controlparental.data.auth.remote.dto.RegisterDeviceRequest
+import com.ursolgleb.controlparental.data.auth.remote.dto.VerifyDeviceRequest
+import com.ursolgleb.controlparental.domain.auth.exception.RateLimitException
+import com.ursolgleb.controlparental.domain.auth.model.DeviceRegistration
+import com.ursolgleb.controlparental.domain.auth.model.DeviceToken
+import com.ursolgleb.controlparental.domain.auth.model.VerificationCode
+import com.ursolgleb.controlparental.domain.auth.repository.AuthState
+import com.ursolgleb.controlparental.domain.auth.repository.DeviceAuthRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import retrofit2.HttpException
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Implementación del repositorio de autenticación
+ */
+@Singleton
+class DeviceAuthRepositoryImpl @Inject constructor(
+    private val apiService: DeviceAuthApiService,
+    private val localDataSource: DeviceAuthLocalDataSource
+) : DeviceAuthRepository {
+    
+    override suspend fun registerDevice(
+        registration: DeviceRegistration
+    ): Result<VerificationCode> {
+        return try {
+            android.util.Log.d("DeviceAuthRepositoryImpl", "registerDevice: Iniciando con deviceId=${registration.deviceId}")
+            
+            val request = RegisterDeviceRequest(
+                deviceId = registration.deviceId,
+                model = registration.model,
+                androidVersion = registration.androidVersion,
+                appVersion = registration.appVersion,
+                manufacturer = registration.manufacturer,
+                fingerprint = registration.fingerprint
+            )
+            
+            android.util.Log.d("DeviceAuthRepositoryImpl", "registerDevice: Llamando API")
+            val response = apiService.registerDevice(request)
+            android.util.Log.d("DeviceAuthRepositoryImpl", "registerDevice: Respuesta recibida - success=${response.success}")
+            
+            if (response.success && response.data != null) {
+                // Verificar si el dispositivo ya está verificado
+                if (response.data.isAlreadyVerified) {
+                    android.util.Log.d("DeviceAuthRepositoryImpl", "registerDevice: Dispositivo ya verificado")
+                    
+                    // Devolver un código especial para indicar que ya está verificado
+                    val specialCode = VerificationCode(
+                        code = "ALREADY_VERIFIED",
+                        expiresInMinutes = 0
+                    )
+                    
+                    Result.success(specialCode)
+                } else {
+                    // Guardar device ID localmente SOLO si el registro fue exitoso
+                    localDataSource.saveDeviceId(registration.deviceId)
+                    
+                    val code = VerificationCode(
+                        code = response.data.verificationCode.replace("-", ""),
+                        expiresInMinutes = response.data.expiresInMinutes
+                    )
+                    
+                    android.util.Log.d("DeviceAuthRepositoryImpl", "registerDevice: Éxito - código=${code.formatted()}")
+                    Result.success(code)
+                }
+            } else {
+                android.util.Log.e("DeviceAuthRepositoryImpl", "registerDevice: Error en respuesta - ${response.error}")
+                Result.failure(
+                    Exception(response.error ?: "Registration failed")
+                )
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("DeviceAuthRepositoryImpl", "registerDevice: Excepción", e)
+            
+            // Manejar específicamente errores de rate limiting
+            if (e is HttpException && e.code() == 429) {
+                // Intentar obtener el header Retry-After
+                val retryAfter = e.response()?.headers()?.get("Retry-After")?.toIntOrNull() ?: 60
+                android.util.Log.d("DeviceAuthRepositoryImpl", "Rate limit exceeded. Retry after: $retryAfter seconds")
+                Result.failure(RateLimitException(retryAfter))
+            } else {
+                Result.failure(e)
+            }
+        }
+    }
+    
+    override suspend fun verifyDevice(
+        deviceId: String,
+        verificationCode: String,
+        childName: String?
+    ): Result<DeviceToken> {
+        return try {
+            val request = VerifyDeviceRequest(
+                deviceId = deviceId,
+                verificationCode = verificationCode,
+                childName = childName
+            )
+            
+            val response = apiService.verifyDevice(request)
+            
+            if (response.success && response.data != null) {
+                val token = DeviceToken(
+                    token = response.data.apiToken,
+                    deviceId = deviceId
+                )
+                
+                Result.success(token)
+            } else {
+                Result.failure(
+                    Exception(response.error ?: "Verification failed")
+                )
+            }
+        } catch (e: Exception) {
+            // Manejar específicamente errores de rate limiting
+            if (e is HttpException && e.code() == 429) {
+                val retryAfter = e.response()?.headers()?.get("Retry-After")?.toIntOrNull() ?: 60
+                Result.failure(RateLimitException(retryAfter))
+            } else {
+                Result.failure(e)
+            }
+        }
+    }
+    
+    override suspend fun getSavedToken(): DeviceToken? {
+        return localDataSource.getApiToken()
+    }
+    
+    override suspend fun saveToken(token: DeviceToken) {
+        android.util.Log.d("DeviceAuthRepositoryImpl", "saveToken: Guardando token para deviceId=${token.deviceId}, token=${token.token.take(10)}...")
+        localDataSource.saveApiToken(token)
+        android.util.Log.d("DeviceAuthRepositoryImpl", "saveToken: Token guardado exitosamente")
+    }
+    
+    override suspend fun clearToken() {
+        localDataSource.clearCredentials()
+    }
+    
+    override suspend fun isDeviceRegistered(): Boolean {
+        return localDataSource.isDeviceRegistered()
+    }
+    
+    override suspend fun getDeviceId(): String? {
+        return localDataSource.getDeviceId()
+    }
+    
+    override suspend fun saveDeviceId(deviceId: String) {
+        localDataSource.saveDeviceId(deviceId)
+    }
+    
+    override fun observeAuthState(): Flow<AuthState> {
+        return localDataSource.authStateFlow.map { isAuthenticated ->
+            when {
+                !localDataSource.isDeviceRegistered() -> AuthState.NotRegistered
+                localDataSource.isDeviceRegistered() && !localDataSource.isDeviceVerified() -> AuthState.WaitingVerification
+                isAuthenticated && localDataSource.getApiToken() != null -> {
+                    AuthState.Authenticated(localDataSource.getApiToken()!!)
+                }
+                else -> AuthState.Unauthenticated
+            }
+        }
+    }
+} 

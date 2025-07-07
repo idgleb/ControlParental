@@ -1,7 +1,7 @@
 package com.ursolgleb.controlparental.data.remote.models
 
 /**
- * Respuesta del endpoint /api/sync/status
+ * Respuesta del endpoint /sync/status
  * Ejemplo JSON:
  * {
  *   "status": "success",
