@@ -28,7 +28,7 @@ import androidx.annotation.RequiresPermission
 import androidx.core.location.LocationManagerCompat
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-import android.app.ServiceInfo
+import android.content.pm.ServiceInfo
 
 @AndroidEntryPoint
 class HeartbeatService : Service() {
@@ -79,7 +79,7 @@ class HeartbeatService : Service() {
             startForeground(
                 1,
                 notification,
-                android.app.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION.toInt() or android.app.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC.toInt()
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION or ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
             )
         } else {
             startForeground(1, notification)
