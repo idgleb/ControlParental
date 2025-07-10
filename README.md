@@ -148,6 +148,7 @@ GPS/Network Provider → HeartbeatService → HeartbeatRequest → API Server
 - `SYSTEM_ALERT_WINDOW`
 - **`ACCESS_FINE_LOCATION`** - Para obtener ubicación GPS precisa
 - **`ACCESS_COARSE_LOCATION`** - Para ubicación aproximada por red
+- - `FOREGROUND_SERVICE_LOCATION` - Requerido desde Android 15 para usar servicios en primer plano de tipo ubicación
 
 ## 📌 Diagrama de casos de uso
 
