@@ -2,6 +2,7 @@ package com.ursolgleb.controlparental.presentation.auth
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -33,11 +34,20 @@ class DeviceAuthActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        android.util.Log.d("DeviceAuthActivity", "onCreate: Iniciando")
+        Log.d("DeviceAuthActivity", "onCreate: Iniciando")
+        
+        // Verificar si venimos de un interceptor
+        val errorMessage = intent.getStringExtra("error_message")
+        if (errorMessage != null) {
+            Log.w("DeviceAuthActivity", "onCreate: Redirigido desde interceptor - $errorMessage")
+            Toast.makeText(this, "Sesión cerrada: $errorMessage", Toast.LENGTH_LONG).show()
+        }
+        
+        // Configurar DataBinding
         binding = ActivityDeviceAuthBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
-        android.util.Log.d("DeviceAuthActivity", "onCreate: ViewModel creado = ${viewModel != null}")
+        Log.d("DeviceAuthActivity", "onCreate: ViewModel creado = ${viewModel != null}")
         
         setupViews()
         observeViewModel()
@@ -91,22 +101,22 @@ class DeviceAuthActivity : AppCompatActivity() {
                 // Observar estado de autenticación
                 launch {
                     viewModel.authState.collect { authState ->
-                        android.util.Log.d("DeviceAuthActivity", "authState cambió a: $authState")
+                        Log.d("DeviceAuthActivity", "authState cambió a: $authState")
                         when (authState) {
                             is AuthState.Authenticated -> {
-                                android.util.Log.d("DeviceAuthActivity", "Estado Authenticated detectado - navegando a main")
+                                Log.d("DeviceAuthActivity", "Estado Authenticated detectado - navegando a main")
                                 // Ir a la actividad principal
                                 navigateToMain()
                             }
                             is AuthState.WaitingVerification -> {
-                                android.util.Log.d("DeviceAuthActivity", "Estado WaitingVerification detectado")
+                                Log.d("DeviceAuthActivity", "Estado WaitingVerification detectado")
                                 // Mostrar vista de verificación si no está ya visible
                                 if (viewModel.uiState.value.registrationStep == RegistrationStep.INITIAL) {
                                     showVerificationView()
                                 }
                             }
                             else -> {
-                                android.util.Log.d("DeviceAuthActivity", "Otro estado: $authState")
+                                Log.d("DeviceAuthActivity", "Otro estado: $authState")
                                 // Mantener en pantalla de auth
                             }
                         }
@@ -190,13 +200,16 @@ class DeviceAuthActivity : AppCompatActivity() {
     }
     
     private fun navigateToMain() {
-        android.util.Log.d("DeviceAuthActivity", "navigateToMain: Navegando a AuthActivity")
+        Log.d("DeviceAuthActivity", "navigateToMain: Navegando a AuthActivity")
+        
+        // Los servicios de background ya se iniciaron en el ViewModel cuando la autenticación fue exitosa
+        
         // Navegar a la actividad principal existente
         val intent = Intent(this, AuthActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         startActivity(intent)
         finish()
-        android.util.Log.d("DeviceAuthActivity", "navigateToMain: Navegación completada")
+        Log.d("DeviceAuthActivity", "navigateToMain: Navegación completada")
     }
 } 

@@ -83,11 +83,34 @@ El proyecto sigue una arquitectura modular y desacoplada:
 
 El sistema implementa un servicio de **HeartbeatService** que:
 
-- **Envía pings periódicos** al servidor (configurable, por defecto cada 30 segundos)
+- **Envía pings periódicos** al servidor (configurable, por defecto cada 25 segundos)
 - **Obtiene la ubicación GPS** del dispositivo si hay permisos disponibles
 - **Monitorea el nivel de batería** y el modelo del dispositivo
 - **Actualiza la información localmente** en la base de datos Room
 - **Marca cambios para sincronización** cuando detecta actualizaciones
+- **Se gestiona automáticamente** según el estado de autenticación del dispositivo
+
+#### Gestión Automática del HeartbeatService
+
+El servicio se inicia y detiene automáticamente basándose en la disponibilidad de credenciales:
+
+**Inicio Automático:**
+- ✅ Al iniciar la aplicación (si hay token)
+- ✅ Al completar autenticación exitosa
+- ✅ Al reiniciar el dispositivo (si hay token)
+- ✅ Al restaurar credenciales
+
+**Detención Automática:**
+- ❌ Al detectar dispositivo eliminado (401/403/404)
+- ❌ Al limpiar credenciales manualmente
+- ❌ Al perder autenticación
+
+**Componentes de Gestión:**
+
+1. **AuthStateReceiver**: BroadcastReceiver que escucha cambios de autenticación
+2. **DeviceAuthLocalDataSource**: Notifica cambios de estado al guardar/eliminar tokens
+3. **BootReceiver**: Inicia el servicio tras reinicio si hay credenciales
+4. **DeviceDeletedInterceptor**: Detiene el servicio al detectar errores de auth
 
 **Flujo de datos de ubicación:**
 
@@ -108,6 +131,12 @@ GPS/Network Provider → HeartbeatService → HeartbeatRequest → API Server
   - `locationUpdatedAt`: Timestamp de última actualización
   - `lastSeen`: Último heartbeat recibido
   - `pingIntervalSeconds`: Intervalo configurable de heartbeat
+
+**Manejo de Ubicación:**
+- Intenta obtener última ubicación conocida primero
+- Si la ubicación es antigua (>1 minuto), solicita nueva ubicación
+- Timeout de 10 segundos para solicitudes de ubicación
+- Soporta tanto GPS como Network Provider
 
 ## 📋 Permisos necesarios
 
@@ -547,3 +576,70 @@ La utilización de **EventDto** como unidad fundamental de sincronización propo
 5. **Orden Garantizado**: Los timestamps ISO 8601 aseguran el orden correcto de aplicación
 6. **Sincronización Bidireccional**: El mismo formato sirve para cliente→servidor y servidor→cliente
 7. **Auditoría**: Historial completo de cambios en la tabla `sync_events` del servidor
+
+## 🔐 Sistema de Autenticación de Dispositivos
+
+### Flujo de Autenticación
+
+El sistema implementa un flujo de autenticación robusto para dispositivos:
+
+1. **Registro del Dispositivo**:
+   - El dispositivo genera un ID único
+   - Se registra en el servidor con nombre y modelo
+   - Recibe un código de verificación de 6 dígitos
+
+2. **Verificación Parental**:
+   - Los padres ingresan el código en el panel web
+   - El servidor valida y aprueba el dispositivo
+   - Se genera un token JWT para el dispositivo
+
+3. **Obtención del Token**:
+   - El dispositivo consulta periódicamente el estado
+   - Al ser aprobado, recibe el token de autenticación
+   - El token se almacena en SharedPreferences encriptadas
+
+### Arquitectura de Autenticación
+
+```
+📂 auth
+ ┣ 📂 local
+ ┃ ┗ 📄 DeviceAuthLocalDataSource (Gestión de credenciales locales)
+ ┣ 📂 remote
+ ┃ ┣ 📄 DeviceAuthApi (Endpoints de autenticación)
+ ┃ ┗ 📄 DeviceAuthInterceptor (Inyección de token en requests)
+ ┣ 📂 repository
+ ┃ ┗ 📄 DeviceAuthRepositoryImpl (Lógica de negocio)
+ ┣ 📂 model
+ ┃ ┗ 📄 DeviceToken (Modelo de datos)
+ ┗ 📂 interceptors
+   ┗ 📄 DeviceDeletedInterceptor (Detección de dispositivo eliminado)
+```
+
+### Gestión de Estados
+
+El sistema maneja tres niveles de estado:
+
+1. **Sin Registrar**: No hay deviceId
+2. **Registrado**: Tiene deviceId pero no token
+3. **Verificado**: Tiene deviceId y token válido
+
+### Manejo de Errores de Autenticación
+
+- **401 Unauthorized**: Token inválido o expirado
+- **403 Forbidden**: Dispositivo bloqueado o sin permisos
+- **404 Not Found**: Dispositivo no existe en el servidor
+- **429 Too Many Requests**: Límite de rate limiting alcanzado
+
+Todos estos errores resultan en:
+1. Detención del HeartbeatService
+2. Limpieza de credenciales (manteniendo deviceId para datos locales)
+3. Redirección a pantalla de autenticación
+
+### Seguridad
+
+- **SharedPreferences Encriptadas**: Usa AES256 para almacenar tokens
+- **JWT Tokens**: Autenticación sin estado con expiración
+- **Rate Limiting**: Protección contra ataques de fuerza bruta
+- **Validación Bidireccional**: Código de verificación + aprobación parental
+
+

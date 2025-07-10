@@ -16,7 +16,7 @@ data class DeviceEntity(
     
     // Campos para heartbeat y sincronización
     val lastSeen: Long = System.currentTimeMillis(),
-    val pingIntervalSeconds: Int = 30,
+    val pingIntervalSeconds: Int = 5,
     
     // Timestamps
     val createdAt: Long = System.currentTimeMillis(),

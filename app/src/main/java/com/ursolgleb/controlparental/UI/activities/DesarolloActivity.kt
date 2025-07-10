@@ -23,8 +23,6 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import android.provider.Settings
 import android.text.TextUtils
@@ -53,9 +51,12 @@ import androidx.core.net.toUri
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ursolgleb.controlparental.utils.Fun
 import com.ursolgleb.controlparental.validadors.PinValidator
+import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 
 @AndroidEntryPoint
-class DesarolloActivity : AppCompatActivity() {
+class DesarolloActivity : BaseAuthActivity() {
 
     @Inject lateinit var pinValidator: PinValidator
 

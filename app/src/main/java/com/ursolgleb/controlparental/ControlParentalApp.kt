@@ -18,6 +18,7 @@ import androidx.work.WorkManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.ursolgleb.controlparental.services.HeartbeatService
+import com.ursolgleb.controlparental.data.auth.local.DeviceAuthLocalDataSource
 
 
 @HiltAndroidApp
@@ -31,6 +32,9 @@ class ControlParentalApp : Application(), Configuration.Provider {
 
     @Inject
     lateinit var appDataRepository: AppDataRepository
+    
+    @Inject
+    lateinit var deviceAuthLocalDataSource: DeviceAuthLocalDataSource
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private var workerStarted = false // Flag para evitar iniciar múltiples veces
@@ -65,9 +69,20 @@ class ControlParentalApp : Application(), Configuration.Provider {
                 ModernSyncWorker.startWorker(this)
                 Log.d("ControlParentalApp", "ModernSyncWorker programado")
                 
-                // Iniciar el servicio de heartbeat
-                Log.d("ControlParentalApp", "Iniciando HeartbeatService...")
-                HeartbeatService.start(this)
+                // Iniciar el servicio de heartbeat solo si hay credenciales
+                coroutineScope.launch {
+                    try {
+                        val hasToken = deviceAuthLocalDataSource.getApiToken() != null
+                        if (hasToken) {
+                            Log.d("ControlParentalApp", "Token encontrado, iniciando HeartbeatService...")
+                            HeartbeatService.start(this@ControlParentalApp)
+                        } else {
+                            Log.d("ControlParentalApp", "No hay token, HeartbeatService no se iniciará")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ControlParentalApp", "Error verificando token para HeartbeatService ControlParentalApp", e)
+                    }
+                }
                 
                 // Verificar el estado del worker después de un breve delay
                 coroutineScope.launch {

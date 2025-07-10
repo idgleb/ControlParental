@@ -87,6 +87,7 @@ class MainAdminFragment : Fragment(R.layout.fragment_main_admin) {
         super.onStart()
         if (!Permisos.hasUsageStatsPermission(appDataRepository.context)
             || !Permisos.hasLocationPermission(appDataRepository.context)
+            || !Permisos.hasBackgroundLocationPermission(appDataRepository.context)
         ) {
 
             val bottomSheetPermisos = BottomSheetPermisosFragment()

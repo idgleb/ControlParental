@@ -125,31 +125,44 @@ class HorarioCrearFragment : Fragment() {
                 }
 
                 appDataRepository.scope.launch {
-                    // Si es un horario nuevo (idHorario == 0), generar un nuevo ID
-                    val finalIdHorario = if (horario.idHorario == 0L) {
-                        // Obtener el máximo idHorario actual y sumar 1
-                        val maxId = appDataRepository.horariosFlow.value
-                            .filter { it.deviceId == appDataRepository.getOrCreateDeviceId() }
-                            .maxOfOrNull { it.idHorario } ?: 0L
-                        maxId + 1
-                    } else {
-                        horario.idHorario
-                    }
+                    try {
+                        val deviceId = appDataRepository.getOrCreateDeviceId()
+                        
+                        // Si es un horario nuevo (idHorario == 0), generar un nuevo ID
+                        val finalIdHorario = if (horario.idHorario == 0L) {
+                            // Obtener el máximo idHorario actual y sumar 1
+                            val maxId = appDataRepository.horariosFlow.value
+                                .filter { it.deviceId == deviceId }
+                                .maxOfOrNull { it.idHorario } ?: 0L
+                            maxId + 1
+                        } else {
+                            horario.idHorario
+                        }
 
-                    val nuevoHorario = HorarioEntity(
-                        idHorario = finalIdHorario,
-                        deviceId = appDataRepository.getOrCreateDeviceId(),
-                        nombreDeHorario = nombreHorario,
-                        diasDeSemana = diasDeSemana,
-                        horaInicio = horaInicio.toString(),
-                        horaFin = horaFin.toString(),
-                        isActive = horario.isActive
-                    )
+                        val nuevoHorario = HorarioEntity(
+                            idHorario = finalIdHorario,
+                            deviceId = deviceId,
+                            nombreDeHorario = nombreHorario,
+                            diasDeSemana = diasDeSemana,
+                            horaInicio = horaInicio.toString(),
+                            horaFin = horaFin.toString(),
+                            isActive = horario.isActive
+                        )
 
-                    appDataRepository.addHorarioBD(nuevoHorario)
-                    
-                    requireActivity().runOnUiThread {
-                        findNavController().popBackStack()
+                        appDataRepository.addHorarioBD(nuevoHorario)
+                        
+                        requireActivity().runOnUiThread {
+                            findNavController().popBackStack()
+                        }
+                    } catch (e: IllegalStateException) {
+                        // El usuario no está autenticado
+                        requireActivity().runOnUiThread {
+                            com.google.android.material.snackbar.Snackbar.make(
+                                binding.root,
+                                "Error: Debes estar autenticado para crear horarios",
+                                com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+                            ).show()
+                        }
                     }
                 }
             } catch (e: Exception) {

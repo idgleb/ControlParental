@@ -54,5 +54,17 @@ class Permisos {
             ) == PackageManager.PERMISSION_GRANTED
         }
 
+        fun hasBackgroundLocationPermission(context: Context): Boolean {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                // En versiones anteriores no existe el permiso, así que lo consideramos concedido
+                true
+            }
+        }
+
     }
 }

@@ -45,6 +45,7 @@ import com.ursolgleb.controlparental.data.remote.models.toEntity
 import kotlinx.coroutines.flow.Flow
 import retrofit2.Response
 import com.ursolgleb.controlparental.handlers.SyncStateManager
+import com.ursolgleb.controlparental.data.auth.local.DeviceAuthLocalDataSource
 
 @Singleton
 class AppDataRepository @Inject constructor(
@@ -55,7 +56,8 @@ class AppDataRepository @Inject constructor(
     private val usageStatsProvider: UsageStatsProvider,
     private val syncHandler: SyncHandler,
     private val remoteDataRepository: RemoteDataRepository,
-    private val syncStateManager: SyncStateManager
+    private val syncStateManager: SyncStateManager,
+    private val deviceAuthLocalDataSource: DeviceAuthLocalDataSource
 ) {
 
     var currentPkg: String? = null
@@ -92,15 +94,22 @@ class AppDataRepository @Inject constructor(
     val syncStatusFlow = MutableStateFlow("inicio..")
 
     fun getOrCreateDeviceId(): String {
-        val prefs = context.getSharedPreferences("device_prefs", Context.MODE_PRIVATE)
-        val existing = prefs.getString("device_id", null)
-        return if (existing != null) {
-            existing
-        } else {
-            val newId = UUID.randomUUID().toString()
-            prefs.edit() { putString("device_id", newId) }
-            newId
+        // Intentar obtener el deviceId del sistema de autenticación
+        val authDeviceId = deviceAuthLocalDataSource.getDeviceId()
+        if (authDeviceId != null) {
+            return authDeviceId
         }
+        
+        // Si no hay deviceId, generar uno nuevo permanente
+        // Este mismo ID se usará para la autenticación cuando el dispositivo se registre
+        val newDeviceId = java.util.UUID.randomUUID().toString()
+        
+        // Guardar el deviceId en el sistema de autenticación para uso futuro
+        deviceAuthLocalDataSource.saveDeviceId(newDeviceId)
+        
+        Logger.info(context, "AppDataRepository", 
+            "Generado nuevo deviceId permanente: $newDeviceId")
+        return newDeviceId
     }
 
     private fun actualizarFlows(
@@ -598,18 +607,42 @@ class AppDataRepository @Inject constructor(
 
     fun saveDeviceInfo(): Deferred<Unit> = scope.async {
         try {
+            // Siempre usar el deviceId del sistema de autenticación
             val deviceId = getOrCreateDeviceId()
             val model = "${Build.MANUFACTURER} ${Build.MODEL}"
             val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
             val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-            val entity =
-                DeviceEntity(deviceId = deviceId, model = model, batteryLevel = battery)
+            
+            // Obtener el device existente si hay uno
+            val existingDevice = deviceDao.getDeviceOnce()
+            
+            val entity = if (existingDevice != null) {
+                // Actualizar el existente manteniendo algunos campos
+                existingDevice.copy(
+                    deviceId = deviceId, // Siempre usar el deviceId del auth
+                    model = model,
+                    batteryLevel = battery,
+                    updatedAt = System.currentTimeMillis()
+                )
+            } else {
+                // Crear uno nuevo
+                DeviceEntity(
+                    deviceId = deviceId, 
+                    model = model, 
+                    batteryLevel = battery
+                )
+            }
+            
+            // Si el deviceId cambió, necesitamos eliminar el antiguo primero
+            if (existingDevice != null && existingDevice.deviceId != deviceId) {
+                deviceDao.deleteAll()
+            }
+            
             deviceDao.replace(entity)
             
             // Marcar el dispositivo como pendiente de sincronización
             syncHandler.markDeviceUpdatePending()
             
-            //f85d8cc0-5637-430d-a109-b96da8c2718c
             Logger.info(context, "AppDataRepository", "Device info guardada: $entity")
         } catch (e: Exception) {
             Logger.error(
@@ -623,21 +656,45 @@ class AppDataRepository @Inject constructor(
 
     suspend fun getDeviceInfoOnce(): DeviceEntity? {
         return try {
-            // Primero intentar obtener de la BD
-            val device = deviceDao.getDeviceOnce()
-            if (device != null) {
-                return device
+            // Siempre obtener el deviceId del sistema de autenticación
+            val authDeviceId = getOrCreateDeviceId()
+            
+            // Obtener el device actual de la BD
+            val existingDevice = deviceDao.getDeviceOnce()
+            
+            if (existingDevice != null) {
+                // Si existe pero tiene un deviceId diferente, actualizarlo
+                if (existingDevice.deviceId != authDeviceId) {
+                    Logger.info(context, "AppDataRepository", 
+                        "Actualizando deviceId de ${existingDevice.deviceId} a $authDeviceId")
+                    
+                    // Crear nuevo entity con el deviceId correcto
+                    val updatedDevice = existingDevice.copy(
+                        deviceId = authDeviceId,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    
+                    // Eliminar el antiguo y crear el nuevo
+                    deviceDao.deleteAll()
+                    deviceDao.insertIgnore(updatedDevice)
+                    
+                    return updatedDevice
+                }
+                return existingDevice
             }
             
-            // Si no existe, crear uno nuevo
-            val deviceId = getOrCreateDeviceId()
+            // Si no existe, crear uno nuevo con el deviceId del sistema de autenticación
             val model = "${Build.MANUFACTURER} ${Build.MODEL}"
             val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
             val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-            val entity = DeviceEntity(deviceId = deviceId, model = model, batteryLevel = battery)
+            val entity = DeviceEntity(
+                deviceId = authDeviceId, 
+                model = model, 
+                batteryLevel = battery
+            )
             
             // Guardar en la BD
-            deviceDao.replace(entity)
+            deviceDao.insertIgnore(entity)
             Logger.info(context, "AppDataRepository", "Device info creada y guardada: $entity")
             
             entity
@@ -942,6 +999,11 @@ class AppDataRepository @Inject constructor(
         // Considerar datos obsoletos después de 5 minutos
         val lastSyncTime = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
             .getLong("last_apps_sync", 0)
+        return System.currentTimeMillis() - lastSyncTime > 5 * 60 * 1000
+    }
+
+    fun isTimeSyncNeeded(): Boolean {
+        val lastSyncTime = syncStateManager.getLastSyncTime()
         return System.currentTimeMillis() - lastSyncTime > 5 * 60 * 1000
     }
 }

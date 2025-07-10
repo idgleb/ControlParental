@@ -47,6 +47,18 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
         }
     }
 
+    // Launcher para permiso de ubicación en segundo plano
+    private val backgroundLocationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            Log.d("PermisosFragment", "Permiso de ubicación en segundo plano otorgado")
+            onResume()
+        } else {
+            Log.w("PermisosFragment", "Permiso de ubicación en segundo plano denegado")
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -97,6 +109,30 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
             )
             val color = ContextCompat.getColorStateList(appDataRepository.context, R.color.mercadopago)
             TextViewCompat.setCompoundDrawableTintList(binding.requestLocationPermissionBoton, color)
+            // Mostrar botón de background location solo si falta ese permiso
+            if (!Permisos.hasBackgroundLocationPermission(appDataRepository.context)) {
+                binding.requestBackgroundLocationPermissionBoton.visibility = View.VISIBLE
+                binding.requestBackgroundLocationPermissionBoton.isEnabled = true
+                binding.requestBackgroundLocationPermissionBoton.setCompoundDrawablesWithIntrinsicBounds(
+                    R.drawable.baseline_add_circle_outline_24,
+                    0,
+                    0,
+                    0
+                )
+                val colorBg = ContextCompat.getColorStateList(appDataRepository.context, R.color.white)
+                TextViewCompat.setCompoundDrawableTintList(binding.requestBackgroundLocationPermissionBoton, colorBg)
+            } else {
+                binding.requestBackgroundLocationPermissionBoton.visibility = View.VISIBLE
+                binding.requestBackgroundLocationPermissionBoton.isEnabled = false
+                binding.requestBackgroundLocationPermissionBoton.setCompoundDrawablesWithIntrinsicBounds(
+                    R.drawable.ok_scaled,
+                    0,
+                    0,
+                    0
+                )
+                val colorBg = ContextCompat.getColorStateList(appDataRepository.context, R.color.mercadopago)
+                TextViewCompat.setCompoundDrawableTintList(binding.requestBackgroundLocationPermissionBoton, colorBg)
+            }
         } else {
             binding.requestLocationPermissionBoton.isEnabled = true
             binding.requestLocationPermissionBoton.setCompoundDrawablesWithIntrinsicBounds(
@@ -107,6 +143,8 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
             )
             val color = ContextCompat.getColorStateList(appDataRepository.context, R.color.white)
             TextViewCompat.setCompoundDrawableTintList(binding.requestLocationPermissionBoton, color)
+            // Ocultar botón de background location si no tiene los normales
+            binding.requestBackgroundLocationPermissionBoton.visibility = View.GONE
         }
     }
 
@@ -141,6 +179,18 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
                 val msg = "Ya tienes los permisos de ubicación"
                 Toast.makeText(appDataRepository.context, msg, Toast.LENGTH_SHORT).show()
                 coroutineScope.launch { Archivo.appendTextToFile(requireContext(), "\n $msg") }
+            }
+        }
+
+        binding.requestBackgroundLocationPermissionBoton.setOnClickListener {
+            if (!Permisos.hasBackgroundLocationPermission(appDataRepository.context)) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    backgroundLocationPermissionLauncher.launch(
+                        android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                    )
+                }
+            } else {
+                Toast.makeText(appDataRepository.context, "Ya tienes el permiso de ubicación en segundo plano", Toast.LENGTH_SHORT).show()
             }
         }
 

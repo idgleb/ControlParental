@@ -20,15 +20,18 @@ class DeviceAuthInterceptor @Inject constructor(
         private val PUBLIC_PATHS = listOf(
             "/v1/auth/register",
             "/v1/auth/verify",
+            "/v1/auth/check-status",
             "/health"
         )
     }
     
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
+        val url = originalRequest.url.toString()
         
         // No agregar auth a rutas públicas
         if (isPublicPath(originalRequest)) {
+            android.util.Log.d("DeviceAuthInterceptor", "Ruta pública, sin auth: $url")
             return chain.proceed(originalRequest)
         }
         
@@ -36,12 +39,15 @@ class DeviceAuthInterceptor @Inject constructor(
         val token = localDataSource.getApiToken()
         
         val request = if (token != null) {
+            android.util.Log.d("DeviceAuthInterceptor", "Agregando auth headers a: $url")
+            android.util.Log.d("DeviceAuthInterceptor", "Token: ${token.token.take(10)}..., DeviceId: ${token.deviceId}")
             originalRequest.newBuilder()
                 .header("Authorization", token.toAuthHeader())
                 .header("X-Device-Token", token.token)
                 .header("X-Device-ID", token.deviceId)
                 .build()
         } else {
+            android.util.Log.w("DeviceAuthInterceptor", "No hay token para: $url")
             originalRequest
         }
         

@@ -6,6 +6,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.ursolgleb.controlparental.BuildConfig
 import com.ursolgleb.controlparental.data.auth.remote.DeviceAuthInterceptor
+import com.ursolgleb.controlparental.interceptors.DeviceDeletedInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -73,7 +74,8 @@ object NetworkModule {
     @Singleton
     fun provideBaseOkHttpClient(
         loggingInterceptor: HttpLoggingInterceptor,
-        deviceAuthInterceptor: DeviceAuthInterceptor
+        deviceAuthInterceptor: DeviceAuthInterceptor,
+        deviceDeletedInterceptor: DeviceDeletedInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor { chain ->
@@ -84,6 +86,7 @@ object NetworkModule {
                 chain.proceed(request)
             }
             .addInterceptor(deviceAuthInterceptor)
+            .addInterceptor(deviceDeletedInterceptor)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)

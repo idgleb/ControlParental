@@ -85,9 +85,13 @@ class SyncStateManager @Inject constructor(
         _syncInfo.value = info
     }
     
-    private fun getFormattedLastSyncTime(): String {
+    fun getLastSyncTime(): Long {
         val prefs = context.getSharedPreferences("event_sync", Context.MODE_PRIVATE)
-        val lastSync = prefs.getLong("last_sync_time", 0)
+        return prefs.getLong("last_sync_time", 0)
+    }
+    
+    private fun getFormattedLastSyncTime(): String {
+        val lastSync = getLastSyncTime()
         
         if (lastSync == 0L) return "Nunca sincronizado"
         

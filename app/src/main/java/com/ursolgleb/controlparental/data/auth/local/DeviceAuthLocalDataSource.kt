@@ -1,25 +1,33 @@
 package com.ursolgleb.controlparental.data.auth.local
 
-import android.content.Context
-import android.util.Log
+import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import android.content.Context
+import androidx.work.WorkManager
 import com.ursolgleb.controlparental.domain.auth.model.DeviceToken
+import com.ursolgleb.controlparental.data.local.dao.DeviceDao
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.ursolgleb.controlparental.receivers.AuthStateReceiver
 
 /**
- * Data source local para manejo seguro de credenciales
+ * Fuente de datos local para la autenticación del dispositivo
+ * Usa SharedPreferences encriptadas para mayor seguridad
  */
 @Singleton
 class DeviceAuthLocalDataSource @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val deviceDao: DeviceDao
 ) {
     companion object {
+        private const val TAG = "DeviceAuthLocalDataSource"
         private const val PREFS_NAME = "device_auth_prefs"
         private const val KEY_DEVICE_ID = "device_id"
         private const val KEY_API_TOKEN = "api_token"
@@ -65,14 +73,12 @@ class DeviceAuthLocalDataSource @Inject constructor(
      * Guardar token de API
      */
     fun saveApiToken(token: DeviceToken) {
-        Log.d("DeviceAuthLocalDataSource", "saveApiToken: Guardando token=${token.token.take(10)}... para deviceId=${token.deviceId}")
         encryptedPrefs.edit().apply {
             putString(KEY_API_TOKEN, token.token)
             putString(KEY_DEVICE_ID, token.deviceId)
             putBoolean(KEY_IS_VERIFIED, true)
             apply()
         }
-        Log.d("DeviceAuthLocalDataSource", "saveApiToken: Token guardado en SharedPreferences")
         updateAuthState()
     }
     
@@ -82,8 +88,6 @@ class DeviceAuthLocalDataSource @Inject constructor(
     fun getApiToken(): DeviceToken? {
         val token = encryptedPrefs.getString(KEY_API_TOKEN, null)
         val deviceId = encryptedPrefs.getString(KEY_DEVICE_ID, null)
-        
-        Log.d("DeviceAuthLocalDataSource", "getApiToken: token=${token?.take(10)}..., deviceId=$deviceId")
         
         return if (token != null && deviceId != null) {
             DeviceToken(token = token, deviceId = deviceId)
@@ -120,5 +124,96 @@ class DeviceAuthLocalDataSource @Inject constructor(
     
     private fun updateAuthState() {
         _authStateFlow.value = getInitialAuthState()
+        // Notificar al receiver sobre el cambio de estado
+        AuthStateReceiver.notifyAuthStateChanged(context)
+    }
+    
+    /**
+     * Limpia solo el token de autenticación, mantiene el registro del dispositivo
+     * Usado cuando el token expira o es inválido
+     */
+    suspend fun clearToken() {
+        withContext(Dispatchers.IO) {
+            encryptedPrefs.edit().apply {
+                remove(KEY_API_TOKEN)
+                putBoolean(KEY_IS_VERIFIED, false)
+                // Mantener KEY_DEVICE_ID y KEY_IS_REGISTERED
+                apply()
+            }
+            
+            android.util.Log.d("DeviceAuthLocalDataSource", "clearToken: Token eliminado, dispositivo sigue registrado")
+            
+            // Cancelar el worker de sincronización
+            try {
+                WorkManager.getInstance(context).cancelUniqueWork("ModernSyncWorker")
+                android.util.Log.d("DeviceAuthLocalDataSource", "clearToken: ModernSyncWorker cancelado")
+            } catch (e: Exception) {
+                android.util.Log.e("DeviceAuthLocalDataSource", "clearToken: Error cancelando ModernSyncWorker", e)
+            }
+            
+            updateAuthState()
+        }
+    }
+    
+    /**
+     * Limpia el registro del dispositivo pero mantiene el deviceId
+     * Usado cuando el dispositivo es eliminado del servidor pero queremos mantener datos locales
+     */
+    suspend fun clearRegistration() {
+        withContext(Dispatchers.IO) {
+            encryptedPrefs.edit().apply {
+                remove(KEY_API_TOKEN)
+                putBoolean(KEY_IS_VERIFIED, false)
+                putBoolean(KEY_IS_REGISTERED, false)
+                // Mantener KEY_DEVICE_ID para preservar datos locales
+                apply()
+            }
+            
+            android.util.Log.d("DeviceAuthLocalDataSource", "clearRegistration: Registro eliminado, deviceId mantenido")
+            
+            // Cancelar el worker de sincronización
+            try {
+                WorkManager.getInstance(context).cancelUniqueWork("ModernSyncWorker")
+                android.util.Log.d("DeviceAuthLocalDataSource", "clearRegistration: ModernSyncWorker cancelado")
+            } catch (e: Exception) {
+                android.util.Log.e("DeviceAuthLocalDataSource", "clearRegistration: Error cancelando ModernSyncWorker", e)
+            }
+            
+            updateAuthState()
+        }
+    }
+    
+    /**
+     * Alias para clearRegistration() - mantener por compatibilidad
+     */
+    suspend fun clearAll() {
+        clearRegistration()
+    }
+    
+    /**
+     * Limpia absolutamente todo, incluyendo el deviceId
+     * Usar solo cuando se quiere un reset completo de la app
+     */
+    suspend fun clearEverything() {
+        withContext(Dispatchers.IO) {
+            encryptedPrefs.edit().clear().apply()
+            
+            // Limpiar toda la base de datos
+            try {
+                deviceDao.deleteAll()
+                android.util.Log.d("DeviceAuthLocalDataSource", "clearEverything: Todo eliminado incluyendo deviceId")
+            } catch (e: Exception) {
+                android.util.Log.e("DeviceAuthLocalDataSource", "clearEverything: Error limpiando devices", e)
+            }
+            
+            // Cancelar el worker
+            try {
+                WorkManager.getInstance(context).cancelUniqueWork("ModernSyncWorker")
+            } catch (e: Exception) {
+                android.util.Log.e("DeviceAuthLocalDataSource", "clearEverything: Error cancelando ModernSyncWorker", e)
+            }
+            
+            updateAuthState()
+        }
     }
 } 

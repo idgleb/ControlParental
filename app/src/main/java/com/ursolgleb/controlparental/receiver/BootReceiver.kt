@@ -15,17 +15,41 @@ import com.ursolgleb.controlparental.R
 import com.ursolgleb.controlparental.services.AppBlockerService
 import com.ursolgleb.controlparental.workers.ModernSyncWorker
 import dagger.hilt.android.AndroidEntryPoint
+import com.ursolgleb.controlparental.data.auth.local.DeviceAuthLocalDataSource
+import com.ursolgleb.controlparental.services.HeartbeatService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class BootReceiver : BroadcastReceiver() {
+    
+    @Inject
+    lateinit var deviceAuthLocalDataSource: DeviceAuthLocalDataSource
     override fun onReceive(context: Context, intent: Intent?) {
         if (intent?.action == Intent.ACTION_BOOT_COMPLETED ||
             intent?.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
             Log.d("BootReceiver", "Dispositivo reiniciado o app actualizada")
 
-            Log.d("BootReceiver", "onReceive: $intent?.action")
+            Log.d("BootReceiver", "onReceive: ${intent?.action}")
             // Usar el sistema moderno de sincronización basado en eventos
             ModernSyncWorker.startWorker(context)
+            
+            // Iniciar HeartbeatService si hay credenciales
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val hasToken = deviceAuthLocalDataSource.getApiToken() != null
+                    if (hasToken) {
+                        Log.d("BootReceiver", "Token encontrado, iniciando HeartbeatService")
+                        HeartbeatService.start(context)
+                    } else {
+                        Log.d("BootReceiver", "No hay token, HeartbeatService no se iniciará")
+                    }
+                } catch (e: Exception) {
+                    Log.e("BootReceiver", "Error verificando token para HeartbeatService BootReceiver", e)
+                }
+            }
 
             val enabledServices = Settings.Secure.getString(
                 context.contentResolver,

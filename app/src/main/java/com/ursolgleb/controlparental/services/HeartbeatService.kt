@@ -1,5 +1,8 @@
 package com.ursolgleb.controlparental.services
 
+import android.Manifest
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.location.Location
@@ -21,20 +24,26 @@ import com.ursolgleb.controlparental.data.local.entities.DeviceEntity
 import android.location.LocationListener
 import android.os.Bundle
 import android.os.Looper
+import androidx.annotation.RequiresPermission
 import androidx.core.location.LocationManagerCompat
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import android.app.ServiceInfo
 
 @AndroidEntryPoint
 class HeartbeatService : Service() {
     
     companion object {
         private const val TAG = "HeartbeatService"
-        private const val DEFAULT_INTERVAL_SECONDS = 30
+        private const val DEFAULT_INTERVAL_SECONDS = 4
         
         fun start(context: Context) {
             val intent = Intent(context, HeartbeatService::class.java)
-            context.startService(intent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
         }
         
         fun stop(context: Context) {
@@ -59,22 +68,35 @@ class HeartbeatService : Service() {
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "HeartbeatService created")
-        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "HeartbeatService started")
+        // Iniciar como foreground service
+        val notification = com.ursolgleb.controlparental.utils.NotificationUtils.createHeartbeatNotification(this)
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(
+                1,
+                notification,
+                android.app.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION.toInt() or android.app.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC.toInt()
+            )
+        } else {
+            startForeground(1, notification)
+        }
         startHeartbeat()
         return START_STICKY
     }
     
     override fun onBind(intent: Intent?): IBinder? = null
-    
+
+    @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "HeartbeatService destroyed")
         heartbeatJob?.cancel()
         serviceScope.cancel()
+        // Eliminar lógica de reinicio con AlarmManager. El reinicio periódico debe hacerse con WorkManager.
     }
     
     private fun startHeartbeat() {
@@ -83,14 +105,15 @@ class HeartbeatService : Service() {
             while (isActive) {
                 try {
                     sendHeartbeat()
-                    
-                    // Obtener el intervalo configurado desde el dispositivo
-                    val device = localRepo.getDeviceInfoOnce()
-                    val intervalSeconds = device?.pingIntervalSeconds ?: DEFAULT_INTERVAL_SECONDS
-                    
-                    delay(intervalSeconds * 1000L)
+                    delay(DEFAULT_INTERVAL_SECONDS * 1000L)
+                } catch (e: IllegalStateException) {
+                    // Si no hay credenciales, detener el servicio
+                    Log.e(TAG, "No credentials available, stopping service: ${e.message}")
+                    //stopSelf()
+                    break
                 } catch (e: Exception) {
                     Log.e(TAG, "Error in heartbeat loop", e)
+                    // Si es un error genérico, intentar continuar después de un delay
                     delay(DEFAULT_INTERVAL_SECONDS * 1000L)
                 }
             }
@@ -105,7 +128,7 @@ class HeartbeatService : Service() {
             }
             
             // Obtener información actualizada del dispositivo
-            val bm = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+            val bm = getSystemService(BATTERY_SERVICE) as BatteryManager
             val currentBattery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
             val currentModel = "${Build.MANUFACTURER} ${Build.MODEL}"
             
@@ -114,8 +137,8 @@ class HeartbeatService : Service() {
             
             // Si no hay última ubicación conocida O la ubicación es muy antigua, intentar obtener una nueva
             val locationAge = location?.let { System.currentTimeMillis() - it.time } ?: Long.MAX_VALUE
-            if (location == null || locationAge > 60000) { // Más de 1 minuto de antigüedad
-                Log.d(TAG, "Location is null or too old (${locationAge}ms), requesting new location...")
+            if (location == null || locationAge > DEFAULT_INTERVAL_SECONDS-1) {
+                Log.w(TAG, "Location is null or too old (${locationAge}ms), requesting new location...")
                 val newLocation = requestNewLocation()
                 if (newLocation != null) {
                     location = newLocation
@@ -151,18 +174,26 @@ class HeartbeatService : Service() {
                     lastSeen = System.currentTimeMillis(),
                     latitude = location?.latitude ?: device.latitude,
                     longitude = location?.longitude ?: device.longitude,
-                    locationUpdatedAt = if (location != null) System.currentTimeMillis() else device.locationUpdatedAt
+                    locationUpdatedAt = if (location != null) System.currentTimeMillis() else device.locationUpdatedAt,
+                    pingIntervalSeconds = DEFAULT_INTERVAL_SECONDS
                 )
                 localRepo.updateDeviceInfo(updatedDevice)
                 
                 // Marcar para sincronización si hubo cambios
                 if (hasDeviceChanges || locationChanged) {
                     syncHandler.markDeviceUpdatePending()
-                    Log.d(TAG, "Device info changed (battery/model: $hasDeviceChanges, location: $locationChanged), marked for sync")
+                    Log.w(TAG, "Device info changed (battery/model: $hasDeviceChanges, location: $locationChanged), marked for sync")
                 }
             } else {
                 Log.e(TAG, "Heartbeat failed: ${response.code()}")
+                // Si es un error de autenticación, propagar para que el servicio se detenga
+                if (response.code() == 401 || response.code() == 403) {
+                    throw IllegalStateException("Authentication error: ${response.code()}")
+                }
             }
+        } catch (e: IllegalStateException) {
+            // Propagar IllegalStateException para que sea manejada en startHeartbeat
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error sending heartbeat", e)
         }
@@ -239,7 +270,7 @@ class HeartbeatService : Service() {
         
         val locationListener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
-                Log.d(TAG, "New location received: lat=${location.latitude}, lon=${location.longitude}")
+                Log.w(TAG, "New location received: lat=${location.latitude}, lon=${location.longitude}")
                 locationManager?.removeUpdates(this)
                 if (!isCompleted) {
                     isCompleted = true

@@ -11,6 +11,8 @@ import com.ursolgleb.controlparental.domain.auth.usecase.RegisterDeviceUseCase
 import com.ursolgleb.controlparental.domain.auth.usecase.VerifyDeviceUseCase
 import com.ursolgleb.controlparental.domain.auth.usecase.CheckDeviceStatusUseCase
 import com.ursolgleb.controlparental.utils.createRateLimitMessage
+import com.ursolgleb.controlparental.workers.ModernSyncWorker
+import com.ursolgleb.controlparental.services.HeartbeatService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +21,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import javax.inject.Inject
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 /**
  * Estados del proceso de registro
@@ -47,7 +51,8 @@ class DeviceAuthViewModel @Inject constructor(
     private val registerDeviceUseCase: RegisterDeviceUseCase,
     private val verifyDeviceUseCase: VerifyDeviceUseCase,
     private val checkDeviceStatusUseCase: CheckDeviceStatusUseCase,
-    private val authRepository: DeviceAuthRepository
+    private val authRepository: DeviceAuthRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(DeviceAuthUiState())
@@ -59,102 +64,64 @@ class DeviceAuthViewModel @Inject constructor(
     private var verificationCheckJob: Job? = null
     
     init {
-        // Checkear estado inicial
         android.util.Log.d("DeviceAuthViewModel", "init: Iniciando checkAuthState")
         checkAuthState()
     }
     
+    /**
+     * Verifica el estado de autenticación actual
+     */
     private fun checkAuthState() {
+        android.util.Log.d("DeviceAuthViewModel", "checkAuthState: Verificando estado de autenticación")
         viewModelScope.launch {
-            try {
-                android.util.Log.d("DeviceAuthViewModel", "checkAuthState: Verificando estado de autenticación")
-                
-                // Verificar si el dispositivo ya tiene token guardado
-                val savedToken = authRepository.getSavedToken()
-                val deviceId = authRepository.getDeviceId()
-                
-                android.util.Log.d("DeviceAuthViewModel", "checkAuthState: savedToken=$savedToken, deviceId=$deviceId")
-                
-                // Si tiene token y deviceId, SIEMPRE verificar con el servidor
-                if (savedToken != null && deviceId != null) {
-                    android.util.Log.d("DeviceAuthViewModel", "checkAuthState: Verificando con servidor...")
-                    
-                    // Mostrar estado de carga mientras verifica
-                    _uiState.value = _uiState.value.copy(isLoading = true)
-                    
+            val savedToken = authRepository.getSavedToken()
+            val deviceId = authRepository.getDeviceId()
+            
+            android.util.Log.d("DeviceAuthViewModel", "checkAuthState: savedToken=$savedToken, deviceId=$deviceId")
+            
+            when {
+                savedToken == null || deviceId == null -> {
+                    // No hay credenciales guardadas
+                    android.util.Log.d("DeviceAuthViewModel", "checkAuthState: No registrado - iniciando registro")
+                    _authState.value = AuthState.NotRegistered
+                    registerDevice()
+                }
+                else -> {
+                    // Hay credenciales, verificar con el servidor
+                    android.util.Log.d("DeviceAuthViewModel", "checkAuthState: Verificando con servidor")
                     checkDeviceStatusUseCase(deviceId).fold(
                         onSuccess = { token ->
-                            _uiState.value = _uiState.value.copy(isLoading = false)
-                            
                             if (token != null) {
-                                // Dispositivo existe y está verificado
+                                android.util.Log.d("DeviceAuthViewModel", "checkAuthState: Dispositivo verificado con token existente")
                                 _authState.value = AuthState.Authenticated(token)
-                                android.util.Log.d("DeviceAuthViewModel", "checkAuthState: Dispositivo confirmado - Autenticado")
-                            } else {
-                                // Dispositivo existe pero no está verificado
-                                android.util.Log.w("DeviceAuthViewModel", "checkAuthState: Dispositivo no verificado - limpiando")
-                                authRepository.clearToken()
-                                _authState.value = AuthState.NotRegistered
                                 _uiState.value = _uiState.value.copy(
-                                    registrationStep = RegistrationStep.INITIAL,
-                                    error = "El dispositivo no está verificado. Registrándose nuevamente..."
+                                    registrationStep = RegistrationStep.COMPLETED
                                 )
-                                delay(2000)
+                                // Reiniciar el worker de sincronización
+                                startBackgroundServices()
+                            } else {
+                                android.util.Log.d("DeviceAuthViewModel", "checkAuthState: Dispositivo no verificado aún")
+                                _authState.value = AuthState.NotRegistered
                                 registerDevice()
                             }
                         },
                         onFailure = { error ->
                             android.util.Log.e("DeviceAuthViewModel", "checkAuthState: Error verificando con servidor", error)
-                            _uiState.value = _uiState.value.copy(isLoading = false)
-                            
-                            // Si el dispositivo no existe (404), limpiar y registrar de nuevo
                             if (error.message?.contains("404") == true || 
                                 error.message?.contains("not found", ignoreCase = true) == true) {
-                                android.util.Log.w("DeviceAuthViewModel", "checkAuthState: Dispositivo no existe - limpiando")
+                                // Dispositivo eliminado
+                                android.util.Log.w("DeviceAuthViewModel", "checkAuthState: Dispositivo eliminado")
                                 authRepository.clearToken()
                                 _authState.value = AuthState.NotRegistered
-                                _uiState.value = _uiState.value.copy(
-                                    error = "El dispositivo fue eliminado del servidor. Registrándose nuevamente...",
-                                    registrationStep = RegistrationStep.INITIAL
-                                )
-                                delay(2000)
-                                _uiState.value = _uiState.value.copy(error = null)
                                 registerDevice()
                             } else {
-                                // Otro error - mostrar botón para reintentar
-                                _authState.value = AuthState.Authenticated(savedToken)
-                                _uiState.value = _uiState.value.copy(
-                                    registrationStep = RegistrationStep.INITIAL,
-                                    error = "No se pudo verificar con el servidor. Presiona el botón para reintentar."
-                                )
+                                // Otro error, asumir no registrado
+                                _authState.value = AuthState.NotRegistered
+                                registerDevice()
                             }
                         }
                     )
-                } else if (deviceId != null) {
-                    // Solo tiene deviceId, no token - estado WaitingVerification
-                    android.util.Log.d("DeviceAuthViewModel", "checkAuthState: Solo deviceId, esperando verificación")
-                    _authState.value = AuthState.WaitingVerification
-                    _uiState.value = _uiState.value.copy(
-                        registrationStep = RegistrationStep.VERIFICATION_CODE
-                    )
-                    
-                    // Si hay un código de verificación previo, iniciamos la verificación periódica
-                    if (_uiState.value.verificationCode == null) {
-                        android.util.Log.d("DeviceAuthViewModel", "checkAuthState: Iniciando verificación periódica desde estado WaitingVerification")
-                        startPeriodicVerificationCheck()
-                    }
-                } else {
-                    // No tiene nada - registrar nuevo
-                    _authState.value = AuthState.NotRegistered
-                    android.util.Log.d("DeviceAuthViewModel", "checkAuthState: No registrado - iniciando registro")
-                    registerDevice()
                 }
-            } catch (e: Exception) {
-                android.util.Log.e("DeviceAuthViewModel", "checkAuthState: Error", e)
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Error al verificar estado: ${e.message}"
-                )
             }
         }
     }
@@ -199,6 +166,8 @@ class DeviceAuthViewModel @Inject constructor(
                                                     isLoading = false,
                                                     registrationStep = RegistrationStep.COMPLETED
                                                 )
+                                                // Reiniciar el worker de sincronización
+                                                startBackgroundServices()
                                             } else {
                                                 _uiState.value = _uiState.value.copy(
                                                     isLoading = false,
@@ -301,30 +270,15 @@ class DeviceAuthViewModel @Inject constructor(
                                     registrationStep = RegistrationStep.COMPLETED,
                                     error = null
                                 )
+                                
+                                // Reiniciar el worker de sincronización
+                                startBackgroundServices()
                             } else {
                                 android.util.Log.d("DeviceAuthViewModel", "check-status devolvió null - dispositivo no verificado aún")
                             }
                         },
                         onFailure = { error ->
-                            android.util.Log.e("DeviceAuthViewModel", "Error verificando estado con servidor", error)
-                            
-                            // Si el dispositivo fue eliminado, detener la verificación y reiniciar
-                            if (error.message?.contains("404") == true || 
-                                error.message?.contains("not found", ignoreCase = true) == true) {
-                                android.util.Log.w("DeviceAuthViewModel", "Dispositivo eliminado durante verificación")
-                                isVerified = true // Salir del loop
-                                
-                                // Limpiar y reiniciar
-                                authRepository.clearToken()
-                                _authState.value = AuthState.NotRegistered
-                                _uiState.value = _uiState.value.copy(
-                                    error = "El dispositivo fue eliminado. Reiniciando registro...",
-                                    registrationStep = RegistrationStep.INITIAL
-                                )
-                                
-                                delay(2000)
-                                checkAuthState()
-                            }
+                            android.util.Log.e("DeviceAuthViewModel", "Error verificando estado", error)
                         }
                     )
                     
@@ -350,6 +304,9 @@ class DeviceAuthViewModel @Inject constructor(
                     )
                     // Cambiar estado de autenticación
                     _authState.value = AuthState.Authenticated(token)
+                    
+                    // Reiniciar el worker de sincronización
+                    startBackgroundServices()
                 },
                 onFailure = { error ->
                     val errorMessage = when (error) {
@@ -436,5 +393,47 @@ class DeviceAuthViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         verificationCheckJob?.cancel()
+    }
+    
+    /**
+     * Reinicia el worker de sincronización para usar el nuevo deviceId
+     */
+    private fun restartSyncWorker() {
+        try {
+            android.util.Log.d("DeviceAuthViewModel", "Reiniciando ModernSyncWorker con nuevo deviceId")
+            ModernSyncWorker.startWorker(context)
+        } catch (e: Exception) {
+            android.util.Log.e("DeviceAuthViewModel", "Error reiniciando ModernSyncWorker", e)
+        }
+    }
+    
+    /**
+     * Inicia el servicio de heartbeat después de autenticación exitosa
+     */
+    fun startHeartbeatService() {
+        try {
+            android.util.Log.d("DeviceAuthViewModel", "Iniciando HeartbeatService")
+            HeartbeatService.start(context)
+        } catch (e: Exception) {
+            android.util.Log.e("DeviceAuthViewModel", "Error iniciando HeartbeatService", e)
+        }
+    }
+    
+    /**
+     * Inicia todos los servicios necesarios después de autenticación exitosa
+     */
+    private fun startBackgroundServices() {
+        android.util.Log.d("DeviceAuthViewModel", "Iniciando servicios de background después de autenticación exitosa")
+        
+        // Iniciar el worker de sincronización
+        restartSyncWorker()
+        
+        // Iniciar el servicio de heartbeat
+        try {
+            android.util.Log.d("DeviceAuthViewModel", "Iniciando HeartbeatService")
+            HeartbeatService.start(context)
+        } catch (e: Exception) {
+            android.util.Log.e("DeviceAuthViewModel", "Error iniciando HeartbeatService", e)
+        }
     }
 } 

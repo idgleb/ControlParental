@@ -63,17 +63,27 @@ class HorarioEditFragment : Fragment(R.layout.fragment_horario_edit) {
         }
 
         binding.aggregarHorariosABoton.setOnClickListener {
-            val horario = HorarioEntity(
-                deviceId = appDataRepository.getOrCreateDeviceId(),
-                idHorario = 0L, // Se asignará un ID real cuando se guarde
-                nombreDeHorario = "",
-                diasDeSemana = listOf(),
-                horaInicio = LocalTime.of(0, 0).toString(),
-                horaFin = LocalTime.of(0, 0).toString(),
-                isActive = true
-            )
-            val action = MainAdminFragmentDirections.actionGlobalHorarioCrearFragment(horario)
-            findNavController().navigate(action)
+            try {
+                val deviceId = appDataRepository.getOrCreateDeviceId()
+                val horario = HorarioEntity(
+                    deviceId = deviceId,
+                    idHorario = 0L, // Se asignará un ID real cuando se guarde
+                    nombreDeHorario = "",
+                    diasDeSemana = listOf(),
+                    horaInicio = LocalTime.of(0, 0).toString(),
+                    horaFin = LocalTime.of(0, 0).toString(),
+                    isActive = true
+                )
+                val action = MainAdminFragmentDirections.actionGlobalHorarioCrearFragment(horario)
+                findNavController().navigate(action)
+            } catch (e: IllegalStateException) {
+                // El usuario no está autenticado
+                com.google.android.material.snackbar.Snackbar.make(
+                    binding.root,
+                    "Error: Debes estar autenticado para crear horarios",
+                    com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+                ).show()
+            }
         }
     }
 

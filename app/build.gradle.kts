@@ -27,7 +27,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         // URLs centralizadas
-        buildConfigField("String", "API_BASE_URL", "\"https://9a38-186-128-91-119.ngrok-free.app/api/\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://dcf8ff014a4a.ngrok-free.app/api/\"")
         buildConfigField("String", "API_BASE_URL_LOCAL", "\"http://192.168.1.35/api/\"")
     }
 
