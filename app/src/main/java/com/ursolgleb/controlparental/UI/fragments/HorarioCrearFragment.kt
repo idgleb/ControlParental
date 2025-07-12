@@ -117,10 +117,10 @@ class HorarioCrearFragment : Fragment() {
             }
 
             try {
-                val horaInicio = LocalTime.parse(horaInicioStr)
-                val horaFin = LocalTime.parse(horaFinStr)
+                val horaInicioParsed = LocalTime.parse(horaInicioStr)
+                val horaFinParsed = LocalTime.parse(horaFinStr)
 
-                if (horaInicio >= horaFin) {
+                if (horaInicioParsed >= horaFinParsed) {
                     return@setOnClickListener
                 }
 
@@ -144,8 +144,8 @@ class HorarioCrearFragment : Fragment() {
                             deviceId = deviceId,
                             nombreDeHorario = nombreHorario,
                             diasDeSemana = diasDeSemana,
-                            horaInicio = horaInicio.toString(),
-                            horaFin = horaFin.toString(),
+                            horaInicio = horaInicioParsed.toString(),
+                            horaFin = horaFinParsed.toString(),
                             isActive = horario.isActive
                         )
 

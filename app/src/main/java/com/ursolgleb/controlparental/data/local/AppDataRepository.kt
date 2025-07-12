@@ -239,13 +239,7 @@ class AppDataRepository @Inject constructor(
         val nuevasEntidades = appsNuevas.map { app ->
             val drawable = app.loadIcon(pm)
             val bitmap = AppsFun.drawableToBitmap(drawable)
-            val entretenimiento = app.category in listOf(
-                ApplicationInfo.CATEGORY_GAME,
-                ApplicationInfo.CATEGORY_AUDIO,
-                ApplicationInfo.CATEGORY_VIDEO
-            )
-            var status = if (entretenimiento) StatusApp.HORARIO.desc else StatusApp.BLOQUEADA.desc
-            status = StatusApp.BLOQUEADA.desc
+            val status = StatusApp.BLOQUEADA.desc
             val timestampActual = System.currentTimeMillis()
             AppEntity(
                 packageName = app.packageName,

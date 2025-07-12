@@ -47,7 +47,7 @@ class DeviceAuthActivity : AppCompatActivity() {
         binding = ActivityDeviceAuthBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
-        Log.d("DeviceAuthActivity", "onCreate: ViewModel creado = ${viewModel != null}")
+        Log.d("DeviceAuthActivity", "onCreate: ViewModel creado")
         
         setupViews()
         observeViewModel()

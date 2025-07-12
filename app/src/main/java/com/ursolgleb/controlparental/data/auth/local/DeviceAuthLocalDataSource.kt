@@ -82,7 +82,7 @@ class DeviceAuthLocalDataSource @Inject constructor(
         val shouldOverwriteDeviceId = currentDeviceId == null || currentDeviceId == token.deviceId
         val editor = encryptedPrefs.edit()
         editor.putString(KEY_API_TOKEN, token.token)
-        if (shouldOverwriteDeviceId && token.deviceId != null) {
+        if (shouldOverwriteDeviceId) {
             editor.putString(KEY_DEVICE_ID, token.deviceId)
         }
         editor.putBoolean(KEY_IS_VERIFIED, true)

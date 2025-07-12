@@ -132,7 +132,8 @@ class RemoteDataRepository @Inject constructor(
         return api.getSyncStatus(deviceId)
     }
     
-    suspend fun deleteAppByPackageName(packageName: String, deviceId: String) {
+    @Suppress("UNUSED_PARAMETER")
+    suspend fun deleteAppByPackageName(deviceId: String, packageName: String) {
         // Por ahora no implementado, se puede agregar si es necesario
     }
 

@@ -9,7 +9,6 @@ plugins {
     // KSP (Kotlin Symbol Processing) - Alineado con la versión de Kotlin
     id("com.google.devtools.ksp") version "1.9.24-1.0.20" apply false
 
-    kotlin("kapt") version "1.9.0" apply false
     id("com.android.library") version "8.1.4" apply false
 
     id("jp.ntsk.room-schema-docs") version "1.1.0"  // 👈 plugin del diagrama

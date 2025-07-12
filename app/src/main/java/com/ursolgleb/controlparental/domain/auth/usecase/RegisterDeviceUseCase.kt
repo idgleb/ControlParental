@@ -5,6 +5,7 @@ import com.ursolgleb.controlparental.BuildConfig
 import com.ursolgleb.controlparental.domain.auth.model.DeviceRegistration
 import com.ursolgleb.controlparental.domain.auth.model.VerificationCode
 import com.ursolgleb.controlparental.domain.auth.repository.DeviceAuthRepository
+import com.ursolgleb.controlparental.domain.auth.repository.DeviceRegistrationResult
 import javax.inject.Inject
 
 /**
@@ -16,7 +17,7 @@ class RegisterDeviceUseCase @Inject constructor(
     /**
      * Ejecutar el registro del dispositivo
      */
-    suspend operator fun invoke(): Result<VerificationCode> {
+    suspend operator fun invoke(): Result<DeviceRegistrationResult> {
         android.util.Log.d("RegisterDeviceUseCase", "invoke: Iniciando registro")
         
         // Obtener device ID existente o generar uno nuevo

@@ -163,32 +163,32 @@ class Ulities : AccessibilityService() {
 
 
         // Construcción del mensaje con toda la información disponible
-        val detallesBase = """
-        🔹 **Tipo de evento:** $eventType
-        📦 **Paquete:** $packageName
-        🏷 **Clase de origen:** $className
-        🖥 **Vista donde ocurrió:** $viewClass
-        🏷 **ID del elemento:** $viewId
-        🗣 **Descripción del contenido:** $contentDesc
-        📝 **Texto capturado:** $eventTextOriginal
-        🌍 **Idioma:** $idioma
-        ⏳ **Tiempo del evento:** $eventTime
-        📝 **Texto previo:** $beforeText
-        ✅ **¿Marcado?:** $isChecked
-        🔒 **¿Campo de contraseña?:** $isPassword
-        🔄 **¿Habilitado?:** $isEnabled
-        🔳 **¿Pantalla completa?:** $isFullScreen
-        🔽 **¿Scrollable?:** $isScrollable
-        📜 **Scroll X/Y:** ($scrollX, $scrollY)
-        📋 **Índice en lista:** $currentItemIndex / $itemCount
-        ➕ **Elementos agregados:** $addedCount
-        ➖ **Elementos eliminados:** $removedCount
-        🎮 **Acción realizada:** $action
-        📜 **Cantidad de registros:** $recordCount
-        🔍 **Granularidad del movimiento:** $movementGranularity
-        📨 **Datos adicionales:** $parcelableData
-        $nodeInfo
-    """.trimIndent()
+        // val detallesBase = """
+        // 🔹 **Tipo de evento:** $eventType
+        // 📦 **Paquete:** $packageName
+        // 🏷 **Clase de origen:** $className
+        // 🖥 **Vista donde ocurrió:** $viewClass
+        // 🏷 **ID del elemento:** $viewId
+        // 🗣 **Descripción del contenido:** $contentDesc
+        // 📝 **Texto capturado:** $eventTextOriginal
+        // 🌍 **Idioma:** $idioma
+        // ⏳ **Tiempo del evento:** $eventTime
+        // 📝 **Texto previo:** $beforeText
+        // ✅ **¿Marcado?:** $isChecked
+        // 🔒 **¿Campo de contraseña?:** $isPassword
+        // 🔄 **¿Habilitado?:** $isEnabled
+        // 🔳 **¿Pantalla completa?:** $isFullScreen
+        // 🔽 **¿Scrollable?:** $isScrollable
+        // 📜 **Scroll X/Y:** ($scrollX, $scrollY)
+        // 📋 **Índice en lista:** $currentItemIndex / $itemCount
+        // ➕ **Elementos agregados:** $addedCount
+        // ➖ **Elementos eliminados:** $removedCount
+        // 🎮 **Acción realizada:** $action
+        // 📜 **Cantidad de registros:** $recordCount
+        // 🔍 **Granularidad del movimiento:** $movementGranularity
+        // 📨 **Datos adicionales:** $parcelableData
+        // $nodeInfo
+        // """.trimIndent() // (No se usa actualmente, comentar para evitar warning)
 
     }
 

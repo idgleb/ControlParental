@@ -28,16 +28,9 @@ class DeviceAuthRepositoryImpl @Inject constructor(
     private val localDataSource: DeviceAuthLocalDataSource
 ) : DeviceAuthRepository {
     
-    // 1. Agregar sealed class para el resultado del registro
-    sealed class DeviceRegistrationResult {
-        data class NewCode(val verificationCode: VerificationCode) : DeviceRegistrationResult()
-        object AlreadyVerified : DeviceRegistrationResult()
-        data class AlreadyVerifiedButFailed(val error: Throwable) : DeviceRegistrationResult()
-    }
-    
     override suspend fun registerDevice(
         registration: DeviceRegistration
-    ): Result<DeviceRegistrationResult> {
+    ): Result<com.ursolgleb.controlparental.domain.auth.repository.DeviceRegistrationResult> {
         return try {
             android.util.Log.d("DeviceAuthRepositoryImpl", "registerDevice: Iniciando con deviceId=${registration.deviceId}")
             
@@ -61,10 +54,10 @@ class DeviceAuthRepositoryImpl @Inject constructor(
                     return if (tokenResult.isSuccess) {
                         // Token recuperado y guardado
                         android.util.Log.d("DeviceAuthRepositoryImpl", "registerDevice: Token recuperado automáticamente tras AlreadyVerified")
-                        Result.success(DeviceRegistrationResult.AlreadyVerified)
+                        Result.success(com.ursolgleb.controlparental.domain.auth.repository.DeviceRegistrationResult.AlreadyVerified)
                     } else {
                         android.util.Log.e("DeviceAuthRepositoryImpl", "registerDevice: No se pudo recuperar el token tras AlreadyVerified")
-                        Result.success(DeviceRegistrationResult.AlreadyVerifiedButFailed(tokenResult.exceptionOrNull() ?: Exception("Error desconocido")))
+                        Result.success(com.ursolgleb.controlparental.domain.auth.repository.DeviceRegistrationResult.AlreadyVerifiedButFailed(tokenResult.exceptionOrNull() ?: Exception("Error desconocido")))
                     }
                 } else if (response.data.verificationCode != null && response.data.expiresInMinutes != null) {
                     // Guardar device ID localmente SOLO si el registro fue exitoso
@@ -76,7 +69,7 @@ class DeviceAuthRepositoryImpl @Inject constructor(
                     )
                     
                     android.util.Log.d("DeviceAuthRepositoryImpl", "registerDevice: Éxito - código=${code.formatted()}")
-                    Result.success(DeviceRegistrationResult.NewCode(code))
+                    Result.success(com.ursolgleb.controlparental.domain.auth.repository.DeviceRegistrationResult.NewCode(code))
                 } else {
                     android.util.Log.e("DeviceAuthRepositoryImpl", "registerDevice: Respuesta inesperada, faltan campos")
                     Result.failure(Exception("Respuesta inesperada del servidor: faltan campos de verificación"))

@@ -51,7 +51,8 @@ class UsageStatsProvider @Inject constructor(
         )
     }
 
-    suspend fun getStatsFromDatabase(startTime: Long, endTime: Long): List<UsageStatsEntity> {
+    @Suppress("UNUSED_PARAMETER")
+    suspend fun getStatsFromDatabase(start: Long, end: Long): List<UsageStatsEntity> {
         saveUsStatsUltimaSemanaToDatabase()
         return usageStatsDao.getAllUsageStats()
     }

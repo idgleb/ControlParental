@@ -151,7 +151,7 @@ class DesarolloActivity : BaseAuthActivity() {
         }
     }
 
-    fun eliminarAppsBloqueadas(view: View) {
+    fun eliminarAppsBloqueadas() {
         coroutineScope.launch {
             logDataRepository.logDao.deleteLogAllBlockedApps()
             withContext(Dispatchers.Main) {
@@ -248,13 +248,13 @@ class DesarolloActivity : BaseAuthActivity() {
                     "Desconocida"
                 }
 
-                val msg =
+                val msgDebug =
                     "$appName - Pkg: ${usageStats.value.packageName} - Uso: ${usageStats.value.totalTimeInForeground}"
-                Log.d("AppBlockerService", msg)
+                Log.d("AppBlockerService", msgDebug)
                 coroutineScope.launch {
                     Archivo.appendTextToFile(
                         this@DesarolloActivity,
-                        "\n $msg"
+                        "\n $msgDebug"
                     )
                 }
             }
