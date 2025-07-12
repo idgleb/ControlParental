@@ -13,6 +13,7 @@ import com.ursolgleb.controlparental.domain.auth.usecase.CheckDeviceStatusUseCas
 import com.ursolgleb.controlparental.utils.createRateLimitMessage
 import com.ursolgleb.controlparental.workers.ModernSyncWorker
 import com.ursolgleb.controlparental.services.HeartbeatService
+import com.ursolgleb.controlparental.services.ServiceStarter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -361,7 +362,7 @@ class DeviceAuthViewModel @Inject constructor(
     fun startHeartbeatService() {
         try {
             android.util.Log.d("DeviceAuthViewModel", "Iniciando HeartbeatService")
-            HeartbeatService.start(context)
+            ServiceStarter.startBackgroundServices(context)
         } catch (e: Exception) {
             android.util.Log.e("DeviceAuthViewModel", "Error iniciando HeartbeatService", e)
         }
@@ -379,7 +380,7 @@ class DeviceAuthViewModel @Inject constructor(
         // Iniciar el servicio de heartbeat
         try {
             android.util.Log.d("DeviceAuthViewModel", "Iniciando HeartbeatService")
-            HeartbeatService.start(context)
+            ServiceStarter.startBackgroundServices(context)
         } catch (e: Exception) {
             android.util.Log.e("DeviceAuthViewModel", "Error iniciando HeartbeatService", e)
         }

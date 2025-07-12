@@ -21,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.ursolgleb.controlparental.services.ServiceStarter
 
 @AndroidEntryPoint
 class BootReceiver : BroadcastReceiver() {
@@ -42,7 +43,7 @@ class BootReceiver : BroadcastReceiver() {
                     val hasToken = deviceAuthLocalDataSource.getApiToken() != null
                     if (hasToken) {
                         Log.d("BootReceiver", "Token encontrado, iniciando HeartbeatService")
-                        HeartbeatService.start(context)
+                        ServiceStarter.startBackgroundServices(context)
                     } else {
                         Log.d("BootReceiver", "No hay token, HeartbeatService no se iniciará")
                     }

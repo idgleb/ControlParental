@@ -107,7 +107,14 @@
             android:name=".services.HeartbeatService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="location|dataSync" />
+            android:foregroundServiceType="dataSync" />
+        
+        <!-- Nuevo servicio para ubicación -->
+        <service
+            android:name=".services.LocationWatcherService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location" />
             
         <!-- Receiver para cambios de estado de autenticación -->
         <receiver

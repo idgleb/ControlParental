@@ -19,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.ursolgleb.controlparental.services.HeartbeatService
 import com.ursolgleb.controlparental.data.auth.local.DeviceAuthLocalDataSource
+import com.ursolgleb.controlparental.services.ServiceStarter
 
 
 @HiltAndroidApp
@@ -75,7 +76,7 @@ class ControlParentalApp : Application(), Configuration.Provider {
                         val hasToken = deviceAuthLocalDataSource.getApiToken() != null
                         if (hasToken) {
                             Log.d("ControlParentalApp", "Token encontrado, iniciando HeartbeatService...")
-                            HeartbeatService.start(this@ControlParentalApp)
+                            ServiceStarter.startBackgroundServices(this@ControlParentalApp)
                         } else {
                             Log.d("ControlParentalApp", "No hay token, HeartbeatService no se iniciará")
                         }

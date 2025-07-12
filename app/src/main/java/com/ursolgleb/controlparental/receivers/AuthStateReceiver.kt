@@ -6,6 +6,7 @@ import android.content.Intent
 import android.util.Log
 import com.ursolgleb.controlparental.data.auth.local.DeviceAuthLocalDataSource
 import com.ursolgleb.controlparental.services.HeartbeatService
+import com.ursolgleb.controlparental.services.ServiceStarter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +41,7 @@ class AuthStateReceiver : BroadcastReceiver() {
                 
                 if (hasToken) {
                     Log.d(TAG, "Token found, starting HeartbeatService")
-                    HeartbeatService.start(context)
+                    ServiceStarter.startBackgroundServices(context)
                 } else {
                     Log.d(TAG, "No token found, stopping HeartbeatService")
                     HeartbeatService.stop(context)

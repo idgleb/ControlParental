@@ -10,6 +10,7 @@ import androidx.work.WorkerParameters
 import com.ursolgleb.controlparental.data.common.Resource
 import com.ursolgleb.controlparental.data.remote.models.toDto
 import com.ursolgleb.controlparental.di.ModernSyncWorkerEntryPoint
+import com.ursolgleb.controlparental.services.ServiceStarter
 import dagger.hilt.android.EntryPointAccessors
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
@@ -46,7 +47,7 @@ class ModernSyncWorker(
         Log.d(TAG, "Starting modern sync...")
 
         // Lanzar HeartbeatService como foreground service (mejor práctica)
-        com.ursolgleb.controlparental.services.HeartbeatService.start(applicationContext)
+        ServiceStarter.startBackgroundServices(applicationContext)
 
         val entryPoint = EntryPointAccessors
             .fromApplication(

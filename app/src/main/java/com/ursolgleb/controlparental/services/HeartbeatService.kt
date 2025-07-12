@@ -73,13 +73,12 @@ class HeartbeatService : Service() {
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "HeartbeatService started")
-        // Iniciar como foreground service
         val notification = com.ursolgleb.controlparental.utils.NotificationUtils.createHeartbeatNotification(this)
         if (Build.VERSION.SDK_INT >= 34) {
             startForeground(
                 1,
                 notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION or ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
             )
         } else {
             startForeground(1, notification)
@@ -126,208 +125,49 @@ class HeartbeatService : Service() {
                 Log.e(TAG, "No device info available")
                 return
             }
-            
-            // Obtener información actualizada del dispositivo
             val bm = getSystemService(BATTERY_SERVICE) as BatteryManager
             val currentBattery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
             val currentModel = "${Build.MANUFACTURER} ${Build.MODEL}"
-            
-            // Obtener ubicación si hay permisos
-            var location = getLastKnownLocation()
-            
-            // Si no hay última ubicación conocida O la ubicación es muy antigua, intentar obtener una nueva
-            val locationAge = location?.let { System.currentTimeMillis() - it.time } ?: Long.MAX_VALUE
-            if (location == null || locationAge > DEFAULT_INTERVAL_SECONDS-1) {
-                Log.w(TAG, "Location is null or too old (${locationAge}ms), requesting new location...")
-                val newLocation = requestNewLocation()
-                if (newLocation != null) {
-                    location = newLocation
-                }
-            }
-            
+
+            // Eliminar lógica de ubicación: location siempre null
+            val location: Location? = null
+
             // Verificar si hay cambios en el dispositivo
             var hasDeviceChanges = false
             if (device.model != currentModel || device.batteryLevel != currentBattery) {
                 hasDeviceChanges = true
             }
-            
-            // Verificar si hay cambios en la ubicación
-            val locationChanged = location != null && (
-                location.latitude != device.latitude || 
-                location.longitude != device.longitude
-            )
-            
-            // Enviar heartbeat al servidor
+
+            // Enviar heartbeat al servidor (sin ubicación)
             val response = remoteRepo.sendHeartbeat(
                 deviceId = device.deviceId,
-                latitude = location?.latitude,
-                longitude = location?.longitude
+                latitude = null,
+                longitude = null
             )
-            
+
             if (response.isSuccessful) {
-                Log.d(TAG, "Heartbeat sent successfully with location: ${location?.let { "lat=${it.latitude}, lon=${it.longitude}" } ?: "no location"}")
-                
-                // Actualizar información del dispositivo localmente
+                Log.d(TAG, "Heartbeat sent successfully (sin ubicación)")
                 val updatedDevice = device.copy(
                     model = currentModel,
                     batteryLevel = currentBattery,
                     lastSeen = System.currentTimeMillis(),
-                    latitude = location?.latitude ?: device.latitude,
-                    longitude = location?.longitude ?: device.longitude,
-                    locationUpdatedAt = if (location != null) System.currentTimeMillis() else device.locationUpdatedAt,
                     pingIntervalSeconds = DEFAULT_INTERVAL_SECONDS
                 )
                 localRepo.updateDeviceInfo(updatedDevice)
-                
-                // Marcar para sincronización si hubo cambios
-                if (hasDeviceChanges || locationChanged) {
+                if (hasDeviceChanges) {
                     syncHandler.markDeviceUpdatePending()
-                    Log.w(TAG, "Device info changed (battery/model: $hasDeviceChanges, location: $locationChanged), marked for sync")
+                    Log.w(TAG, "Device info changed (battery/model), marked for sync")
                 }
             } else {
                 Log.e(TAG, "Heartbeat failed: ${response.code()}")
-                // Si es un error de autenticación, propagar para que el servicio se detenga
                 if (response.code() == 401 || response.code() == 403) {
                     throw IllegalStateException("Authentication error: ${response.code()}")
                 }
             }
         } catch (e: IllegalStateException) {
-            // Propagar IllegalStateException para que sea manejada en startHeartbeat
             throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error sending heartbeat", e)
-        }
-    }
-    
-    private fun getLastKnownLocation(): Location? {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED &&
-            ActivityCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            Log.w(TAG, "Location permissions not granted")
-            return null
-        }
-        
-        // Verificar si el GPS está habilitado
-        val isGpsEnabled = locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) ?: false
-        val isNetworkEnabled = locationManager?.isProviderEnabled(LocationManager.NETWORK_PROVIDER) ?: false
-        
-        Log.d(TAG, "GPS enabled: $isGpsEnabled, Network enabled: $isNetworkEnabled")
-        
-        if (!isGpsEnabled && !isNetworkEnabled) {
-            Log.w(TAG, "No location providers enabled")
-            return null
-        }
-        
-        return try {
-            // Intentar obtener la última ubicación conocida
-            val gpsLocation = if (isGpsEnabled) {
-                locationManager?.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-            } else null
-            
-            val networkLocation = if (isNetworkEnabled) {
-                locationManager?.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-            } else null
-            
-            Log.d(TAG, "GPS Location: ${gpsLocation?.let { "lat=${it.latitude}, lon=${it.longitude}, age=${System.currentTimeMillis() - it.time}ms" } ?: "null"}")
-            Log.d(TAG, "Network Location: ${networkLocation?.let { "lat=${it.latitude}, lon=${it.longitude}, age=${System.currentTimeMillis() - it.time}ms" } ?: "null"}")
-            
-            // Elegir la ubicación más reciente
-            when {
-                gpsLocation != null && networkLocation != null -> {
-                    if (gpsLocation.time > networkLocation.time) gpsLocation else networkLocation
-                }
-                gpsLocation != null -> gpsLocation
-                networkLocation != null -> networkLocation
-                else -> {
-                    Log.w(TAG, "No last known location available")
-                    null
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error getting location", e)
-            null
-        }
-    }
-    
-    // Método alternativo para solicitar ubicación activamente
-    private suspend fun requestNewLocation(): Location? = suspendCoroutine { continuation ->
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            continuation.resume(null)
-            return@suspendCoroutine
-        }
-        
-        var isCompleted = false
-        
-        val locationListener = object : LocationListener {
-            override fun onLocationChanged(location: Location) {
-                Log.w(TAG, "New location received: lat=${location.latitude}, lon=${location.longitude}")
-                locationManager?.removeUpdates(this)
-                if (!isCompleted) {
-                    isCompleted = true
-                    continuation.resume(location)
-                }
-            }
-            
-            @Deprecated("Deprecated in Java")
-            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
-            override fun onProviderEnabled(provider: String) {}
-            override fun onProviderDisabled(provider: String) {}
-        }
-        
-        try {
-            // Intentar con GPS primero si está disponible
-            val isGpsEnabled = locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) ?: false
-            val isNetworkEnabled = locationManager?.isProviderEnabled(LocationManager.NETWORK_PROVIDER) ?: false
-            
-            when {
-                isGpsEnabled -> {
-                    Log.d(TAG, "Requesting location update from GPS provider")
-                    locationManager?.requestSingleUpdate(
-                        LocationManager.GPS_PROVIDER,
-                        locationListener,
-                        Looper.getMainLooper()
-                    )
-                }
-                isNetworkEnabled -> {
-                    Log.d(TAG, "Requesting location update from Network provider")
-                    locationManager?.requestSingleUpdate(
-                        LocationManager.NETWORK_PROVIDER,
-                        locationListener,
-                        Looper.getMainLooper()
-                    )
-                }
-                else -> {
-                    Log.w(TAG, "No location providers available for update")
-                    continuation.resume(null)
-                    return@suspendCoroutine
-                }
-            }
-            
-            // Timeout después de 10 segundos
-            serviceScope.launch {
-                delay(10000)
-                locationManager?.removeUpdates(locationListener)
-                if (!isCompleted) {
-                    isCompleted = true
-                    Log.w(TAG, "Location request timed out")
-                    continuation.resume(null)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error requesting location update", e)
-            if (!isCompleted) {
-                continuation.resume(null)
-            }
         }
     }
 } 
