@@ -69,7 +69,12 @@ class DeviceAuthActivity : AppCompatActivity() {
                     viewModel.registerDevice() // Solicitar nuevo código
                 }
             }
-            
+            // Botón de reintento de recuperación de token
+            btnRetry.setOnClickListener {
+                if (isClickAllowed()) {
+                    viewModel.forceNewRegistration()
+                }
+            }
             // Cerrar error al tocar
             tvError.setOnClickListener {
                 viewModel.clearError()
@@ -142,6 +147,9 @@ class DeviceAuthActivity : AppCompatActivity() {
             state.error?.let { showError(it) } ?: run {
                 tvError.isVisible = false
             }
+            
+            // Mostrar botón de reintento solo para el error de token
+            btnRetry.isVisible = state.error?.contains("No se pudo recuperar el token automáticamente") == true
             
             // Vistas según el paso
             when (state.registrationStep) {

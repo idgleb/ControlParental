@@ -27,10 +27,10 @@ data class RegisterDeviceData(
     val deviceId: String,
     
     @Json(name = "verification_code")
-    val verificationCode: String,
+    val verificationCode: String?,
     
     @Json(name = "expires_in_minutes")
-    val expiresInMinutes: Int = 10,
+    val expiresInMinutes: Int?,
     
     @Json(name = "is_already_verified")
     val isAlreadyVerified: Boolean = false,

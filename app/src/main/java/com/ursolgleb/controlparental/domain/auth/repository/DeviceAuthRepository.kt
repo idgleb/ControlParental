@@ -3,6 +3,7 @@ package com.ursolgleb.controlparental.domain.auth.repository
 import com.ursolgleb.controlparental.domain.auth.model.DeviceRegistration
 import com.ursolgleb.controlparental.domain.auth.model.DeviceToken
 import com.ursolgleb.controlparental.domain.auth.model.VerificationCode
+import com.ursolgleb.controlparental.data.auth.repository.DeviceAuthRepositoryImpl.DeviceRegistrationResult
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -12,9 +13,9 @@ interface DeviceAuthRepository {
     
     /**
      * Registrar un nuevo dispositivo
-     * @return Código de verificación generado
+     * @return Resultado del registro (código de verificación o ya verificado)
      */
-    suspend fun registerDevice(registration: DeviceRegistration): Result<VerificationCode>
+    suspend fun registerDevice(registration: DeviceRegistration): Result<DeviceRegistrationResult>
     
     /**
      * Verificar dispositivo con código
@@ -73,4 +74,13 @@ sealed class AuthState {
     object WaitingVerification : AuthState()
     data class Authenticated(val token: DeviceToken) : AuthState()
     object Unauthenticated : AuthState()
+} 
+
+/**
+ * Resultado del registro de dispositivo
+ */
+sealed class DeviceRegistrationResult {
+    data class NewCode(val verificationCode: VerificationCode) : DeviceRegistrationResult()
+    object AlreadyVerified : DeviceRegistrationResult()
+    data class AlreadyVerifiedButFailed(val error: Throwable) : DeviceRegistrationResult()
 } 

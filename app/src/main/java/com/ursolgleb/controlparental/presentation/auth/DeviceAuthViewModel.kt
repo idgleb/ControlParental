@@ -23,6 +23,7 @@ import kotlinx.coroutines.Job
 import javax.inject.Inject
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.ursolgleb.controlparental.domain.auth.repository.DeviceRegistrationResult
 
 /**
  * Estados del proceso de registro
@@ -139,77 +140,18 @@ class DeviceAuthViewModel @Inject constructor(
                 registerDeviceUseCase().fold(
                     onSuccess = { result ->
                         android.util.Log.d("DeviceAuthViewModel", "registerDevice: Resultado recibido")
-                        
-                        // Si el resultado indica que ya está verificado
-                        if (result is VerificationCode && result.code == "ALREADY_VERIFIED") {
-                            android.util.Log.d("DeviceAuthViewModel", "registerDevice: Dispositivo ya verificado, verificando estado...")
-                            
-                            // Cancelar cualquier verificación periódica en progreso
-                            verificationCheckJob?.cancel()
-                            
-                            // Hacer check-status inmediatamente
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = true,
-                                error = null
-                            )
-                            
-                            // Verificar estado inmediatamente
-                            viewModelScope.launch {
-                                val deviceId = authRepository.getDeviceId()
-                                if (deviceId != null) {
-                                    checkDeviceStatusUseCase(deviceId).fold(
-                                        onSuccess = { token ->
-                                            if (token != null) {
-                                                android.util.Log.d("DeviceAuthViewModel", "Token obtenido exitosamente")
-                                                _authState.value = AuthState.Authenticated(token)
-                                                _uiState.value = _uiState.value.copy(
-                                                    isLoading = false,
-                                                    registrationStep = RegistrationStep.COMPLETED
-                                                )
-                                                // Reiniciar el worker de sincronización
-                                                startBackgroundServices()
-                                            } else {
-                                                _uiState.value = _uiState.value.copy(
-                                                    isLoading = false,
-                                                    error = "No se pudo obtener el token de autenticación"
-                                                )
-                                            }
-                                        },
-                                        onFailure = { error ->
-                                            _uiState.value = _uiState.value.copy(
-                                                isLoading = false,
-                                                error = "Error al verificar estado: ${error.message}"
-                                            )
-                                        }
-                                    )
-                                }
-                            }
-                        } else {
-                            // Flujo normal de registro
-                            android.util.Log.d("DeviceAuthViewModel", "registerDevice: Éxito - código: ${result.formatted()}")
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                registrationStep = RegistrationStep.VERIFICATION_CODE,
-                                verificationCode = result
-                            )
-                            // Iniciar verificación periódica
-                            startPeriodicVerificationCheck()
-                        }
+                        handleRegistrationResult(result)
                     },
                     onFailure = { error ->
                         android.util.Log.e("DeviceAuthViewModel", "registerDevice: Error", error)
-                        
                         val errorMessage = when (error) {
                             is RateLimitException -> createRateLimitMessage(error.retryAfterSeconds)
                             else -> error.message ?: "Error al registrar dispositivo"
                         }
-                        
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             error = errorMessage
                         )
-                        
-                        // Cancelar verificación periódica si hay error
                         verificationCheckJob?.cancel()
                     }
                 )
@@ -219,6 +161,35 @@ class DeviceAuthViewModel @Inject constructor(
                     isLoading = false,
                     error = "Error inesperado al registrar dispositivo"
                 )
+            }
+        }
+    }
+    
+    private fun handleRegistrationResult(result: DeviceRegistrationResult) {
+        when (result) {
+            is DeviceRegistrationResult.AlreadyVerified -> {
+                verificationCheckJob?.cancel()
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    registrationStep = RegistrationStep.COMPLETED,
+                    error = null
+                )
+            }
+            is DeviceRegistrationResult.AlreadyVerifiedButFailed -> {
+                verificationCheckJob?.cancel()
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    registrationStep = RegistrationStep.INITIAL,
+                    error = "El dispositivo ya estaba verificado, pero no se pudo recuperar el token automáticamente. ${result.error.message ?: ""}"
+                )
+            }
+            is DeviceRegistrationResult.NewCode -> {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    registrationStep = RegistrationStep.VERIFICATION_CODE,
+                    verificationCode = result.verificationCode
+                )
+                startPeriodicVerificationCheck()
             }
         }
     }
@@ -327,30 +298,7 @@ class DeviceAuthViewModel @Inject constructor(
      * Forzar un nuevo registro limpiando cualquier credencial existente
      */
     fun forceNewRegistration() {
-        viewModelScope.launch {
-            android.util.Log.d("DeviceAuthViewModel", "forceNewRegistration: Forzando nuevo registro")
-            
-            // Cancelar cualquier verificación en progreso
-            verificationCheckJob?.cancel()
-            
-            // Limpiar todas las credenciales locales
-            authRepository.clearToken()
-            
-            // Resetear estados
-            _authState.value = AuthState.NotRegistered
-            _uiState.value = DeviceAuthUiState(
-                isLoading = false,
-                error = null,
-                registrationStep = RegistrationStep.INITIAL,
-                verificationCode = null
-            )
-            
-            // Pequeño delay para asegurar que todo se limpió
-            delay(100)
-            
-            // Registrar dispositivo directamente
-            registerDevice()
-        }
+        registerDevice()
     }
     
     /**

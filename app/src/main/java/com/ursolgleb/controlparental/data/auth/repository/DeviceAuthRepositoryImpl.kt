@@ -28,9 +28,16 @@ class DeviceAuthRepositoryImpl @Inject constructor(
     private val localDataSource: DeviceAuthLocalDataSource
 ) : DeviceAuthRepository {
     
+    // 1. Agregar sealed class para el resultado del registro
+    sealed class DeviceRegistrationResult {
+        data class NewCode(val verificationCode: VerificationCode) : DeviceRegistrationResult()
+        object AlreadyVerified : DeviceRegistrationResult()
+        data class AlreadyVerifiedButFailed(val error: Throwable) : DeviceRegistrationResult()
+    }
+    
     override suspend fun registerDevice(
         registration: DeviceRegistration
-    ): Result<VerificationCode> {
+    ): Result<DeviceRegistrationResult> {
         return try {
             android.util.Log.d("DeviceAuthRepositoryImpl", "registerDevice: Iniciando con deviceId=${registration.deviceId}")
             
@@ -48,18 +55,18 @@ class DeviceAuthRepositoryImpl @Inject constructor(
             android.util.Log.d("DeviceAuthRepositoryImpl", "registerDevice: Respuesta recibida - success=${response.success}")
             
             if (response.success && response.data != null) {
-                // Verificar si el dispositivo ya está verificado
                 if (response.data.isAlreadyVerified) {
-                    android.util.Log.d("DeviceAuthRepositoryImpl", "registerDevice: Dispositivo ya verificado")
-                    
-                    // Devolver un código especial para indicar que ya está verificado
-                    val specialCode = VerificationCode(
-                        code = "ALREADY_VERIFIED",
-                        expiresInMinutes = 0
-                    )
-                    
-                    Result.success(specialCode)
-                } else {
+                    // Flujo automático: intentar recuperar el token
+                    val tokenResult = fetchTokenIfAlreadyVerified(response.data.deviceId)
+                    return if (tokenResult.isSuccess) {
+                        // Token recuperado y guardado
+                        android.util.Log.d("DeviceAuthRepositoryImpl", "registerDevice: Token recuperado automáticamente tras AlreadyVerified")
+                        Result.success(DeviceRegistrationResult.AlreadyVerified)
+                    } else {
+                        android.util.Log.e("DeviceAuthRepositoryImpl", "registerDevice: No se pudo recuperar el token tras AlreadyVerified")
+                        Result.success(DeviceRegistrationResult.AlreadyVerifiedButFailed(tokenResult.exceptionOrNull() ?: Exception("Error desconocido")))
+                    }
+                } else if (response.data.verificationCode != null && response.data.expiresInMinutes != null) {
                     // Guardar device ID localmente SOLO si el registro fue exitoso
                     localDataSource.saveDeviceId(registration.deviceId)
                     
@@ -69,7 +76,10 @@ class DeviceAuthRepositoryImpl @Inject constructor(
                     )
                     
                     android.util.Log.d("DeviceAuthRepositoryImpl", "registerDevice: Éxito - código=${code.formatted()}")
-                    Result.success(code)
+                    Result.success(DeviceRegistrationResult.NewCode(code))
+                } else {
+                    android.util.Log.e("DeviceAuthRepositoryImpl", "registerDevice: Respuesta inesperada, faltan campos")
+                    Result.failure(Exception("Respuesta inesperada del servidor: faltan campos de verificación"))
                 }
             } else {
                 android.util.Log.e("DeviceAuthRepositoryImpl", "registerDevice: Error en respuesta - ${response.error}")
@@ -94,6 +104,25 @@ class DeviceAuthRepositoryImpl @Inject constructor(
                 // Otros errores, posiblemente de autenticación
                 Result.failure(e)
             }
+        }
+    }
+    
+    // 3. Método privado para recuperar el token automáticamente
+    private suspend fun fetchTokenIfAlreadyVerified(deviceId: String): Result<DeviceToken> {
+        return try {
+            val response = apiService.checkDeviceStatus(deviceId)
+            if (response.success && response.data != null && response.data.apiToken != null) {
+                val token = DeviceToken(
+                    token = response.data.apiToken,
+                    deviceId = deviceId
+                )
+                localDataSource.saveApiToken(token)
+                Result.success(token)
+            } else {
+                Result.failure(Exception("No se pudo recuperar el token"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
     
