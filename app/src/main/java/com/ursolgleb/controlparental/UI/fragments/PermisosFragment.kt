@@ -146,6 +146,29 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
             // Ocultar botón de background location si no tiene los normales
             binding.requestBackgroundLocationPermissionBoton.visibility = View.GONE
         }
+
+        // Actualizar UI para permiso de ventana flotante (SYSTEM_ALERT_WINDOW)
+        if (Permisos.hasSystemAlertWindowPermission(appDataRepository.context)) {
+            binding.requestSystemAlertWindowPermissionBoton.isEnabled = false
+            binding.requestSystemAlertWindowPermissionBoton.setCompoundDrawablesWithIntrinsicBounds(
+                R.drawable.ok_scaled,
+                0,
+                0,
+                0
+            )
+            val color = ContextCompat.getColorStateList(appDataRepository.context, R.color.mercadopago)
+            TextViewCompat.setCompoundDrawableTintList(binding.requestSystemAlertWindowPermissionBoton, color)
+        } else {
+            binding.requestSystemAlertWindowPermissionBoton.isEnabled = true
+            binding.requestSystemAlertWindowPermissionBoton.setCompoundDrawablesWithIntrinsicBounds(
+                R.drawable.baseline_add_circle_outline_24,
+                0,
+                0,
+                0
+            )
+            val color = ContextCompat.getColorStateList(appDataRepository.context, R.color.white)
+            TextViewCompat.setCompoundDrawableTintList(binding.requestSystemAlertWindowPermissionBoton, color)
+        }
     }
 
     private fun initListeners() {
@@ -191,6 +214,17 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
                 }
             } else {
                 Toast.makeText(appDataRepository.context, "Ya tienes el permiso de ubicación en segundo plano", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        binding.requestSystemAlertWindowPermissionBoton.setOnClickListener {
+            if (!Permisos.hasSystemAlertWindowPermission(appDataRepository.context)) {
+                Log.w("PermisosFragment", "Solicitando permiso de ventana flotante (SYSTEM_ALERT_WINDOW)")
+                Permisos.requestSystemAlertWindowPermission(appDataRepository.context)
+            } else {
+                val msg = "Ya tienes el permiso de ventana flotante"
+                Toast.makeText(appDataRepository.context, msg, Toast.LENGTH_SHORT).show()
+                coroutineScope.launch { Archivo.appendTextToFile(requireContext(), "\n $msg") }
             }
         }
 
