@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 import javax.inject.Singleton
 import com.ursolgleb.controlparental.receivers.AuthStateReceiver
+import androidx.core.content.edit
 
 /**
  * Fuente de datos local para la autenticación del dispositivo
@@ -53,13 +54,16 @@ class DeviceAuthLocalDataSource @Inject constructor(
     /**
      * Guardar ID del dispositivo
      */
-    fun saveDeviceId(deviceId: String) {
-        encryptedPrefs.edit().apply {
+    fun saveDeviceId(deviceId: String): Boolean {
+        val result = encryptedPrefs.edit().apply {
             putString(KEY_DEVICE_ID, deviceId)
             putBoolean(KEY_IS_REGISTERED, true)
-            apply()
+        }.commit()
+        if (result) {
+            android.util.Log.d(TAG, "DeviceId guardado exitosamente: $deviceId")
         }
         updateAuthState()
+        return result
     }
     
     /**
@@ -72,14 +76,22 @@ class DeviceAuthLocalDataSource @Inject constructor(
     /**
      * Guardar token de API
      */
-    fun saveApiToken(token: DeviceToken) {
-        encryptedPrefs.edit().apply {
-            putString(KEY_API_TOKEN, token.token)
-            putString(KEY_DEVICE_ID, token.deviceId)
-            putBoolean(KEY_IS_VERIFIED, true)
-            apply()
+    fun saveApiToken(token: DeviceToken): Boolean {
+        val currentDeviceId = getDeviceId()
+        // Solo sobrescribir si el deviceId es igual al guardado o si no hay ninguno guardado
+        val shouldOverwriteDeviceId = currentDeviceId == null || currentDeviceId == token.deviceId
+        val editor = encryptedPrefs.edit()
+        editor.putString(KEY_API_TOKEN, token.token)
+        if (shouldOverwriteDeviceId && token.deviceId != null) {
+            editor.putString(KEY_DEVICE_ID, token.deviceId)
+        }
+        editor.putBoolean(KEY_IS_VERIFIED, true)
+        val result = editor.commit()
+        if (result) {
+            android.util.Log.d(TAG, "Token guardado exitosamente: "+token.token.take(8)+"..., deviceId: "+token.deviceId)
         }
         updateAuthState()
+        return result
     }
     
     /**
@@ -100,7 +112,7 @@ class DeviceAuthLocalDataSource @Inject constructor(
      * Limpiar todas las credenciales
      */
     fun clearCredentials() {
-        encryptedPrefs.edit().clear().apply()
+        encryptedPrefs.edit() { clear() }
         updateAuthState()
     }
     
@@ -134,13 +146,14 @@ class DeviceAuthLocalDataSource @Inject constructor(
      */
     suspend fun clearToken() {
         withContext(Dispatchers.IO) {
-            encryptedPrefs.edit().apply {
+            val result = encryptedPrefs.edit().apply {
                 remove(KEY_API_TOKEN)
                 putBoolean(KEY_IS_VERIFIED, false)
                 // Mantener KEY_DEVICE_ID y KEY_IS_REGISTERED
-                apply()
+            }.commit()
+            if (!result) {
+                android.util.Log.e(TAG, "clearToken: Error al eliminar el token de autenticación")
             }
-            
             android.util.Log.d("DeviceAuthLocalDataSource", "clearToken: Token eliminado, dispositivo sigue registrado")
             
             // Cancelar el worker de sincronización
@@ -161,14 +174,15 @@ class DeviceAuthLocalDataSource @Inject constructor(
      */
     suspend fun clearRegistration() {
         withContext(Dispatchers.IO) {
-            encryptedPrefs.edit().apply {
+            val result = encryptedPrefs.edit().apply {
                 remove(KEY_API_TOKEN)
                 putBoolean(KEY_IS_VERIFIED, false)
                 putBoolean(KEY_IS_REGISTERED, false)
                 // Mantener KEY_DEVICE_ID para preservar datos locales
-                apply()
+            }.commit()
+            if (!result) {
+                android.util.Log.e(TAG, "clearRegistration: Error al eliminar el registro del dispositivo")
             }
-            
             android.util.Log.d("DeviceAuthLocalDataSource", "clearRegistration: Registro eliminado, deviceId mantenido")
             
             // Cancelar el worker de sincronización
@@ -196,7 +210,10 @@ class DeviceAuthLocalDataSource @Inject constructor(
      */
     suspend fun clearEverything() {
         withContext(Dispatchers.IO) {
-            encryptedPrefs.edit().clear().apply()
+            val result = encryptedPrefs.edit().clear().commit()
+            if (!result) {
+                android.util.Log.e(TAG, "clearEverything: Error al limpiar todas las credenciales")
+            }
             
             // Limpiar toda la base de datos
             try {

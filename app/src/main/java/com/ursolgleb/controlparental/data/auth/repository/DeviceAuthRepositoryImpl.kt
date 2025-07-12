@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.map
 import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import com.squareup.moshi.JsonDataException
 
 /**
  * Implementación del repositorio de autenticación
@@ -83,7 +86,12 @@ class DeviceAuthRepositoryImpl @Inject constructor(
                 val retryAfter = e.response()?.headers()?.get("Retry-After")?.toIntOrNull() ?: 60
                 android.util.Log.d("DeviceAuthRepositoryImpl", "Rate limit exceeded. Retry after: $retryAfter seconds")
                 Result.failure(RateLimitException(retryAfter))
+            } else if (e is SocketTimeoutException || e is UnknownHostException || e is JsonDataException) {
+                android.util.Log.e("DeviceAuthRepositoryImpl", "registerDevice: Error de red o parsing, no se borra el token", e)
+                Result.failure(e)
             } else {
+                android.util.Log.e("DeviceAuthRepositoryImpl", "registerDevice: Error no autenticación, posible borrado de token", e)
+                // Otros errores, posiblemente de autenticación
                 Result.failure(e)
             }
         }
@@ -120,7 +128,12 @@ class DeviceAuthRepositoryImpl @Inject constructor(
             if (e is HttpException && e.code() == 429) {
                 val retryAfter = e.response()?.headers()?.get("Retry-After")?.toIntOrNull() ?: 60
                 Result.failure(RateLimitException(retryAfter))
+            } else if (e is SocketTimeoutException || e is UnknownHostException || e is JsonDataException) {
+                android.util.Log.e("DeviceAuthRepositoryImpl", "verifyDevice: Error de red o parsing, no se borra el token", e)
+                Result.failure(e)
             } else {
+                android.util.Log.e("DeviceAuthRepositoryImpl", "verifyDevice: Error no autenticación, posible borrado de token", e)
+                // Otros errores, posiblemente de autenticación
                 Result.failure(e)
             }
         }
@@ -154,12 +167,11 @@ class DeviceAuthRepositoryImpl @Inject constructor(
     
     override fun observeAuthState(): Flow<AuthState> {
         return localDataSource.authStateFlow.map { isAuthenticated ->
+            val token = localDataSource.getApiToken()
             when {
                 !localDataSource.isDeviceRegistered() -> AuthState.NotRegistered
                 localDataSource.isDeviceRegistered() && !localDataSource.isDeviceVerified() -> AuthState.WaitingVerification
-                isAuthenticated && localDataSource.getApiToken() != null -> {
-                    AuthState.Authenticated(localDataSource.getApiToken()!!)
-                }
+                isAuthenticated && token != null -> AuthState.Authenticated(token)
                 else -> AuthState.Unauthenticated
             }
         }
