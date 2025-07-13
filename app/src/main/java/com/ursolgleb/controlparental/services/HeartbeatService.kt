@@ -129,9 +129,6 @@ class HeartbeatService : Service() {
             val currentBattery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
             val currentModel = "${Build.MANUFACTURER} ${Build.MODEL}"
 
-            // Eliminar lógica de ubicación: location siempre null
-            val location: Location? = null
-
             // Verificar si hay cambios en el dispositivo
             var hasDeviceChanges = false
             if (device.model != currentModel || device.batteryLevel != currentBattery) {

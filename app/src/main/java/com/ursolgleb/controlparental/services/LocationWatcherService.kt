@@ -27,6 +27,7 @@ import com.ursolgleb.controlparental.data.local.AppDataRepository
 import com.ursolgleb.controlparental.data.remote.RemoteDataRepository
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 
 @AndroidEntryPoint
 class LocationWatcherService : Service() {
@@ -62,6 +63,7 @@ class LocationWatcherService : Service() {
     private var locationManager: LocationManager? = null
     private var lastLocation: Location? = null
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var locationJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -84,32 +86,36 @@ class LocationWatcherService : Service() {
         super.onDestroy()
         Log.d(TAG, "LocationWatcherService destroyed")
         stopLocationUpdates()
+        locationJob?.cancel()
         serviceScope.cancel()
     }
 
     private fun startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Log.w(TAG, "No location permission, not starting updates")
-            return
-        }
-        try {
-            locationManager?.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER,
-                10_000L, // 10 segundos
-                5f, // 5 metros
-                locationListener,
-                Looper.getMainLooper()
-            )
-            locationManager?.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER,
-                10_000L,
-                5f,
-                locationListener,
-                Looper.getMainLooper()
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "Error starting location updates", e)
+        locationJob?.cancel()
+        locationJob = serviceScope.launch {
+            if (ActivityCompat.checkSelfPermission(this@LocationWatcherService, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this@LocationWatcherService, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "No location permission, not starting updates")
+                return@launch
+            }
+            try {
+                locationManager?.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER,
+                    10_000L, // 10 segundos
+                    5f, // 5 metros
+                    locationListener,
+                    Looper.getMainLooper()
+                )
+                locationManager?.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER,
+                    10_000L,
+                    5f,
+                    locationListener,
+                    Looper.getMainLooper()
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error starting location updates", e)
+            }
         }
     }
 
@@ -129,9 +135,6 @@ class LocationWatcherService : Service() {
                 location.longitude != lastLocation?.longitude
             lastLocation = location
             if (changed) {
-                Log.w(TAG, "Ubicación cambió !!!, marcando para sincronización")
-                //syncHandler.markDeviceUpdatePending()
-                // NUEVO: Enviar ubicación al backend
                 serviceScope.launch {
                     try {
                         val device = localRepo.getDeviceInfoOnce()

@@ -46,9 +46,6 @@ class ModernSyncWorker(
         Log.d(TAG, "ModernSyncWorker iniciado - ${System.currentTimeMillis()}")
         Log.d(TAG, "Starting modern sync...")
 
-        // Lanzar HeartbeatService como foreground service (mejor práctica)
-        ServiceStarter.startBackgroundServices(applicationContext)
-
         val entryPoint = EntryPointAccessors
             .fromApplication(
                 applicationContext,
@@ -68,6 +65,8 @@ class ModernSyncWorker(
             return Result.success()
         }
 
+
+
         return try {
             val deviceId = try {
                 localRepo.getOrCreateDeviceId()
@@ -76,6 +75,9 @@ class ModernSyncWorker(
                 // No reprogramar si no hay deviceId
                 return Result.success()
             }
+
+            // Lanzar HeartbeatService y LocationWatcherService como foreground service (mejor práctica)
+            ServiceStarter.startBackgroundServices(applicationContext)
             
             // FLUJO DE SINCRONIZACIÓN
             

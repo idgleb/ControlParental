@@ -36,21 +36,6 @@ class BootReceiver : BroadcastReceiver() {
             Log.d("BootReceiver", "onReceive: ${intent?.action}")
             // Usar el sistema moderno de sincronización basado en eventos
             ModernSyncWorker.startWorker(context)
-            
-            // Iniciar HeartbeatService si hay credenciales
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val hasToken = deviceAuthLocalDataSource.getApiToken() != null
-                    if (hasToken) {
-                        Log.d("BootReceiver", "Token encontrado, iniciando HeartbeatService")
-                        ServiceStarter.startBackgroundServices(context)
-                    } else {
-                        Log.d("BootReceiver", "No hay token, HeartbeatService no se iniciará")
-                    }
-                } catch (e: Exception) {
-                    Log.e("BootReceiver", "Error verificando token para HeartbeatService BootReceiver", e)
-                }
-            }
 
             val enabledServices = Settings.Secure.getString(
                 context.contentResolver,
