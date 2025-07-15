@@ -34,19 +34,10 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
+    // Launcher para permisos de ubicación
     private lateinit var locationPermissionLauncher: ActivityResultLauncher<Array<String>>
-
     // Launcher para permiso de ubicación en segundo plano
-    private val backgroundLocationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            Log.d("PermisosFragment", "Permiso de ubicación en segundo plano otorgado")
-            onResume()
-        } else {
-            Log.w("PermisosFragment", "Permiso de ubicación en segundo plano denegado")
-        }
-    }
+    private lateinit var backgroundLocationPermissionLauncher: ActivityResultLauncher<String>
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -58,6 +49,16 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
                 onResume()
             } else {
                 Log.w("PermisosFragment", "Permisos de ubicación denegados")
+            }
+        }
+        backgroundLocationPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            if (granted) {
+                Log.d("PermisosFragment", "Permiso de ubicación en segundo plano otorgado")
+                onResume()
+            } else {
+                Log.w("PermisosFragment", "Permiso de ubicación en segundo plano denegado")
             }
         }
 
@@ -190,14 +191,12 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
         binding.requestLocationPermissionBoton.setOnClickListener {
             if (!Permisos.hasLocationPermission(appDataRepository.context)) {
                 Log.w("PermisosFragment", "Solicitando permisos de ubicación")
-                Permisos.requestLocationPermission(this) { allGranted ->
-                    if (allGranted) {
-                        Log.d("PermisosFragment", "Permisos de ubicación otorgados")
-                        onResume()
-                    } else {
-                        Log.w("PermisosFragment", "Permisos de ubicación denegados")
-                    }
-                }
+                locationPermissionLauncher.launch(
+                    arrayOf(
+                        android.Manifest.permission.ACCESS_FINE_LOCATION,
+                        android.Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
             } else {
                 val msg = "Ya tienes los permisos de ubicación"
                 Toast.makeText(appDataRepository.context, msg, Toast.LENGTH_SHORT).show()
@@ -207,13 +206,9 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
 
         binding.requestBackgroundLocationPermissionBoton.setOnClickListener {
             if (!Permisos.hasBackgroundLocationPermission(appDataRepository.context)) {
-                Permisos.requestBackgroundLocationPermission(this) { granted ->
-                    if (granted) {
-                        Log.d("PermisosFragment", "Permiso de ubicación en segundo plano otorgado")
-                        onResume()
-                    } else {
-                        Log.w("PermisosFragment", "Permiso de ubicación en segundo plano denegado")
-                    }
+                Log.w("PermisosFragment", "Solicitando permiso de ubicación en segundo plano")
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    backgroundLocationPermissionLauncher.launch(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                 }
             } else {
                 Toast.makeText(appDataRepository.context, "Ya tienes el permiso de ubicación en segundo plano", Toast.LENGTH_SHORT).show()
