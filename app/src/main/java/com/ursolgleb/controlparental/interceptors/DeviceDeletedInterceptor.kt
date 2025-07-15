@@ -38,49 +38,52 @@ class DeviceDeletedInterceptor @Inject constructor(
         val request = chain.request()
         val response = chain.proceed(request)
 
-        // Verificar códigos de error de autenticación
-        when (response.code) {
-            401 -> {
-                // No autorizado - el dispositivo fue eliminado o no existe
-                handleDeviceDeleted(response.code, response.message)
+        // Solo reaccionar a 404 en endpoints relevantes
+        if (response.code == 404 && (
+                request.url.encodedPath.contains("/device/") ||
+                request.url.encodedPath.contains("/auth/verify")
+            )) {
+            Log.d(TAG, "handleDeviceDeleted: 404 en endpoint de dispositivo o verificación")
+            CoroutineScope(Dispatchers.IO).launch {
+                deviceAuthLocalDataSource.clearRegistration()
+                Log.d(TAG, "handleDeviceDeleted: Registro eliminado, datos locales mantenidos")
             }
-
-            403 -> {
-                // Prohibido - podría ser token expirado o dispositivo bloqueado
-                // Por ahora tratarlo como dispositivo eliminado
-                handleDeviceDeleted(response.code, response.message)
-            }
-
-            404 -> {
-                // No encontrado - el dispositivo no existe en el servidor
-                handleDeviceDeleted(response.code, response.message)
-            }
+            // Aquí podrías lanzar la pantalla de autenticación si lo deseas, pero solo para estos casos
         }
 
         return response
+    }
+
+    private fun shouldOpenAuthScreen(): Boolean {
+        val deviceId = deviceAuthLocalDataSource.getDeviceId()
+        val token = deviceAuthLocalDataSource.getApiToken()
+        val isRegistered = deviceAuthLocalDataSource.isDeviceRegistered()
+        return !isRegistered && token == null && !registroYaFallóRecientemente()
+    }
+
+    private fun registroYaFallóRecientemente(): Boolean {
+        // Implementación simple: podrías guardar un timestamp en SharedPreferences
+        // Aquí solo retorna false para ejemplo
+        return false
     }
 
     private fun handleDeviceDeleted(code: Int, message: String) {
         Log.d(TAG, "handleDeviceDeleted: $code - $message")
 
         CoroutineScope(Dispatchers.IO).launch {
-            // Para errores 401/403/404, limpiar el registro pero mantener el deviceId
-            // Esto permite que la app siga funcionando offline
             deviceAuthLocalDataSource.clearRegistration()
             Log.d(TAG, "handleDeviceDeleted: Registro eliminado, datos locales mantenidos")
         }
 
-        // Redirigir a la pantalla de autenticación
-        CoroutineScope(Dispatchers.Main).launch {
-
-            val intent = Intent(context, DeviceAuthActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                putExtra("error_message", "$code - $message")
+        // Solo abrir DeviceAuthActivity si corresponde
+        if (shouldOpenAuthScreen()) {
+            CoroutineScope(Dispatchers.Main).launch {
+                val intent = Intent(context, DeviceAuthActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    putExtra("error_message", "$code - $message")
+                }
+                context.startActivity(intent)
             }
-            context.startActivity(intent)
-
-            redirectToAuth(context, "$code - $message")
-
         }
     }
 

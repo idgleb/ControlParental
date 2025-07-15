@@ -23,6 +23,7 @@ import javax.inject.Inject
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.ursolgleb.controlparental.domain.auth.repository.DeviceRegistrationResult
+import com.ursolgleb.controlparental.data.local.DeviceRegistrationStatusLocalDataSource
 
 /**
  * Estados del proceso de registro
@@ -52,7 +53,8 @@ class DeviceAuthViewModel @Inject constructor(
     private val verifyDeviceUseCase: VerifyDeviceUseCase,
     private val checkDeviceStatusUseCase: CheckDeviceStatusUseCase,
     private val authRepository: DeviceAuthRepository,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val registrationStatusLocalDataSource: DeviceRegistrationStatusLocalDataSource
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(DeviceAuthUiState())
@@ -64,6 +66,8 @@ class DeviceAuthViewModel @Inject constructor(
     private var verificationCheckJob: Job? = null
     private var lastRegisterErrorCode: Int? = null
     fun canRetryRegister(): Boolean = lastRegisterErrorCode != 404
+    
+    fun puedeIntentarRegistro(): Boolean = registrationStatusLocalDataSource.puedeIntentarRegistro()
     
     init {
         android.util.Log.d("DeviceAuthViewModel", "init: Iniciando checkAuthState")
@@ -86,10 +90,10 @@ class DeviceAuthViewModel @Inject constructor(
                     // No hay credenciales guardadas
                     android.util.Log.d("DeviceAuthViewModel", "checkAuthState: No registrado - iniciando registro")
                     _authState.value = AuthState.NotRegistered
-                    if (canRetryRegister()) {
+                    if (puedeIntentarRegistro()) {
                         registerDevice()
                     } else {
-                        android.util.Log.w("DeviceAuthViewModel", "No se reintenta registro automático porque el último error fue 404")
+                        android.util.Log.w("DeviceAuthViewModel", "No se reintenta registro automático porque hay marca de fallo persistente")
                     }
                 }
                 else -> {
@@ -147,23 +151,30 @@ class DeviceAuthViewModel @Inject constructor(
     /**
      * Registrar el dispositivo
      */
-    fun registerDevice() {
+    fun registerDevice(
+        onSuccess: (() -> Unit)? = null,
+        onFailure: ((Throwable) -> Unit)? = null
+    ) {
         android.util.Log.d("DeviceAuthViewModel", "registerDevice: Iniciando registro")
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true, error = null)
                 android.util.Log.d("DeviceAuthViewModel", "registerDevice: Llamando registerDeviceUseCase")
-                
                 registerDeviceUseCase().fold(
                     onSuccess = { result ->
                         android.util.Log.d("DeviceAuthViewModel", "registerDevice: Resultado recibido")
                         handleRegistrationResult(result)
+                        registrationStatusLocalDataSource.limpiarRegistroFallido()
                         lastRegisterErrorCode = null
+                        onSuccess?.invoke()
                     },
                     onFailure = { error ->
                         android.util.Log.e("DeviceAuthViewModel", "registerDevice: Error", error)
                         val is404 = error.message?.contains("404") == true || error.message?.contains("Servidor no disponible") == true
                         lastRegisterErrorCode = if (is404) 404 else null
+                        if (is404) {
+                            registrationStatusLocalDataSource.marcarRegistroFallido()
+                        }
                         val errorMessage = when {
                             is404 -> "No se pudo conectar con el servidor. Por favor, verifica tu conexión o contacta al administrador."
                             error is RateLimitException -> createRateLimitMessage(error.retryAfterSeconds)
@@ -174,6 +185,7 @@ class DeviceAuthViewModel @Inject constructor(
                             error = errorMessage
                         )
                         verificationCheckJob?.cancel()
+                        onFailure?.invoke(error)
                     }
                 )
             } catch (e: Exception) {
@@ -182,6 +194,7 @@ class DeviceAuthViewModel @Inject constructor(
                     isLoading = false,
                     error = "Error inesperado al registrar dispositivo"
                 )
+                onFailure?.invoke(e)
             }
         }
     }
@@ -320,6 +333,11 @@ class DeviceAuthViewModel @Inject constructor(
      */
     fun forceNewRegistration() {
         registerDevice()
+    }
+    
+    fun reintentarRegistro() {
+        registrationStatusLocalDataSource.limpiarRegistroFallido()
+        checkAuthState()
     }
     
     /**

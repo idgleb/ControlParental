@@ -58,8 +58,16 @@ class DeviceAuthActivity : AppCompatActivity() {
             // Botón de registro
             btnRegisterDevice.setOnClickListener {
                 if (isClickAllowed()) {
-                    // Forzar limpieza y nuevo registro
-                    viewModel.forceNewRegistration()
+                    if (viewModel.puedeIntentarRegistro()) {
+                        viewModel.registerDevice(
+                            onSuccess = { finish() },
+                            onFailure = { error ->
+                                Log.e("DeviceAuthActivity", "Registro fallido: $error")
+                            }
+                        )
+                    } else {
+                        Toast.makeText(this@DeviceAuthActivity, "No se puede registrar ahora. Espera unos minutos o pulsa 'Reintentar' más tarde.", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             
@@ -72,10 +80,10 @@ class DeviceAuthActivity : AppCompatActivity() {
             // Botón de reintento de recuperación de token
             btnRetry.setOnClickListener {
                 if (isClickAllowed()) {
-                    if (viewModel.canRetryRegister()) {
-                        viewModel.forceNewRegistration()
+                    if (viewModel.puedeIntentarRegistro()) {
+                        viewModel.reintentarRegistro()
                     } else {
-                        Toast.makeText(this@DeviceAuthActivity, "No se puede volver a intentar hasta que el servidor esté disponible.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@DeviceAuthActivity, "No se puede volver a intentar hasta que el servidor esté disponible o haya pasado el tiempo de espera.", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -157,7 +165,8 @@ class DeviceAuthActivity : AppCompatActivity() {
 
             // Mostrar botón de reintento solo si se puede reintentar
             btnRetry.isVisible = state.error != null
-            btnRetry.isEnabled = viewModel.canRetryRegister()
+            btnRetry.isEnabled = viewModel.puedeIntentarRegistro()
+            btnRegisterDevice.isEnabled = viewModel.puedeIntentarRegistro()
 
             // Vistas según el paso
             when (state.registrationStep) {
