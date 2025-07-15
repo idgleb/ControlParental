@@ -72,7 +72,11 @@ class DeviceAuthActivity : AppCompatActivity() {
             // Botón de reintento de recuperación de token
             btnRetry.setOnClickListener {
                 if (isClickAllowed()) {
-                    viewModel.forceNewRegistration()
+                    if (viewModel.canRetryRegister()) {
+                        viewModel.forceNewRegistration()
+                    } else {
+                        Toast.makeText(this@DeviceAuthActivity, "No se puede volver a intentar hasta que el servidor esté disponible.", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             // Cerrar error al tocar
@@ -144,13 +148,17 @@ class DeviceAuthActivity : AppCompatActivity() {
             progressBar.isVisible = state.isLoading
             
             // Error
-            state.error?.let { showError(it) } ?: run {
+            state.error?.let {
+                showError(it)
+                Toast.makeText(this@DeviceAuthActivity, it, Toast.LENGTH_LONG).show()
+            } ?: run {
                 tvError.isVisible = false
             }
-            
-            // Mostrar botón de reintento solo para el error de token
-            btnRetry.isVisible = state.error?.contains("No se pudo recuperar el token automáticamente") == true
-            
+
+            // Mostrar botón de reintento solo si se puede reintentar
+            btnRetry.isVisible = state.error != null
+            btnRetry.isEnabled = viewModel.canRetryRegister()
+
             // Vistas según el paso
             when (state.registrationStep) {
                 RegistrationStep.INITIAL -> {

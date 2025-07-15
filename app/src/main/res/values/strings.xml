@@ -1,8 +1,9 @@
 <resources>
     <string name="app_name">Control Parental URSOL</string>
-    <string name="accessibility_service_description">
-        Servicio de accesibilidad para supervisar y bloquear aplicaciones no permitidas en el dispositivos de tus hijos.
-    </string>
+    <string name="accessibility_service_description">Este servicio de accesibilidad permite a la aplicación de control parental detectar y bloquear aplicaciones no permitidas, y también iniciar el servicio de ubicación para que los padres puedan conocer la localización del dispositivo de sus hijos en todo momento. Su uso es exclusivo para la protección y supervisión infantil.</string>
+    <string name="accessibility_description">Servicio de accesibilidad para control parental: detecta y bloquea aplicaciones no permitidas. Además, permite arrancar el servicio de ubicación para que los padres puedan conocer la localización del dispositivo de sus hijos.</string>
+    <string name="accessibility_label">Control Parental - Bloqueo de Apps y Localización</string>
+    <string name="location_service_description">Servicio de ubicación arrancado desde el servicio de accesibilidad para que los padres puedan saber dónde está el menor en todo momento.</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <!-- Strings used for fragments for navigation -->

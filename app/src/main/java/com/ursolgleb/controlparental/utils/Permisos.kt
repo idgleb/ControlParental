@@ -12,6 +12,9 @@ import androidx.core.content.ContextCompat
 import android.app.Activity
 import androidx.core.app.ActivityCompat
 import androidx.core.net.toUri
+import androidx.activity.result.ActivityResultCaller
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 
 class Permisos {
     companion object{
@@ -54,6 +57,27 @@ class Permisos {
             ) == PackageManager.PERMISSION_GRANTED
         }
 
+        fun requestLocationPermission(context: Context) {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:" + context.packageName)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        }
+
+        fun requestLocationPermission(
+            fragment: androidx.fragment.app.Fragment,
+            onResult: (Boolean) -> Unit
+        ) {
+            val launcher = getLocationPermissionLauncher(fragment, onResult)
+            launcher.launch(
+                arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+
         fun hasBackgroundLocationPermission(context: Context): Boolean {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ContextCompat.checkSelfPermission(
@@ -63,6 +87,33 @@ class Permisos {
             } else {
                 // En versiones anteriores no existe el permiso, así que lo consideramos concedido
                 true
+            }
+        }
+
+        fun requestBackgroundLocationPermission(context: Context) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.parse("package:" + context.packageName)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            }
+        }
+
+        fun requestBackgroundLocationPermission(
+            fragment: androidx.fragment.app.Fragment,
+            onResult: (Boolean) -> Unit
+        ) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val launcher = fragment.registerForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { granted ->
+                    onResult(granted)
+                }
+                launcher.launch(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            } else {
+                // En versiones anteriores, se considera concedido
+                onResult(true)
             }
         }
 
@@ -79,6 +130,18 @@ class Permisos {
                 val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + context.packageName))
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 context.startActivity(intent)
+            }
+        }
+
+        fun getLocationPermissionLauncher(
+            caller: ActivityResultCaller,
+            onResult: (Boolean) -> Unit
+        ): ActivityResultLauncher<Array<String>> {
+            return caller.registerForActivityResult(
+                ActivityResultContracts.RequestMultiplePermissions()
+            ) { permissions ->
+                val allGranted = permissions.all { it.value }
+                onResult(allGranted)
             }
         }
 

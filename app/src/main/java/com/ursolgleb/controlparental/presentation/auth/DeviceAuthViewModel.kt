@@ -12,8 +12,6 @@ import com.ursolgleb.controlparental.domain.auth.usecase.VerifyDeviceUseCase
 import com.ursolgleb.controlparental.domain.auth.usecase.CheckDeviceStatusUseCase
 import com.ursolgleb.controlparental.utils.createRateLimitMessage
 import com.ursolgleb.controlparental.workers.ModernSyncWorker
-import com.ursolgleb.controlparental.services.HeartbeatService
-import com.ursolgleb.controlparental.services.ServiceStarter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -64,6 +62,8 @@ class DeviceAuthViewModel @Inject constructor(
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
     
     private var verificationCheckJob: Job? = null
+    private var lastRegisterErrorCode: Int? = null
+    fun canRetryRegister(): Boolean = lastRegisterErrorCode != 404
     
     init {
         android.util.Log.d("DeviceAuthViewModel", "init: Iniciando checkAuthState")
@@ -86,7 +86,11 @@ class DeviceAuthViewModel @Inject constructor(
                     // No hay credenciales guardadas
                     android.util.Log.d("DeviceAuthViewModel", "checkAuthState: No registrado - iniciando registro")
                     _authState.value = AuthState.NotRegistered
-                    registerDevice()
+                    if (canRetryRegister()) {
+                        registerDevice()
+                    } else {
+                        android.util.Log.w("DeviceAuthViewModel", "No se reintenta registro automático porque el último error fue 404")
+                    }
                 }
                 else -> {
                     // Hay credenciales, verificar con el servidor
@@ -102,9 +106,13 @@ class DeviceAuthViewModel @Inject constructor(
                                 // Reiniciar el worker de sincronización
                                 startBackgroundServices()
                             } else {
-                                android.util.Log.d("DeviceAuthViewModel", "checkAuthState: Dispositivo no verificado aún")
+                                android.util.Log.d("DeviceAuthViewModel", "check-status devolvió null - dispositivo no verificado aún")
                                 _authState.value = AuthState.NotRegistered
-                                registerDevice()
+                                if (canRetryRegister()) {
+                                    registerDevice()
+                                } else {
+                                    android.util.Log.w("DeviceAuthViewModel", "No se reintenta registro automático porque el último error fue 404")
+                                }
                             }
                         },
                         onFailure = { error ->
@@ -115,11 +123,19 @@ class DeviceAuthViewModel @Inject constructor(
                                 android.util.Log.w("DeviceAuthViewModel", "checkAuthState: Dispositivo eliminado")
                                 authRepository.clearToken()
                                 _authState.value = AuthState.NotRegistered
-                                registerDevice()
+                                if (canRetryRegister()) {
+                                    registerDevice()
+                                } else {
+                                    android.util.Log.w("DeviceAuthViewModel", "No se reintenta registro automático porque el último error fue 404")
+                                }
                             } else {
                                 // Otro error, asumir no registrado
                                 _authState.value = AuthState.NotRegistered
-                                registerDevice()
+                                if (canRetryRegister()) {
+                                    registerDevice()
+                                } else {
+                                    android.util.Log.w("DeviceAuthViewModel", "No se reintenta registro automático porque el último error fue 404")
+                                }
                             }
                         }
                     )
@@ -142,11 +158,15 @@ class DeviceAuthViewModel @Inject constructor(
                     onSuccess = { result ->
                         android.util.Log.d("DeviceAuthViewModel", "registerDevice: Resultado recibido")
                         handleRegistrationResult(result)
+                        lastRegisterErrorCode = null
                     },
                     onFailure = { error ->
                         android.util.Log.e("DeviceAuthViewModel", "registerDevice: Error", error)
-                        val errorMessage = when (error) {
-                            is RateLimitException -> createRateLimitMessage(error.retryAfterSeconds)
+                        val is404 = error.message?.contains("404") == true || error.message?.contains("Servidor no disponible") == true
+                        lastRegisterErrorCode = if (is404) 404 else null
+                        val errorMessage = when {
+                            is404 -> "No se pudo conectar con el servidor. Por favor, verifica tu conexión o contacta al administrador."
+                            error is RateLimitException -> createRateLimitMessage(error.retryAfterSeconds)
                             else -> error.message ?: "Error al registrar dispositivo"
                         }
                         _uiState.value = _uiState.value.copy(
@@ -357,18 +377,6 @@ class DeviceAuthViewModel @Inject constructor(
     }
     
     /**
-     * Inicia el servicio de heartbeat después de autenticación exitosa
-     */
-    fun startHeartbeatService() {
-        try {
-            android.util.Log.d("DeviceAuthViewModel", "Iniciando HeartbeatService")
-            ServiceStarter.startBackgroundServices(context)
-        } catch (e: Exception) {
-            android.util.Log.e("DeviceAuthViewModel", "Error iniciando HeartbeatService", e)
-        }
-    }
-    
-    /**
      * Inicia todos los servicios necesarios después de autenticación exitosa
      */
     private fun startBackgroundServices() {
@@ -377,12 +385,5 @@ class DeviceAuthViewModel @Inject constructor(
         // Iniciar el worker de sincronización
         restartSyncWorker()
         
-        // Iniciar el servicio de heartbeat
-        try {
-            android.util.Log.d("DeviceAuthViewModel", "Iniciando HeartbeatService")
-            ServiceStarter.startBackgroundServices(context)
-        } catch (e: Exception) {
-            android.util.Log.e("DeviceAuthViewModel", "Error iniciando HeartbeatService", e)
-        }
     }
 } 

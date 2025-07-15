@@ -16,13 +16,10 @@ import com.ursolgleb.controlparental.services.AppBlockerService
 import com.ursolgleb.controlparental.workers.ModernSyncWorker
 import dagger.hilt.android.AndroidEntryPoint
 import com.ursolgleb.controlparental.data.auth.local.DeviceAuthLocalDataSource
-import com.ursolgleb.controlparental.services.HeartbeatService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import com.ursolgleb.controlparental.services.ServiceStarter
-
 @AndroidEntryPoint
 class BootReceiver : BroadcastReceiver() {
     

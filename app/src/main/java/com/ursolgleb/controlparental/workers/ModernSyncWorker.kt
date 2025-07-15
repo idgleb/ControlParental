@@ -10,7 +10,6 @@ import androidx.work.WorkerParameters
 import com.ursolgleb.controlparental.data.common.Resource
 import com.ursolgleb.controlparental.data.remote.models.toDto
 import com.ursolgleb.controlparental.di.ModernSyncWorkerEntryPoint
-import com.ursolgleb.controlparental.services.ServiceStarter
 import dagger.hilt.android.EntryPointAccessors
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
@@ -55,6 +54,8 @@ class ModernSyncWorker(
         val localRepo = entryPoint.getAppDataRepository()
         val eventSyncManager = entryPoint.getEventSyncManager()
         val authLocalDataSource = entryPoint.getDeviceAuthLocalDataSource()
+        val remoteRepo = entryPoint.getRemoteDataRepository()
+        val syncHandler = entryPoint.getSyncHandler()
         Log.d(TAG, "Dependencies obtained successfully")
 
         // Verificar si tenemos token de autenticación
@@ -65,7 +66,12 @@ class ModernSyncWorker(
             return Result.success()
         }
 
-
+        // Heartbeat: enviar datos básicos al backend
+        try {
+            sendHeartbeat(localRepo, remoteRepo, syncHandler)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error enviando heartbeat", e)
+        }
 
         return try {
             val deviceId = try {
@@ -76,9 +82,6 @@ class ModernSyncWorker(
                 return Result.success()
             }
 
-            // Lanzar HeartbeatService y LocationWatcherService como foreground service (mejor práctica)
-            ServiceStarter.startBackgroundServices(applicationContext)
-            
             // FLUJO DE SINCRONIZACIÓN
             
             // Paso 1: Verificar si necesitamos sincronización completa
@@ -186,5 +189,56 @@ class ModernSyncWorker(
         )
     }
 
+    private suspend fun sendHeartbeat(
+        localRepo: com.ursolgleb.controlparental.data.local.AppDataRepository,
+        remoteRepo: com.ursolgleb.controlparental.data.remote.RemoteDataRepository,
+        syncHandler: com.ursolgleb.controlparental.handlers.SyncHandler
+    ) {
+        try {
+            val device = localRepo.getDeviceInfoOnce() ?: run {
+                Log.e("ModernSyncWorker", "No device info available")
+                return
+            }
+            val bm = applicationContext.getSystemService(android.content.Context.BATTERY_SERVICE) as android.os.BatteryManager
+            val currentBattery = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            val currentModel = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
 
+            // Verificar si hay cambios en el dispositivo
+            var hasDeviceChanges = false
+            if (device.model != currentModel || device.batteryLevel != currentBattery) {
+                hasDeviceChanges = true
+            }
+
+            // Enviar heartbeat al servidor (sin ubicación)
+            val response = remoteRepo.sendHeartbeat(
+                deviceId = device.deviceId,
+                latitude = null,
+                longitude = null
+            )
+
+            if (response.isSuccessful) {
+                Log.d("ModernSyncWorker", "Heartbeat sent successfully (sin ubicación)")
+                val updatedDevice = device.copy(
+                    model = currentModel,
+                    batteryLevel = currentBattery,
+                    lastSeen = System.currentTimeMillis(),
+                    pingIntervalSeconds = 4 // igual que HeartbeatService
+                )
+                localRepo.updateDeviceInfo(updatedDevice)
+                if (hasDeviceChanges) {
+                    syncHandler.markDeviceUpdatePending()
+                    Log.w("ModernSyncWorker", "Device info changed (battery/model), marked for sync")
+                }
+            } else {
+                Log.e("ModernSyncWorker", "Heartbeat failed: ${response.code()}")
+                if (response.code() == 401 || response.code() == 403) {
+                    throw IllegalStateException("Authentication error: ${response.code()}")
+                }
+            }
+        } catch (e: IllegalStateException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e("ModernSyncWorker", "Error sending heartbeat", e)
+        }
+    }
 } 

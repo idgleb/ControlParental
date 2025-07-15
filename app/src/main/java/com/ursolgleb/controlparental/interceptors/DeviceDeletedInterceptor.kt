@@ -5,7 +5,6 @@ import android.content.Intent
 import android.util.Log
 import com.ursolgleb.controlparental.data.auth.local.DeviceAuthLocalDataSource
 import com.ursolgleb.controlparental.presentation.auth.DeviceAuthActivity
-import com.ursolgleb.controlparental.services.HeartbeatService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -65,10 +64,6 @@ class DeviceDeletedInterceptor @Inject constructor(
         Log.d(TAG, "handleDeviceDeleted: $code - $message")
 
         CoroutineScope(Dispatchers.IO).launch {
-            // Detener el servicio de heartbeat antes de limpiar las credenciales
-            Log.d(TAG, "Deteniendo HeartbeatService...")
-            HeartbeatService.stop(context)
-
             // Para errores 401/403/404, limpiar el registro pero mantener el deviceId
             // Esto permite que la app siga funcionando offline
             deviceAuthLocalDataSource.clearRegistration()

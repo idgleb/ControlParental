@@ -17,6 +17,7 @@ import com.ursolgleb.controlparental.UI.activities.AuthActivity
 import com.ursolgleb.controlparental.data.local.AppDataRepository
 import com.ursolgleb.controlparental.handlers.AppBlockHandler
 import com.ursolgleb.controlparental.utils.Session
+import com.ursolgleb.controlparental.services.LocationWatcherService
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import javax.inject.Inject
@@ -63,6 +64,22 @@ class AppBlockerService : AccessibilityService() {
             Log.d("AppBlockerService333", "currentPkg2=${appDataRepository.currentPkg}")
         }
 
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        if (hasLocationPermission()) {
+            LocationWatcherService.start(this)
+            Log.d("AppBlockerService", "LocationWatcherService arrancado desde AccessibilityService")
+        } else {
+            Log.w("AppBlockerService", "No hay permisos de ubicación, no se arranca LocationWatcherService")
+            // Aquí podrías notificar a la UI principal para pedir permisos si lo deseas
+        }
+    }
+
+    private fun hasLocationPermission(): Boolean {
+        return checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
+               checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
     }
 
     private fun showAuthenticationDialog() {

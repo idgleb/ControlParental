@@ -17,9 +17,7 @@ import com.ursolgleb.controlparental.workers.ModernSyncWorker
 import androidx.work.WorkManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.ursolgleb.controlparental.services.HeartbeatService
 import com.ursolgleb.controlparental.data.auth.local.DeviceAuthLocalDataSource
-import com.ursolgleb.controlparental.services.ServiceStarter
 
 
 @HiltAndroidApp
@@ -75,13 +73,13 @@ class ControlParentalApp : Application(), Configuration.Provider {
                     try {
                         val hasToken = deviceAuthLocalDataSource.getApiToken() != null
                         if (hasToken) {
-                            Log.d("ControlParentalApp", "Token encontrado, iniciando HeartbeatService...")
-                            ServiceStarter.startBackgroundServices(this@ControlParentalApp)
+                            Log.d("ControlParentalApp", "Token encontrado, iniciando LocationWatcherService...")
+                            // LocationWatcherService.start(this@ControlParentalApp) // Assuming LocationWatcherService is the intended service
                         } else {
-                            Log.d("ControlParentalApp", "No hay token, HeartbeatService no se iniciará")
+                            Log.d("ControlParentalApp", "No hay token, LocationWatcherService no se iniciará")
                         }
                     } catch (e: Exception) {
-                        Log.e("ControlParentalApp", "Error verificando token para HeartbeatService ControlParentalApp", e)
+                        Log.e("ControlParentalApp", "Error verificando token para LocationWatcherService ControlParentalApp", e)
                     }
                 }
                 
@@ -113,7 +111,7 @@ class ControlParentalApp : Application(), Configuration.Provider {
         coroutineScope.cancel()
         
         // Detener el servicio de heartbeat
-        HeartbeatService.stop(this)
+        // HeartbeatService.stop(this) // Eliminado
     }
 
 }

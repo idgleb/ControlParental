@@ -82,9 +82,10 @@ class DeviceAuthRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             android.util.Log.e("DeviceAuthRepositoryImpl", "registerDevice: Excepción", e)
-            
-            // Manejar específicamente errores de rate limiting
-            if (e is HttpException && e.code() == 429) {
+            if (e is HttpException && e.code() == 404) {
+                // Manejo especial para 404
+                Result.failure(Exception("Servidor no disponible (404)"))
+            } else if (e is HttpException && e.code() == 429) {
                 // Intentar obtener el header Retry-After
                 val retryAfter = e.response()?.headers()?.get("Retry-After")?.toIntOrNull() ?: 60
                 android.util.Log.d("DeviceAuthRepositoryImpl", "Rate limit exceeded. Retry after: $retryAfter seconds")

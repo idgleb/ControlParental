@@ -21,6 +21,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.ActivityResultLauncher
 
 @AndroidEntryPoint
 class PermisosFragment : Fragment(R.layout.fragment_permisos) {
@@ -33,19 +34,7 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
-    // Registrar el launcher para permisos de ubicación
-    private val locationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val allGranted = permissions.all { it.value }
-        if (allGranted) {
-            Log.d("PermisosFragment", "Permisos de ubicación otorgados")
-            // Actualizar UI
-            onResume()
-        } else {
-            Log.w("PermisosFragment", "Permisos de ubicación denegados")
-        }
-    }
+    private lateinit var locationPermissionLauncher: ActivityResultLauncher<Array<String>>
 
     // Launcher para permiso de ubicación en segundo plano
     private val backgroundLocationPermissionLauncher = registerForActivityResult(
@@ -61,6 +50,16 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Registrar el launcher usando el helper de Permisos
+        locationPermissionLauncher = Permisos.getLocationPermissionLauncher(this) { allGranted ->
+            if (allGranted) {
+                Log.d("PermisosFragment", "Permisos de ubicación otorgados")
+                onResume()
+            } else {
+                Log.w("PermisosFragment", "Permisos de ubicación denegados")
+            }
+        }
 
         initUI(view)
 
@@ -191,13 +190,14 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
         binding.requestLocationPermissionBoton.setOnClickListener {
             if (!Permisos.hasLocationPermission(appDataRepository.context)) {
                 Log.w("PermisosFragment", "Solicitando permisos de ubicación")
-                // Usar el launcher en lugar del método deprecado
-                locationPermissionLauncher.launch(
-                    arrayOf(
-                        android.Manifest.permission.ACCESS_FINE_LOCATION,
-                        android.Manifest.permission.ACCESS_COARSE_LOCATION
-                    )
-                )
+                Permisos.requestLocationPermission(this) { allGranted ->
+                    if (allGranted) {
+                        Log.d("PermisosFragment", "Permisos de ubicación otorgados")
+                        onResume()
+                    } else {
+                        Log.w("PermisosFragment", "Permisos de ubicación denegados")
+                    }
+                }
             } else {
                 val msg = "Ya tienes los permisos de ubicación"
                 Toast.makeText(appDataRepository.context, msg, Toast.LENGTH_SHORT).show()
@@ -207,10 +207,13 @@ class PermisosFragment : Fragment(R.layout.fragment_permisos) {
 
         binding.requestBackgroundLocationPermissionBoton.setOnClickListener {
             if (!Permisos.hasBackgroundLocationPermission(appDataRepository.context)) {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                    backgroundLocationPermissionLauncher.launch(
-                        android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                    )
+                Permisos.requestBackgroundLocationPermission(this) { granted ->
+                    if (granted) {
+                        Log.d("PermisosFragment", "Permiso de ubicación en segundo plano otorgado")
+                        onResume()
+                    } else {
+                        Log.w("PermisosFragment", "Permiso de ubicación en segundo plano denegado")
+                    }
                 }
             } else {
                 Toast.makeText(appDataRepository.context, "Ya tienes el permiso de ubicación en segundo plano", Toast.LENGTH_SHORT).show()
