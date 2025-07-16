@@ -20,7 +20,21 @@ import androidx.core.content.edit
 
 /**
  * Fuente de datos local para la autenticación del dispositivo
- * Usa SharedPreferences encriptadas para mayor seguridad
+ *
+ * Esta clase utiliza **exclusivamente** el contexto protegido por dispositivo
+ * (`context.createDeviceProtectedStorageContext()`) para almacenar credenciales
+ * sensibles en EncryptedSharedPreferences.
+ *
+ * Ventajas:
+ * - Máxima seguridad: los datos solo están disponibles tras el desbloqueo del dispositivo.
+ * - Acceso seguro desde receivers y servicios tras el boot (ej: BootReceiver).
+ * - La UI y actividades pueden acceder a los datos normalmente tras el desbloqueo.
+ *
+ * Consideraciones:
+ * - No es posible acceder a las credenciales desde la UI antes de que el usuario desbloquee el dispositivo (lo cual Android no permite de todos modos).
+ * - Si existían datos en el contexto normal, deben migrarse manualmente si es necesario.
+ *
+ * Uso recomendado para apps de control parental y escenarios donde la seguridad de las credenciales es prioritaria.
  */
 @Singleton
 class DeviceAuthLocalDataSource @Inject constructor(
@@ -36,18 +50,8 @@ class DeviceAuthLocalDataSource @Inject constructor(
         private const val KEY_IS_VERIFIED = "is_verified"
     }
 
-    val deviceProtectedContext = context.createDeviceProtectedStorageContext()
-
-
-    init {
-        // Migrar datos si estaban en almacenamiento normal
-        val migrated = deviceProtectedContext.moveSharedPreferencesFrom(context, PREFS_NAME)
-        if (!migrated) {
-            android.util.Log.w(TAG, "No se pudieron migrar las SharedPreferences al almacenamiento protegido por dispositivo")
-        } else {
-            android.util.Log.d(TAG, "SharedPreferences migradas correctamente a almacenamiento protegido")
-        }
-    }
+    // Usar solo contexto protegido
+    private val deviceProtectedContext = context.createDeviceProtectedStorageContext()
 
     private val masterKey = MasterKey.Builder(deviceProtectedContext)
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)

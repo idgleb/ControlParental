@@ -52,6 +52,7 @@ class BootReceiver : BroadcastReceiver() {
             }
 
             // Usar el sistema moderno de sincronización basado en eventos
+            Log.d("BootReceiver", "Iniciando ModernSyncWorker.")
             ModernSyncWorker.startWorker(context)
 
             val enabledServices = Settings.Secure.getString(
