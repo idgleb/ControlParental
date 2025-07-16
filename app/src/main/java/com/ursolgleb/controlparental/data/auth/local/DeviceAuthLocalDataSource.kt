@@ -35,13 +35,26 @@ class DeviceAuthLocalDataSource @Inject constructor(
         private const val KEY_IS_REGISTERED = "is_registered"
         private const val KEY_IS_VERIFIED = "is_verified"
     }
-    
-    private val masterKey = MasterKey.Builder(context)
+
+    val deviceProtectedContext = context.createDeviceProtectedStorageContext()
+
+
+    init {
+        // Migrar datos si estaban en almacenamiento normal
+        val migrated = deviceProtectedContext.moveSharedPreferencesFrom(context, PREFS_NAME)
+        if (!migrated) {
+            android.util.Log.w(TAG, "No se pudieron migrar las SharedPreferences al almacenamiento protegido por dispositivo")
+        } else {
+            android.util.Log.d(TAG, "SharedPreferences migradas correctamente a almacenamiento protegido")
+        }
+    }
+
+    private val masterKey = MasterKey.Builder(deviceProtectedContext)
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
-    
+
     private val encryptedPrefs = EncryptedSharedPreferences.create(
-        context,
+        deviceProtectedContext,
         PREFS_NAME,
         masterKey,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
