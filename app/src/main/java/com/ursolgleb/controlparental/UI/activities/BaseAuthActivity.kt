@@ -67,7 +67,7 @@ abstract class BaseAuthActivity : AppCompatActivity() {
     private fun isAuthenticationActivity(): Boolean {
         val activityClass = this::class.java
         return activityClass == DeviceAuthActivity::class.java || 
-               activityClass == com.ursolgleb.controlparental.UI.activities.AuthActivity::class.java
+               activityClass == AuthActivity::class.java
     }
     
     /**

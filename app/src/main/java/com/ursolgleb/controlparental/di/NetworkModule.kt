@@ -5,7 +5,7 @@ import com.squareup.moshi.JsonReader
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.ursolgleb.controlparental.BuildConfig
-import com.ursolgleb.controlparental.data.auth.remote.DeviceAuthInterceptor
+import com.ursolgleb.controlparental.data.auth.interceptor.DeviceAuthInterceptor
 import com.ursolgleb.controlparental.interceptors.DeviceDeletedInterceptor
 import dagger.Module
 import dagger.Provides

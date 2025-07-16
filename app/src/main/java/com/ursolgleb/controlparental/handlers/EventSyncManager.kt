@@ -92,7 +92,7 @@ class EventSyncManager @Inject constructor(
                     val serverEvents = remoteRepo.getEvents(
                         deviceId = deviceId, 
                         lastEventId = lastEventId,
-                        types = "horario,app,device" // Agregar device a los tipos
+                        types = "horario,app,device"
                     )
                     
                     if (serverEvents.events.isNotEmpty()) {

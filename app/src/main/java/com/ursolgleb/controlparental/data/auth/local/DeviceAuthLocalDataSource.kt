@@ -156,14 +156,6 @@ class DeviceAuthLocalDataSource @Inject constructor(
             }
             android.util.Log.d("DeviceAuthLocalDataSource", "clearToken: Token eliminado, dispositivo sigue registrado")
             
-            // Cancelar el worker de sincronización
-            try {
-                WorkManager.getInstance(context).cancelUniqueWork("ModernSyncWorker")
-                android.util.Log.d("DeviceAuthLocalDataSource", "clearToken: ModernSyncWorker cancelado")
-            } catch (e: Exception) {
-                android.util.Log.e("DeviceAuthLocalDataSource", "clearToken: Error cancelando ModernSyncWorker", e)
-            }
-            
             updateAuthState()
         }
     }
@@ -184,14 +176,6 @@ class DeviceAuthLocalDataSource @Inject constructor(
                 android.util.Log.e(TAG, "clearRegistration: Error al eliminar el registro del dispositivo")
             }
             android.util.Log.d("DeviceAuthLocalDataSource", "clearRegistration: Registro eliminado, deviceId mantenido")
-            
-            // Cancelar el worker de sincronización
-            try {
-                WorkManager.getInstance(context).cancelUniqueWork("ModernSyncWorker")
-                android.util.Log.d("DeviceAuthLocalDataSource", "clearRegistration: ModernSyncWorker cancelado")
-            } catch (e: Exception) {
-                android.util.Log.e("DeviceAuthLocalDataSource", "clearRegistration: Error cancelando ModernSyncWorker", e)
-            }
             
             updateAuthState()
         }

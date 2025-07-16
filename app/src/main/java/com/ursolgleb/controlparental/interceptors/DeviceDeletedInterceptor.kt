@@ -22,6 +22,8 @@ import android.os.Looper
 import android.provider.Settings
 import android.view.View
 import android.view.WindowManager
+import androidx.work.WorkManager
+import com.ursolgleb.controlparental.workers.ModernSyncWorker
 
 
 @Singleton
@@ -38,16 +40,15 @@ class DeviceDeletedInterceptor @Inject constructor(
         val request = chain.request()
         val response = chain.proceed(request)
 
-        // Solo reaccionar a 404 en endpoints relevantes
-        if (response.code == 404 && (
-                request.url.encodedPath.contains("/device/") ||
-                request.url.encodedPath.contains("/auth/verify")
-            )) {
-            Log.d(TAG, "handleDeviceDeleted: 404 en endpoint de dispositivo o verificación")
-            CoroutineScope(Dispatchers.IO).launch {
-                deviceAuthLocalDataSource.clearRegistration()
-                Log.d(TAG, "handleDeviceDeleted: Registro eliminado, datos locales mantenidos")
-            }
+        // Solo reaccionar a 401
+        if (response.code in listOf(401)) {
+            handleDeviceDeleted(response.code, response.message)
+
+            /*            Log.d(TAG, "handleDeviceDeleted: 401 en endpoint de dispositivo o verificación")
+                        CoroutineScope(Dispatchers.IO).launch {
+                            deviceAuthLocalDataSource.clearRegistration()
+                            Log.d(TAG, "handleDeviceDeleted: Registro eliminado, datos locales mantenidos")
+                        }*/
             // Aquí podrías lanzar la pantalla de autenticación si lo deseas, pero solo para estos casos
         }
 
@@ -71,19 +72,18 @@ class DeviceDeletedInterceptor @Inject constructor(
         Log.d(TAG, "handleDeviceDeleted: $code - $message")
 
         CoroutineScope(Dispatchers.IO).launch {
+            Log.d(TAG, "Deteniendo ModernSyncWorker...")
+            ModernSyncWorker.cancelAndAwait(context)
             deviceAuthLocalDataSource.clearRegistration()
             Log.d(TAG, "handleDeviceDeleted: Registro eliminado, datos locales mantenidos")
         }
 
         // Solo abrir DeviceAuthActivity si corresponde
         if (shouldOpenAuthScreen()) {
-            CoroutineScope(Dispatchers.Main).launch {
-                val intent = Intent(context, DeviceAuthActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    putExtra("error_message", "$code - $message")
-                }
-                context.startActivity(intent)
-            }
+
+            redirectToAuth(context, "$code - $message")
+            Log.d(TAG, "handleDeviceDeleted: Abriendo DeviceAuthActivity")
+
         }
     }
 

@@ -5,14 +5,17 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.ursolgleb.controlparental.data.common.Resource
 import com.ursolgleb.controlparental.data.remote.models.toDto
 import com.ursolgleb.controlparental.di.ModernSyncWorkerEntryPoint
 import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.delay
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeout
 
 /**
  * Worker moderno que usa sincronización basada en eventos
@@ -25,7 +28,21 @@ class ModernSyncWorker(
     companion object {
         private const val TAG = "ModernSyncWorker"
         private const val WORK_NAME = "ModernSyncWorker"
-        
+
+        suspend fun cancelAndAwait(context: Context, timeoutMs: Long = 3000L) {
+            val workManager = WorkManager.getInstance(context)
+            workManager.cancelUniqueWork(WORK_NAME)
+            withTimeout(timeoutMs) {
+                while (true) {
+                    val infos = workManager.getWorkInfosForUniqueWork(WORK_NAME).get()
+                    val running = infos.any { it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.ENQUEUED }
+                    if (!running) break
+                    delay(100)
+                }
+            }
+        }
+
+
         fun startWorker(context: Context) {
             Log.d(TAG, "startWorker called")
             val workRequest = OneTimeWorkRequestBuilder<ModernSyncWorker>()
@@ -241,4 +258,5 @@ class ModernSyncWorker(
             Log.e("ModernSyncWorker", "Error sending heartbeat", e)
         }
     }
+
 } 

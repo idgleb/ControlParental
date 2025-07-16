@@ -1,7 +1,7 @@
 package com.ursolgleb.controlparental.di
 
 import com.ursolgleb.controlparental.data.auth.remote.DeviceAuthApiService
-import com.ursolgleb.controlparental.data.auth.remote.DeviceAuthInterceptor
+import com.ursolgleb.controlparental.data.auth.interceptor.DeviceAuthInterceptor
 import com.ursolgleb.controlparental.data.auth.repository.DeviceAuthRepositoryImpl
 import com.ursolgleb.controlparental.domain.auth.repository.DeviceAuthRepository
 import dagger.Binds

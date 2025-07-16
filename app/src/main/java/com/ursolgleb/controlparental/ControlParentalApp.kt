@@ -66,7 +66,6 @@ class ControlParentalApp : Application(), Configuration.Provider {
                 // Usar solo el sistema moderno basado en eventos
                 Log.d("ControlParentalApp", "Iniciando ModernSyncWorker...")
                 ModernSyncWorker.startWorker(this)
-                Log.d("ControlParentalApp", "ModernSyncWorker programado")
                 
                 // Iniciar el servicio de heartbeat solo si hay credenciales
                 coroutineScope.launch {
