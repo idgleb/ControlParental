@@ -73,7 +73,9 @@ class LocationWatcherService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "LocationWatcherService started")
+        val startTime = System.currentTimeMillis()
+        Log.d(TAG, "onStartCommand: iniciado a $startTime")
+
         val notification = buildNotification()
         if (Build.VERSION.SDK_INT >= 34) {
             startForeground(
@@ -84,6 +86,13 @@ class LocationWatcherService : Service() {
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
+
+        Log.d(TAG, "startForeground llamado a ${System.currentTimeMillis()} (delay: ${System.currentTimeMillis() - startTime} ms)")
+        val delay = System.currentTimeMillis() - startTime
+        if (delay > 9000) {
+            Log.w(TAG, "⚠️ startForeground fue llamado demasiado tarde: $delay ms")
+        }
+
         startLocationUpdates()
         return START_STICKY
     }

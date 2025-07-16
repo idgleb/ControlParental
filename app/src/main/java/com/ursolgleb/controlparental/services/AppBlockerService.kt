@@ -69,13 +69,30 @@ class AppBlockerService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         if (hasLocationPermission()) {
-            LocationWatcherService.start(this)
-            Log.d("AppBlockerService", "LocationWatcherService arrancado desde AccessibilityService")
+            val prefs = getSharedPreferences("device_auth_prefs", Context.MODE_PRIVATE)
+            val token = prefs.getString("api_token", null)
+            if (token != null) {
+                if (!isServiceRunning(LocationWatcherService::class.java)) {
+                    Log.d("AppBlockerService", "LocationWatcherService no está corriendo. Iniciando...")
+                    LocationWatcherService.start(this)
+                } else {
+                    Log.d("AppBlockerService", "LocationWatcherService ya está activo")
+                }
+            } else {
+                Log.w("AppBlockerService", "No hay token. No se inicia LocationWatcherService")
+            }
         } else {
             Log.w("AppBlockerService", "No hay permisos de ubicación, no se arranca LocationWatcherService")
             // Aquí podrías notificar a la UI principal para pedir permisos si lo deseas
         }
     }
+
+    private fun isServiceRunning(serviceClass: Class<*>): Boolean {
+        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        return activityManager.getRunningServices(Int.MAX_VALUE)
+            .any { it.service.className == serviceClass.name }
+    }
+
 
     private fun hasLocationPermission(): Boolean {
         return checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED ||

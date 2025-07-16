@@ -67,21 +67,6 @@ class ControlParentalApp : Application(), Configuration.Provider {
                 Log.d("ControlParentalApp", "Iniciando ModernSyncWorker...")
                 ModernSyncWorker.startWorker(this)
                 
-                // Iniciar el servicio de heartbeat solo si hay credenciales
-                coroutineScope.launch {
-                    try {
-                        val hasToken = deviceAuthLocalDataSource.getApiToken() != null
-                        if (hasToken) {
-                            Log.d("ControlParentalApp", "Token encontrado, iniciando LocationWatcherService...")
-                            // LocationWatcherService.start(this@ControlParentalApp) // Assuming LocationWatcherService is the intended service
-                        } else {
-                            Log.d("ControlParentalApp", "No hay token, LocationWatcherService no se iniciará")
-                        }
-                    } catch (e: Exception) {
-                        Log.e("ControlParentalApp", "Error verificando token para LocationWatcherService ControlParentalApp", e)
-                    }
-                }
-                
                 // Verificar el estado del worker después de un breve delay
                 coroutineScope.launch {
                     delay(1000)
