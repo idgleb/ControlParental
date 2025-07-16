@@ -38,8 +38,7 @@ class BootReceiver : BroadcastReceiver() {
 
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val dataSource = deviceAuthLocalDataSource(context)
-                    val token = dataSource.getApiToken()
+                    val token = deviceAuthLocalDataSource.getApiToken()
                     if (token != null) {
                         Log.d("BootReceiver", "Token válido encontrado. Iniciando LocationWatcherService.")
                         val serviceIntent = Intent(context, LocationWatcherService::class.java)
