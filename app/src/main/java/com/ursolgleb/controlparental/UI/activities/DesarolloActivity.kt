@@ -26,7 +26,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowInsetsCompat
 import android.provider.Settings
 import android.text.TextUtils
-import android.view.View
 import android.view.accessibility.AccessibilityManager
 import android.widget.TextView
 import android.widget.Toast
@@ -36,7 +35,7 @@ import com.ursolgleb.controlparental.utils.Archivo
 import com.ursolgleb.controlparental.utils.FileWatcher
 import com.ursolgleb.controlparental.utils.Launcher
 import com.ursolgleb.controlparental.R
-import com.ursolgleb.controlparental.receiver.UpdateAppsBloquedasReceiver
+import com.ursolgleb.controlparental.receivers.UpdateAppsBloquedasReceiver
 import com.ursolgleb.controlparental.databinding.ActivityDesarolloBinding
 import com.ursolgleb.controlparental.utils.Permisos
 import dagger.hilt.android.AndroidEntryPoint
@@ -51,8 +50,6 @@ import androidx.core.net.toUri
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ursolgleb.controlparental.utils.Fun
 import com.ursolgleb.controlparental.validadors.PinValidator
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 
 @AndroidEntryPoint

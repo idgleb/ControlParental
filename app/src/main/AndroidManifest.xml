@@ -96,7 +96,8 @@
             android:description="@string/location_service_description"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="location" />
+            android:foregroundServiceType="location"
+            android:permission="android.permission.FOREGROUND_SERVICE_LOCATION"/>
 
         <!-- Receiver para cambios de estado de autenticación -->
         <receiver
@@ -107,6 +108,18 @@
                 <action android:name="com.ursolgleb.controlparental.AUTH_STATE_CHANGED" />
             </intent-filter>
         </receiver>
+        <receiver
+            android:name=".receivers.BootReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.ACTION_MY_PACKAGE_REPLACED"/>
+            </intent-filter>
+        </receiver>
+
 
         <!-- Service used by WorkManager when utilizing the GCM scheduler.
           This needs to be exported so that Google Play services can
