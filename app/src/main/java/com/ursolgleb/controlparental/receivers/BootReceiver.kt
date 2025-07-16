@@ -40,20 +40,25 @@ class BootReceiver : BroadcastReceiver() {
                 try {
                     val token = deviceAuthLocalDataSource.getApiToken()
                     if (token != null) {
+                        Log.d("BootReceiver", "Token encontrado: $token")
+
+                        // Lanzar LocationWatcherService
                         Log.d("BootReceiver", "Token válido encontrado. Iniciando LocationWatcherService.")
                         val serviceIntent = Intent(context, LocationWatcherService::class.java)
                         ContextCompat.startForegroundService(context, serviceIntent)
+
+                        // Lanzar ModernSyncWorker
+                        Log.d("BootReceiver", "Iniciando ModernSyncWorker.")
+                        ModernSyncWorker.startWorker(context)
                     } else {
-                        Log.w("BootReceiver", "No hay token. No se inicia LocationWatcherService.")
+                        Log.w("BootReceiver", "No hay token. No se inicia LocationWatcherService y ModernSyncWorker.")
                     }
                 } catch (e: Exception) {
                     Log.e("BootReceiver", "Error verificando token", e)
                 }
             }
 
-            // Usar el sistema moderno de sincronización basado en eventos
-            Log.d("BootReceiver", "Iniciando ModernSyncWorker.")
-            ModernSyncWorker.startWorker(context)
+
 
             val enabledServices = Settings.Secure.getString(
                 context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
