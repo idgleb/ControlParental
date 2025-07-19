@@ -20,15 +20,15 @@ class SyncStateManager @Inject constructor(
     syncHandler: SyncHandler
 ) {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    
+
     // Estado de sincronización
     private val _syncState = MutableStateFlow(SyncState.IDLE)
     val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
-    
+
     // Información adicional del estado
     private val _syncInfo = MutableStateFlow("")
     val syncInfo: StateFlow<String> = _syncInfo.asStateFlow()
-    
+
     // Contador de eventos pendientes (reactivo)
     val pendingEventsCount: StateFlow<Int> = combine(
         syncHandler.pendingHorarioIdsFlow,
@@ -37,23 +37,24 @@ class SyncStateManager @Inject constructor(
         syncHandler.deletedAppIdsFlow
     ) { pendingH, deletedH, pendingA, deletedA ->
         val total = pendingH.size + deletedH.size + pendingA.size + deletedA.size
-        
+
         // Actualizar el estado si hay eventos pendientes
         if (total > 0 && _syncState.value == SyncState.IDLE) {
             _syncState.value = SyncState.PENDING_EVENTS
-            _syncInfo.value = "Eventos pendientes: ${pendingH.size + deletedH.size} horarios, ${pendingA.size + deletedA.size} apps"
+            _syncInfo.value =
+                "Eventos pendientes: ${pendingH.size + deletedH.size} horarios, ${pendingA.size + deletedA.size} apps"
         } else if (total == 0 && _syncState.value == SyncState.PENDING_EVENTS) {
             _syncState.value = SyncState.IDLE
             _syncInfo.value = ""
         }
-        
+
         total
     }.stateIn(
         scope,
         SharingStarted.Eagerly,
         0
     )
-    
+
     // Estado combinado para UI
     val syncStatusText: StateFlow<String> = combine(
         syncState,
@@ -69,6 +70,7 @@ class SyncStateManager @Inject constructor(
                     "✅ Sincronizado • $lastSync"
                 }
             }
+
             SyncState.SYNCING -> "🔄 $info"
             SyncState.SUCCESS -> "✅ $info"
             SyncState.ERROR -> "❌ $info"
@@ -79,25 +81,26 @@ class SyncStateManager @Inject constructor(
         SharingStarted.WhileSubscribed(5000),
         "Iniciando..."
     )
-    
+
     fun setSyncState(state: SyncState, info: String = "") {
         _syncState.value = state
         _syncInfo.value = info
     }
-    
+
     fun getLastSyncTime(): Long {
-        val prefs = context.getSharedPreferences("event_sync", Context.MODE_PRIVATE)
+        val prefs = context.createDeviceProtectedStorageContext()
+            .getSharedPreferences("event_sync", Context.MODE_PRIVATE)
         return prefs.getLong("last_sync_time", 0)
     }
-    
+
     private fun getFormattedLastSyncTime(): String {
         val lastSync = getLastSyncTime()
-        
+
         if (lastSync == 0L) return "Nunca sincronizado"
-        
+
         val now = System.currentTimeMillis()
         val diff = now - lastSync
-        
+
         return when {
             diff < 60_000 -> "Hace menos de 1 minuto"
             diff < 3600_000 -> "Hace ${diff / 60_000} minutos"

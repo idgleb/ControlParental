@@ -99,16 +99,18 @@ class AppDataRepository @Inject constructor(
         if (authDeviceId != null) {
             return authDeviceId
         }
-        
+
         // Si no hay deviceId, generar uno nuevo permanente
         // Este mismo ID se usará para la autenticación cuando el dispositivo se registre
         val newDeviceId = java.util.UUID.randomUUID().toString()
-        
+
         // Guardar el deviceId en el sistema de autenticación para uso futuro
         deviceAuthLocalDataSource.saveDeviceId(newDeviceId)
-        
-        Logger.info(context, "AppDataRepository", 
-            "Generado nuevo deviceId permanente: $newDeviceId")
+
+        Logger.info(
+            context, "AppDataRepository",
+            "Generado nuevo deviceId permanente: $newDeviceId"
+        )
         return newDeviceId
     }
 
@@ -492,7 +494,11 @@ class AppDataRepository @Inject constructor(
     fun deleteHorarioByIdHorario(idHorario: Long, deviceId: String): Deferred<Unit> = scope.async {
         try {
             horarioDao.deleteByIdHorario(idHorario, deviceId)
-            Logger.info(context, "AppDataRepository", "Horario eliminado por idHorario: $idHorario, deviceId: $deviceId")
+            Logger.info(
+                context,
+                "AppDataRepository",
+                "Horario eliminado por idHorario: $idHorario, deviceId: $deviceId"
+            )
         } catch (e: Exception) {
             Logger.error(
                 context,
@@ -606,10 +612,10 @@ class AppDataRepository @Inject constructor(
             val model = "${Build.MANUFACTURER} ${Build.MODEL}"
             val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
             val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-            
+
             // Obtener el device existente si hay uno
             val existingDevice = deviceDao.getDeviceOnce()
-            
+
             val entity = if (existingDevice != null) {
                 // Actualizar el existente manteniendo algunos campos
                 existingDevice.copy(
@@ -621,22 +627,22 @@ class AppDataRepository @Inject constructor(
             } else {
                 // Crear uno nuevo
                 DeviceEntity(
-                    deviceId = deviceId, 
-                    model = model, 
+                    deviceId = deviceId,
+                    model = model,
                     batteryLevel = battery
                 )
             }
-            
+
             // Si el deviceId cambió, necesitamos eliminar el antiguo primero
             if (existingDevice != null && existingDevice.deviceId != deviceId) {
                 deviceDao.deleteAll()
             }
-            
+
             deviceDao.replace(entity)
-            
+
             // Marcar el dispositivo como pendiente de sincronización
             syncHandler.markDeviceUpdatePending()
-            
+
             Logger.info(context, "AppDataRepository", "Device info guardada: $entity")
         } catch (e: Exception) {
             Logger.error(
@@ -652,45 +658,47 @@ class AppDataRepository @Inject constructor(
         return try {
             // Siempre obtener el deviceId del sistema de autenticación
             val authDeviceId = getOrCreateDeviceId()
-            
+
             // Obtener el device actual de la BD
             val existingDevice = deviceDao.getDeviceOnce()
-            
+
             if (existingDevice != null) {
                 // Si existe pero tiene un deviceId diferente, actualizarlo
                 if (existingDevice.deviceId != authDeviceId) {
-                    Logger.info(context, "AppDataRepository", 
-                        "Actualizando deviceId de ${existingDevice.deviceId} a $authDeviceId")
-                    
+                    Logger.info(
+                        context, "AppDataRepository",
+                        "Actualizando deviceId de ${existingDevice.deviceId} a $authDeviceId"
+                    )
+
                     // Crear nuevo entity con el deviceId correcto
                     val updatedDevice = existingDevice.copy(
                         deviceId = authDeviceId,
                         updatedAt = System.currentTimeMillis()
                     )
-                    
+
                     // Eliminar el antiguo y crear el nuevo
                     deviceDao.deleteAll()
                     deviceDao.insertIgnore(updatedDevice)
-                    
+
                     return updatedDevice
                 }
                 return existingDevice
             }
-            
+
             // Si no existe, crear uno nuevo con el deviceId del sistema de autenticación
             val model = "${Build.MANUFACTURER} ${Build.MODEL}"
             val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
             val battery = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
             val entity = DeviceEntity(
-                deviceId = authDeviceId, 
-                model = model, 
+                deviceId = authDeviceId,
+                model = model,
                 batteryLevel = battery
             )
-            
+
             // Guardar en la BD
             deviceDao.insertIgnore(entity)
             Logger.info(context, "AppDataRepository", "Device info creada y guardada: $entity")
-            
+
             entity
         } catch (e: Exception) {
             Logger.error(
@@ -710,7 +718,7 @@ class AppDataRepository @Inject constructor(
     }
 
     fun getDeviceFlow() = deviceDao.getDevice()
-    
+
     /**
      * Actualiza la información del dispositivo en la base de datos
      */
@@ -727,7 +735,7 @@ class AppDataRepository @Inject constructor(
             )
         }
     }
-    
+
     suspend fun deleteAppByPackageName(packageName: String, deviceId: String) {
         try {
             dbLock.withLock {
@@ -736,7 +744,12 @@ class AppDataRepository @Inject constructor(
                 Log.d("AppDataRepository", "App eliminada: $packageName, notificada para sync.")
             }
         } catch (e: Exception) {
-            Logger.error(context, "AppDataRepository", "Error deleteAppByPackageName: ${e.message}", e)
+            Logger.error(
+                context,
+                "AppDataRepository",
+                "Error deleteAppByPackageName: ${e.message}",
+                e
+            )
         }
     }
 
@@ -744,7 +757,12 @@ class AppDataRepository @Inject constructor(
         return try {
             appDao.getAppByPackageNameOnce(packageName, deviceId)
         } catch (e: Exception) {
-            Logger.error(context, "AppDataRepository", "Error getAppByPackageNameOnce: ${e.message}", e)
+            Logger.error(
+                context,
+                "AppDataRepository",
+                "Error getAppByPackageNameOnce: ${e.message}",
+                e
+            )
             null
         }
     }
@@ -780,29 +798,36 @@ class AppDataRepository @Inject constructor(
             dbLock.withLock {
                 // Sincronización inteligente: solo aplicar cambios necesarios
                 Log.d("AppDataRepo", "Iniciando sincronización inteligente de horarios")
-                
+
                 // 1. Obtener horarios locales actuales
                 val localHorarios = horarioDao.getHorariosByDeviceIdOnce(deviceId)
                 val localIds = localHorarios.map { it.idHorario }.toSet()
                 val remoteIds = remoteHorarios.map { it.idHorario }.toSet()
-                
-                Log.d("AppDataRepo", "Horarios locales: ${localIds.size}, remotos: ${remoteIds.size}")
-                
+
+                Log.d(
+                    "AppDataRepo",
+                    "Horarios locales: ${localIds.size}, remotos: ${remoteIds.size}"
+                )
+
                 // 2. Identificar horarios a eliminar (existen localmente pero no en el servidor)
                 val idsToDelete = localIds - remoteIds
                 if (idsToDelete.isNotEmpty()) {
-                    Log.d("AppDataRepo", "Eliminando ${idsToDelete.size} horarios que ya no existen en el servidor: $idsToDelete")
+                    Log.d(
+                        "AppDataRepo",
+                        "Eliminando ${idsToDelete.size} horarios que ya no existen en el servidor: $idsToDelete"
+                    )
                     horarioDao.deleteHorariosByIds(idsToDelete.toList())
                 }
-                
+
                 // 3. Identificar horarios nuevos y actualizados
                 val horariosToInsert = mutableListOf<HorarioEntity>()
                 val horariosToUpdate = mutableListOf<HorarioEntity>()
-                
+
                 remoteHorarios.forEach { remoteHorario ->
                     val entity = remoteHorario.toEntity()
-                    val localHorario = localHorarios.find { it.idHorario == remoteHorario.idHorario }
-                    
+                    val localHorario =
+                        localHorarios.find { it.idHorario == remoteHorario.idHorario }
+
                     if (localHorario == null) {
                         // Horario nuevo
                         horariosToInsert.add(entity)
@@ -812,19 +837,22 @@ class AppDataRepository @Inject constructor(
                     }
                     // Si no hay cambios, no hacer nada
                 }
-                
+
                 // 4. Aplicar inserciones
                 if (horariosToInsert.isNotEmpty()) {
                     Log.d("AppDataRepo", "Insertando ${horariosToInsert.size} horarios nuevos")
                     horarioDao.insertHorarios(horariosToInsert)
                 }
-                
+
                 // 5. Aplicar actualizaciones
                 if (horariosToUpdate.isNotEmpty()) {
-                    Log.d("AppDataRepo", "Actualizando ${horariosToUpdate.size} horarios modificados")
+                    Log.d(
+                        "AppDataRepo",
+                        "Actualizando ${horariosToUpdate.size} horarios modificados"
+                    )
                     horariosToUpdate.forEach { horarioDao.updateHorario(it) }
                 }
-                
+
                 val totalChanges = idsToDelete.size + horariosToInsert.size + horariosToUpdate.size
                 Log.d("AppDataRepo", "Sincronización completada. Total de cambios: $totalChanges")
             }
@@ -834,23 +862,23 @@ class AppDataRepository @Inject constructor(
             // 1. No hay datos locales
             // 2. Es una sincronización inicial forzada
             // 3. Hay una flag indicando que hay cambios en el servidor
-            localData == null || 
-            localData.isEmpty() || 
-            hasPendingServerChanges("horario")
-        } 
+            localData == null ||
+                    localData.isEmpty() ||
+                    hasPendingServerChanges("horario")
+        }
     )
-    
+
     /**
      * Compara dos horarios para detectar si hay cambios
      */
     private fun hasChanges(local: HorarioEntity, remote: HorarioEntity): Boolean {
         return local.nombreDeHorario != remote.nombreDeHorario ||
-               local.diasDeSemana != remote.diasDeSemana ||
-               local.horaInicio != remote.horaInicio ||
-               local.horaFin != remote.horaFin ||
-               local.isActive != remote.isActive
+                local.diasDeSemana != remote.diasDeSemana ||
+                local.horaInicio != remote.horaInicio ||
+                local.horaFin != remote.horaFin ||
+                local.isActive != remote.isActive
     }
-    
+
     /**
      * Obtiene las aplicaciones del dispositivo con sincronización de red
      * Similar a getHorarios pero para apps
@@ -872,32 +900,38 @@ class AppDataRepository @Inject constructor(
             dbLock.withLock {
                 // Sincronización inteligente de apps
                 Log.d("AppDataRepo", "Iniciando sincronización inteligente de apps")
-                
+
                 // 1. Obtener apps locales actuales del dispositivo
                 val localApps = appDao.getAllApps().first().filter { it.deviceId == deviceId }
                 val localPackages = localApps.map { it.packageName }.toSet()
                 val remotePackages = remoteApps.mapNotNull { it.packageName }.toSet()
-                
-                Log.d("AppDataRepo", "Apps locales: ${localPackages.size}, remotas: ${remotePackages.size}")
-                
+
+                Log.d(
+                    "AppDataRepo",
+                    "Apps locales: ${localPackages.size}, remotas: ${remotePackages.size}"
+                )
+
                 // 2. Identificar apps a eliminar (ya no están en el servidor)
                 val packagesToDelete = localPackages - remotePackages
                 if (packagesToDelete.isNotEmpty()) {
-                    Log.d("AppDataRepo", "Eliminando ${packagesToDelete.size} apps que ya no existen en el servidor")
+                    Log.d(
+                        "AppDataRepo",
+                        "Eliminando ${packagesToDelete.size} apps que ya no existen en el servidor"
+                    )
                     packagesToDelete.forEach { pkg ->
                         appDao.deleteAppByPackageName(pkg, deviceId)
                     }
                 }
-                
+
                 // 3. Identificar apps nuevas y actualizadas
                 val appsToInsert = mutableListOf<AppEntity>()
                 val appsToUpdate = mutableListOf<AppEntity>()
-                
+
                 remoteApps.forEach { remoteApp ->
                     val entity = remoteApp.toEntity()
                     if (entity != null) {
                         val localApp = localApps.find { it.packageName == remoteApp.packageName }
-                        
+
                         if (localApp == null) {
                             // App nueva - pero preservar el ícono local si existe
                             val existingIcon = getLocalAppIcon(remoteApp.packageName!!)
@@ -912,16 +946,22 @@ class AppDataRepository @Inject constructor(
                         }
                     }
                 }
-                
+
                 // 4. Aplicar cambios
                 if (appsToInsert.isNotEmpty() || appsToUpdate.isNotEmpty()) {
                     val allAppsToSave = appsToInsert + appsToUpdate
-                    Log.d("AppDataRepo", "Guardando ${allAppsToSave.size} apps (${appsToInsert.size} nuevas, ${appsToUpdate.size} actualizadas)")
+                    Log.d(
+                        "AppDataRepo",
+                        "Guardando ${allAppsToSave.size} apps (${appsToInsert.size} nuevas, ${appsToUpdate.size} actualizadas)"
+                    )
                     appDao.insertListaApps(allAppsToSave)
                 }
-                
+
                 val totalChanges = packagesToDelete.size + appsToInsert.size + appsToUpdate.size
-                Log.d("AppDataRepo", "Sincronización de apps completada. Total de cambios: $totalChanges")
+                Log.d(
+                    "AppDataRepo",
+                    "Sincronización de apps completada. Total de cambios: $totalChanges"
+                )
             }
         },
         shouldFetch = { localApps ->
@@ -929,50 +969,54 @@ class AppDataRepository @Inject constructor(
             // 1. No hay datos locales
             // 2. Hay cambios pendientes en el servidor
             // 3. Los datos están obsoletos (más de 5 minutos)
-            localApps == null || 
-            localApps.isEmpty() || 
-            hasPendingServerChanges("app") ||
-            isDataStale()
+            localApps == null ||
+                    localApps.isEmpty() ||
+                    hasPendingServerChanges("app") ||
+                    isDataStale()
         }
     )
-    
+
     /**
      * Verifica si hay cambios pendientes en el servidor para un tipo de entidad
      */
     private fun hasPendingServerChanges(entityType: String): Boolean {
-        val prefs = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
+        val prefs = context.createDeviceProtectedStorageContext()
+            .getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
         val pendingChanges = prefs.getStringSet("pending_server_changes", emptySet()) ?: emptySet()
         return pendingChanges.contains(entityType)
     }
-    
+
     /**
      * Marca que hay cambios pendientes del servidor para un tipo de entidad
      */
     fun markServerChanges(entityType: String, hasPending: Boolean) {
-        val prefs = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
-        val pendingChanges = prefs.getStringSet("pending_server_changes", emptySet())?.toMutableSet() ?: mutableSetOf()
-        
+        val prefs = context.createDeviceProtectedStorageContext()
+            .getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
+        val pendingChanges =
+            prefs.getStringSet("pending_server_changes", emptySet())?.toMutableSet()
+                ?: mutableSetOf()
+
         if (hasPending) {
             pendingChanges.add(entityType)
         } else {
             pendingChanges.remove(entityType)
         }
-        
+
         prefs.edit().putStringSet("pending_server_changes", pendingChanges).apply()
     }
-    
+
     /**
      * Compara dos apps para detectar si hay cambios (excluyendo el ícono)
      */
     private fun hasAppChanges(local: AppEntity, remote: AppEntity): Boolean {
         return local.appName != remote.appName ||
-               local.appStatus != remote.appStatus ||
-               local.dailyUsageLimitMinutes != remote.dailyUsageLimitMinutes ||
-               local.appCategory != remote.appCategory ||
-               local.contentRating != remote.contentRating ||
-               local.isSystemApp != remote.isSystemApp
+                local.appStatus != remote.appStatus ||
+                local.dailyUsageLimitMinutes != remote.dailyUsageLimitMinutes ||
+                local.appCategory != remote.appCategory ||
+                local.contentRating != remote.contentRating ||
+                local.isSystemApp != remote.isSystemApp
     }
-    
+
     /**
      * Obtiene el ícono de una app instalada localmente
      */
@@ -985,13 +1029,14 @@ class AppDataRepository @Inject constructor(
             null
         }
     }
-    
+
     /**
      * Verifica si los datos locales están desactualizados
      */
     private fun isDataStale(): Boolean {
         // Considerar datos obsoletos después de 5 minutos
-        val lastSyncTime = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
+        val lastSyncTime = context.createDeviceProtectedStorageContext()
+            .getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
             .getLong("last_apps_sync", 0)
         return System.currentTimeMillis() - lastSyncTime > 5 * 60 * 1000
     }

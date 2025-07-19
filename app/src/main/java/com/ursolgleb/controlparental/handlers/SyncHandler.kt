@@ -19,24 +19,25 @@ class SyncHandler @Inject constructor(
     private val appDataRepository: Provider<AppDataRepository>,
 ) {
 
-    private val prefs = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
+    private val prefs = context.createDeviceProtectedStorageContext()
+        .getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
 
     // Flows reactivos para los IDs pendientes
     private val _pendingHorarioIds = MutableStateFlow<Set<String>>(emptySet())
     val pendingHorarioIdsFlow: StateFlow<Set<String>> = _pendingHorarioIds.asStateFlow()
-    
+
     private val _deletedHorarioIds = MutableStateFlow<Set<String>>(emptySet())
     val deletedHorarioIdsFlow: StateFlow<Set<String>> = _deletedHorarioIds.asStateFlow()
-    
+
     private val _pendingAppIds = MutableStateFlow<Set<String>>(emptySet())
     val pendingAppIdsFlow: StateFlow<Set<String>> = _pendingAppIds.asStateFlow()
-    
+
     private val _deletedAppIds = MutableStateFlow<Set<String>>(emptySet())
     val deletedAppIdsFlow: StateFlow<Set<String>> = _deletedAppIds.asStateFlow()
-    
+
     private val _deviceUpdatePending = MutableStateFlow(false)
     val deviceUpdatePendingFlow: StateFlow<Boolean> = _deviceUpdatePending.asStateFlow()
-    
+
     init {
         // Cargar valores iniciales desde SharedPreferences
         _pendingHorarioIds.value = getPendingHorarioIds()

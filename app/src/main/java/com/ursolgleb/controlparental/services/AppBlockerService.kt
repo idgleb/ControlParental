@@ -69,7 +69,8 @@ class AppBlockerService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         if (hasLocationPermission()) {
-            val prefs = getSharedPreferences("device_auth_prefs", Context.MODE_PRIVATE)
+            val prefs = createDeviceProtectedStorageContext()
+                .getSharedPreferences("device_auth_prefs", Context.MODE_PRIVATE)
             val token = prefs.getString("api_token", null)
             if (token != null) {
                 if (!isServiceRunning(LocationWatcherService::class.java)) {
